@@ -87,6 +87,15 @@
             to { bottom: 0; opacity: 0; }
         }
 
+        #modalInput {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+
     </style>
 </head>
 
@@ -291,8 +300,11 @@
                 newFinishInput.value = '';
                 nameInput.style.border = "1px solid #ccc"; 
                 
+            setTimeout(async () => {
                 await fetchForAdmin(); 
                 await populateFinishDropdown();
+            }, 500);
+
             } else {
                 const errorData = await response.json();
                 alert("Upload failed: " + JSON.stringify(errorData));
@@ -309,12 +321,21 @@
         try {
             const response = await fetch(`${API_BASE}?cb=${Date.now()}`);
             if (!response.ok) throw new Error("Sync failed");
-            const data = await response.json();
-            window.adminItems = data;
+            const newData = await response.json();
+
+            if (window.adminItems && window.adminItems.length > 0) {
+                window.adminItems = newData.map(newItem => {
+                    const localItem = window.adminItems.find(li => li.id === newItem.id);
+                    return localItem ? { ...newItem, inStock: localItem.inStock } : newItem;
+                });
+            } else {
+                window.adminItems = newData;
+            }
+            
             
             // Run current filter to keep view consistent
             const currentSearch = document.getElementById('adminSearchInput').value.toLowerCase();
-            const filtered = data.filter(i => i.color.toLowerCase().includes(currentSearch));
+            const filtered = window.adminItems.filter(i => i.color.toLowerCase().includes(currentSearch));
             renderAdminResults(filtered);
 
             const nameInput = document.getElementById('name');
@@ -395,8 +416,9 @@
 
             if (response.ok) {
                 showToast(currentState ? "✅ Marked In Stock" : "➖ Marked Out of Stock");
-            } else {
-                throw new Error("Server rejected update");
+                return true;
+            }  else {
+                throw new Error("Server error");
             }
 
         } catch (err) {
@@ -408,6 +430,7 @@
                 if (item) item.inStock = !currentState;
             }
             await fetchForAdmin();
+            return false;
         }
     }
     
@@ -526,7 +549,5 @@
 </script>
 
 <script src="js/footer.js"></script>
-
-    <div id="toast">✅ Inventory Updated</div>
 </body>
 </html>
