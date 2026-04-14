@@ -323,14 +323,20 @@
             if (!response.ok) throw new Error("Sync failed");
             const newData = await response.json();
 
-            if (window.adminItems && window.adminItems.length > 0) {
-                window.adminItems = newData.map(newItem => {
+            window.adminItems = newData.map(newItem => {
+                const pendingChange = localStorage.getItem(`pending_${newItem.id}`);
+                if (pendingChange !== null) {
+                    return { ...newItem, inStock: pendingChange === 'true' };
+                }
+            
+                if (window.adminItems) {
                     const localItem = window.adminItems.find(li => li.id === newItem.id);
-                    return localItem ? { ...newItem, inStock: localItem.inStock } : newItem;
-                });
-            } else {
-                window.adminItems = newData;
-            }
+                    if (localItem) {            
+                        return { ...newItem, inStock: localItem.inStock };
+                }
+            } 
+            return newItem;
+            });
             
             
             // Run current filter to keep view consistent
@@ -400,6 +406,8 @@
             if (item) item.inStock = currentState;
         }
 
+        localStorage.setItem(`pending_${id}`, currentState);
+
         const currentSearch = document.getElementById('adminSearchInput').value.toLowerCase();
         const filtered = window.adminItems.filter(i => i.color.toLowerCase().includes(currentSearch));
         renderAdminResults(filtered);
@@ -416,9 +424,8 @@
 
             if (response.ok) {
                 showToast(currentState ? "✅ Marked In Stock" : "➖ Marked Out of Stock");
+                setTimeout(() => localStorage.removeItem(`pending_${id}`), 5000);
                 return true;
-            }  else {
-                throw new Error("Server error");
             }
 
         } catch (err) {
@@ -547,7 +554,7 @@
         await loadMobileStats();
     });
 </script>
-
+<div id="toast"></div>
 <script src="js/footer.js"></script>
 </body>
 </html>
