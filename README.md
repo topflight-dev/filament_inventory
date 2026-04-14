@@ -1,60 +1,56 @@
-Crafted 3D Printing – Filament Inventory Site
-A web-based inventory and gallery for managing 3D printing filament and showcasing printed projects. Built with HTML, CSS, and modular JavaScript, with Airtable integration for live inventory data.
+# 🏺 Crafted 3D Printing – Filament Inventory Ecosystem
+> A full-stack inventory management and gallery solution for 3D printing, featuring a public interface, a hidden administrative portal, and secure Supabase integration.
 
-📂 Project Structure
-index.html – Home/About Me page
+---
 
-inventory.html – Inventory display with Airtable fetch + filter buttons
+## 📂 System Architecture
+Understanding the purpose and flow of the project:
 
-gallery.html – Gallery of printed objects
+### 1. Public Facing (Web)
+* **`index.html`** – Home and brand introduction page.
+* **`inventory.html`** – Real-time filament stock display with dynamic data fetching.
+* **`gallery.html`** – High-resolution showcase of completed printed objects.
 
-contact.html – Contact form/info
+### 2. Administrative Layer (Hidden)
+* **`admin.html`** – A secure, unlinked portal for inventory management.
+  * *Purpose:* Allows adding, editing, or deleting filament records from a mobile-friendly interface.
+  * *Connectivity:* Synchronized with the mobile app for on-the-go updates.
 
-style.css – Global styles
+### 3. Data & Logic
+* **`/js/supabase-config.js`** – Centralized initialization for the Supabase client.
+* **`/js/inventory.js`** – Handles public data fetching, rendering, and filtering.
+* **`/js/admin.js`** – Manages administrative database operations (POST/PATCH/DELETE).
 
-/js – Page-specific scripts
+---
 
-home.js – Enhancements for index.html
+## 🔐 Database & Security (Supabase)
+This project leverages Supabase with **Row Level Security (RLS)** to ensure all data is protected and integrity is maintained.
 
-inventory.js – Airtable fetch, render, filter logic
+### Tables & RLS Policies
+1. **`colors` Table**
+   * **Purpose:** Stores core filament inventory (Color, Finish, Stock Status).
+   * **Public Access:** `SELECT` only. Users can view inventory but cannot modify it.
+   * **Admin Access:** Full `INSERT`, `UPDATE`, and `DELETE` permissions for authorized sessions.
 
-gallery.js – Gallery display logic
+2. **`site_traffic` Table**
+   * **Purpose:** Tracks engagement and site analytics.
+   * **Public Access:** `INSERT` only. Allows the site to log visits without exposing logs to the public.
+   * **Admin Access:** `SELECT` and `DELETE` for traffic review and maintenance.
 
-contact.js – Form validation/submission
+---
 
-/images – Filament images + placeholder
+## 🛠 Maintenance & CLI Workflow
+Use these standard Git commands to keep your development environment accurate and up-to-date:
 
-/gallery – Printed object photos
+* **Check Status:** `git status` (See pending changes).
+* **Save Progress:** `git add .` followed by `git commit -m "Your descriptive note"`.
+* **Deploy/Update:** `git push origin main`.
+* **Version Control:** Ensure you update the internal version number in your project files before major feature pushes.
 
-favicon.ico – Browser tab icon
+---
 
-🚀 Getting Started
-Clone or download this repository.
-
-Open the project in VS Code (or your editor of choice).
-
-Run with Live Server or open index.html directly in a browser.
-
-For inventory data, configure Airtable:
-
-Create a base with fields: Color, Finish, Description, Image, inStock.
-
-Update YOUR_BASE_ID and YOUR_API_KEY in js/inventory.js.
-
-🛠 Features
-Top navigation bar for clean site-wide navigation.
-
-Inventory page connected to Airtable with filtering by finish type.
-
-Gallery page for showcasing printed projects.
-
-Contact page for inquiries.
-
-Responsive design with modular CSS and JS.
-
-📌 Notes
-Legacy files (inventory.csv, inventory.json, json-to-csv.js) are archived and not required if Airtable is live.
-
-Ensure favicon.ico is in the root folder for proper browser tab display.
-
-Use .gitignore to exclude node_modules and other non-essential files from version control.
+## 🚀 Setup Checklist
+1. **Database:** Create a Supabase project and set up the `colors` and `site_traffic` tables with RLS enabled.
+2. **Configuration:** Copy your **Project URL** and **Anon Key** into your local configuration file.
+3. **Security:** Add your configuration files to `.gitignore` to prevent API keys from being tracked in version control.
+4. **Legacy Note:** Files such as `inventory.csv` and `json-to-csv.js` are archived and not required for the Supabase-live version.

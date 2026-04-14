@@ -53,6 +53,40 @@
         .stat-box { text-align: center; }
         .stat-val { display: block; font-size: 22px; font-weight: bold; color: #4ADE80; }
         .stat-lbl { font-size: 11px; text-transform: uppercase; color: #94A3B8; }
+
+        #toast {
+            visibility: hidden;
+            min-width: 200px;
+            background-color: #334155;
+            color: #fff;
+            text-align: center;
+            border-radius: 50px;
+            padding: 12px;
+            position: fixed;
+            z-index: 2000;
+            left: 50%;
+            bottom: 30px;
+            transform: translateX(-50%);
+            font-size: 14px;
+            font-weight: 500;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        #toast.show {
+            visibility: visible;
+            animation: fadein 0.5s, fadeout 0.5s 1.5s;
+        }
+
+        @keyframes fadein {
+            from { bottom: 0; opacity: 0; }
+            to { bottom: 30px; opacity: 1; }
+        }
+
+        @keyframes fadeout {
+            from { bottom: 30px; opacity: 1; }
+            to { bottom: 0; opacity: 0; }
+        }
+
     </style>
 </head>
 
@@ -332,17 +366,51 @@
         `).join('');
     }
 
+    function showToast(message) {
+        const toast = document.getElementById("toast");
+        toast.innerText = message || "✅ Inventory Updated";
+        toast.className = "show";
+        setTimeout(() => { toast.className = toast.className.replace("show", ""); }, 2000);
+    }
+
     async function toggleStock(id, currentState) {
+        if (window.adminItems) {
+            const item = window.adminItems.find(i => i.id === id);
+            if (item) item.inStock = currentState;
+        }
+
+        const currentSearch = document.getElementById('adminSearchInput').value.toLowerCase();
+        const filtered = window.adminItems.filter(i => i.color.toLowerCase().includes(currentSearch));
+        renderAdminResults(filtered);
+
         try {
-            await fetch(`${API_BASE}/${id}`, {
+            const response = await fetch(`${API_BASE}/${id}`, {
                 method: "PATCH",
-                headers: { "Content-Type": "application/json", 
-                           "x-api-key" : ADMIN_KEY
+                headers: {
+                    "Content-Type": "application/json",
+                    "x-api-key" : ADMIN_KEY
                 },
                 body: JSON.stringify({ inStock: currentState })
             });
-        } catch (err) { alert("Stock update failed."); }
+
+            if (response.ok) {
+                showToast(currentState ? "✅ Marked In Stock" : "➖ Marked Out of Stock");
+            } else {
+                throw new Error("Server rejected update");
+            }
+
+        } catch (err) {
+            console.error("Stock update failed:", err);
+            alert("Sync Error: Could not update status.");
+
+            if (window.adminItems) {
+                const item = window.adminItems.find(i => i.id === id);
+                if (item) item.inStock = !currentState;
+            }
+            await fetchForAdmin();
+        }
     }
+    
 
     async function loadMobileStats() {
         if (window.innerWidth > 600) return;
@@ -459,5 +527,6 @@
 
 <script src="js/footer.js"></script>
 
+    <div id="toast">✅ Inventory Updated</div>
 </body>
 </html>
