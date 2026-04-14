@@ -326,11 +326,12 @@
             window.adminItems = newData.map(newItem => {
                 const pendingChange = localStorage.getItem(`pending_${newItem.id}`);
                 if (pendingChange !== null) {
-                    return { ...newItem, inStock: pendingChange === 'true' };
+                    const isPendingTrue = (pendingChange === 'true' || pendingChange === true);
+                    return { ...newItem, inStock: isPendingTrue };
                 }
             
                 if (window.adminItems) {
-                    const localItem = window.adminItems.find(li => li.id === newItem.id);
+                    const localItem = window.adminItems.find(li => String(li.id) === STring(newItem.id));
                     if (localItem) {            
                         return { ...newItem, inStock: localItem.inStock };
                 }
@@ -401,8 +402,9 @@
     }
 
     async function toggleStock(id, currentState) {
+        const stringId = String(id);
         if (window.adminItems) {
-            const item = window.adminItems.find(i => i.id === id);
+            const item = window.adminItems.find(i => String(i.id) === stringId);
             if (item) item.inStock = currentState;
         }
 
