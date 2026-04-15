@@ -1,0 +1,1 @@
+This project uses a flat structure. All website files (HTML, CSS, JS) are in the root directory. There is no 'Frontend' or 'Backend' folder. Always prioritize index.html as the entry point and inventory.html for 3D print data. I use Supabase for my database and Render for hosting.

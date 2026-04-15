@@ -245,8 +245,12 @@ nav a {
   font-weight: bold;
 }
 
+nav a:hover {
+  text-decoration: underline;
+}
+
 nav a.active {
-  color: black;
+  color: blue;
   border-bottom: 3px solid #ff9800;
   padding-bottom: 2px;
 }

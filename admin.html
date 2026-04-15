@@ -324,20 +324,25 @@
             const newData = await response.json();
 
             window.adminItems = newData.map(newItem => {
-                const pendingChange = localStorage.getItem(`pending_${newItem.id}`);
+                const stringId = String(newItem.id);
+                const pendingChange = localStorage.getItem(`pending_${stringId}`);
                 if (pendingChange !== null) {
-                    const isPendingTrue = (pendingChange === 'true' || pendingChange === true);
-                    return { ...newItem, inStock: isPendingTrue };
+                    const isPendingInStock = (pendingChange === 'true');
+                    return { ...newItem, inStock: isPendingInStock };
                 }
-            
-                if (window.adminItems) {
-                    const localItem = window.adminItems.find(li => String(li.id) === STring(newItem.id));
-                    if (localItem) {            
-                        return { ...newItem, inStock: localItem.inStock };
-                }
-            } 
-            return newItem;
+                return newItem;
             });
+            
+            const currentSearch = document.getElementById('adminSearchInput').value.toLowerCase();
+            const filtered = window.adminItems.filter(i => i.color.toLowerCase().includes(currentSearch));
+            renderAdminResults(filtered);
+
+        } catch (err) {
+            console.error("Sync error:", err);
+        } finally {
+            if (btn) btn.innerText = "🔄 Sync & View Current Colors";
+        }
+    }
             
             
             // Run current filter to keep view consistent
@@ -408,7 +413,7 @@
             if (item) item.inStock = currentState;
         }
 
-        localStorage.setItem(`pending_${id}`, currentState);
+        localStorage.setItem(`pending_${stringId}`, String(currentState));
 
         const currentSearch = document.getElementById('adminSearchInput').value.toLowerCase();
         const filtered = window.adminItems.filter(i => i.color.toLowerCase().includes(currentSearch));
@@ -425,21 +430,19 @@
             });
 
             if (response.ok) {
-                showToast(currentState ? "✅ Marked In Stock" : "➖ Marked Out of Stock");
-                setTimeout(() => localStorage.removeItem(`pending_${id}`), 5000);
-                return true;
+                showToast(currentState ? "✅ In Stock" : "➖ Marked Out of Stock");
+                setTimeout(() => {
+                    localStorage.removeItem(`pending_${stringId}`);
+                }, 6000);
+            } else {
+                throw new Error("Server rejected update");
             }
 
         } catch (err) {
             console.error("Stock update failed:", err);
             alert("Sync Error: Could not update status.");
-
-            if (window.adminItems) {
-                const item = window.adminItems.find(i => i.id === id);
-                if (item) item.inStock = !currentState;
-            }
+            localStorage.removeItem(`pending_${stringId}`);
             await fetchForAdmin();
-            return false;
         }
     }
     
