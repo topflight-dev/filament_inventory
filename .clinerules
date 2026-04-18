@@ -1,1 +1,31 @@
-This project uses a flat structure. All website files (HTML, CSS, JS) are in the root directory. There is no 'Frontend' or 'Backend' folder. Always prioritize index.html as the entry point and inventory.html for 3D print data. I use Supabase for my database and Render for hosting.
+PROJECT CORE
+Structure: Root = Desktop; ./mobile-companion/ = Mobile PWA.
+
+Stack: HTML5, CSS3, JavaScript, Supabase.
+
+PATH & BOUNDARY RULES
+PROJECT_ROOT: The absolute folder containing this file.
+
+NO SYSTEM ACCESS: Never write to C:\ or outside this project folder.
+
+RELATIVE PATHS: Always use './' syntax for local files.
+
+VERIFY LOCATION: Use 'Get-Location' before write operations if unsure.
+
+TERMINAL & ENVIRONMENT
+ALWAYS use PowerShell. Do not use CMD.
+
+Always ignore 'node_modules', '.git', and 'package-lock.json'.
+
+BEHAVIORAL RULES
+CLEAN BREAK: Keep mobile and desktop code strictly separated.
+
+PERSISTENT MEMORY: 
+- At the end of every task, update 'PROJECT_LOG.md' with progress and the 'Next Step'.
+- Only update 'Project_Log.md' when a major task is completed (e.g., extracting CSS, moving files, fixing a bug). Do not update the log for the act of updating the log itself.
+
+EDITING POLICY: If a file edit fails twice, generate a PowerShell script to perform the edit instead.
+
+NO SHIFTING BURDEN: 
+- Never ask the user to 'find' a technical error. If an error is suspected, use grep, Select-String, or Get-Content to investigate the files yourself before reporting.
+```

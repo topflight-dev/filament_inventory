@@ -1,0 +1,432 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
+
+/* =============================================
+   BASE
+   ============================================= */
+body {
+  font-family: Arial, sans-serif;
+  text-align: center;
+  background: linear-gradient(to bottom, #fff1eb, #ace0f9);
+  min-height: 100vh;
+  margin: 0;
+}
+
+/* =============================================
+   LAYOUT
+   ============================================= */
+.container {
+  display: flex;
+  min-height: 100vh;
+}
+
+.home-sections {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 1rem;
+  width: 100%;
+}
+
+.main-content {
+  flex: 1;
+  padding: 20px;
+}
+
+/* =============================================
+   HEADER & NAV
+   ============================================= */
+header {
+  text-align: center;
+  margin: 1.5rem 0 0.5rem;
+}
+
+header h1 {
+  font-size: 1.6em;
+  margin: 0;
+  color: hsl(25, 36%, 37%);
+}
+
+header p {
+  font-size: 1em;
+  font-style: italic;
+  color: hsl(0, 27%, 62%);
+  margin: 5px 0 10px;
+}
+
+.slogan {
+  font-size: 16px;
+  font-style: italic;
+}
+
+nav {
+  background-color: #e0e0e0;
+  padding: 0.5em;
+}
+
+nav ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.5em;
+}
+
+nav li {
+  margin: 0 0.5em;
+}
+
+nav a {
+  color: black;
+  text-decoration: none;
+  font-weight: bold;
+  font-size: 0.9em;
+}
+
+nav a:hover {
+  text-decoration: underline;
+}
+
+nav a.active {
+  color: blue;
+  border-bottom: 3px solid #ff9800;
+  padding-bottom: 2px;
+}
+
+/* =============================================
+   FOOTER
+   ============================================= */
+footer {
+  text-align: center;
+  padding: 20px;
+  margin-top: 40px;
+  border-top: 1px solid #ddd;
+  font-size: 0.8rem;
+  color: #666;
+}
+
+/* =============================================
+   ADMIN PANELS
+   ============================================= */
+.admin-stats-panel,
+.admin-inventory-panel,
+.admin-add-panel {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+  text-align: left;
+}
+
+.admin-stats-panel h2,
+.admin-inventory-panel h2,
+.admin-add-panel h2 {
+  margin-top: 0;
+  font-size: 1.1rem;
+  color: #1E293B;
+  border-bottom: 2px solid #f0f0f0;
+  padding-bottom: 10px;
+  margin-bottom: 15px;
+}
+
+/* Stats Grid */
+.stat-grid {
+  display: flex;
+  justify-content: space-around;
+  margin-bottom: 15px;
+}
+
+.stat-box {
+  text-align: center;
+}
+
+.stat-val {
+  display: block;
+  font-size: 28px;
+  font-weight: bold;
+  color: #28a745;
+}
+
+.stat-lbl {
+  font-size: 11px;
+  text-transform: uppercase;
+  color: #94A3B8;
+  letter-spacing: 0.05em;
+}
+
+/* Admin Controls */
+.admin-controls {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+  flex-wrap: wrap;
+}
+
+.admin-search {
+  flex: 1;
+  min-width: 150px;
+  padding: 10px 12px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 16px;
+}
+
+/* Admin Buttons */
+.admin-btn {
+  padding: 10px 16px;
+  background-color: #3B82F6;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+.admin-btn:hover {
+  background-color: #2563EB;
+}
+
+.admin-btn:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+.admin-btn-green {
+  background-color: #28a745;
+  width: 100%;
+  padding: 14px;
+  font-size: 16px;
+}
+
+.admin-btn-green:hover {
+  background-color: #218838;
+}
+
+.admin-btn-blue {
+  background-color: #007bff;
+}
+
+.admin-btn-blue:hover {
+  background-color: #0056b3;
+}
+
+/* Admin Inventory Items */
+.admin-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #f0f0f0;
+  background: white;
+}
+
+.admin-item.out-of-stock {
+  background: #fff8f8;
+}
+
+.admin-item.out-of-stock strong {
+  color: #999;
+}
+
+.admin-item-info {
+  flex-grow: 1;
+}
+
+.admin-item-name,
+.admin-item-finish {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.edit-btn {
+  padding: 3px 8px;
+  font-size: 11px;
+  background: #6c757d;
+  color: white;
+  border-radius: 4px;
+  border: none;
+  cursor: pointer;
+}
+
+.edit-btn:hover {
+  background: #5a6268;
+}
+
+.edit-btn-sm {
+  background: #adb5bd;
+  font-size: 10px;
+}
+
+.admin-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.stock-toggle {
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+  accent-color: #28a745;
+}
+
+.delete-btn {
+  background: none;
+  border: none;
+  color: #dc3545;
+  cursor: pointer;
+  font-size: 20px;
+  padding: 4px;
+  line-height: 1;
+}
+
+/* =============================================
+   FORM ELEMENTS
+   ============================================= */
+.form-group {
+  margin-bottom: 16px;
+}
+
+.form-group label {
+  display: block;
+  font-weight: bold;
+  margin-bottom: 6px;
+  font-size: 14px;
+  color: #333;
+}
+
+.form-group input[type="text"],
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 16px;
+  box-sizing: border-box;
+  font-family: Arial, sans-serif;
+}
+
+.form-group textarea {
+  resize: vertical;
+}
+
+.color-row {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.color-row input[type="color"] {
+  width: 50px;
+  height: 40px;
+  border: none;
+  cursor: pointer;
+  background: none;
+  padding: 0;
+  border-radius: 4px;
+}
+
+.color-row input[type="text"] {
+  flex: 1;
+}
+
+/* =============================================
+   MODAL
+   ============================================= */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.6);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-content {
+  background: white;
+  padding: 25px;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 400px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+}
+
+.modal-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+/* =============================================
+   TOAST
+   ============================================= */
+#toast {
+  visibility: hidden;
+  min-width: 200px;
+  background-color: #334155;
+  color: #fff;
+  text-align: center;
+  border-radius: 50px;
+  padding: 12px 20px;
+  position: fixed;
+  z-index: 2000;
+  left: 50%;
+  bottom: 30px;
+  transform: translateX(-50%);
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+}
+
+#toast.show {
+  visibility: visible;
+  animation: fadein 0.4s, fadeout 0.5s 2s;
+}
+
+@keyframes fadein {
+  from { bottom: 0; opacity: 0; }
+  to   { bottom: 30px; opacity: 1; }
+}
+
+@keyframes fadeout {
+  from { bottom: 30px; opacity: 1; }
+  to   { bottom: 0; opacity: 0; }
+}
+
+/* =============================================
+   RESPONSIVE — 480px
+   ============================================= */
+@media (max-width: 480px) {
+  header h1 {
+    font-size: 1.3em;
+  }
+
+  header p {
+    font-size: 0.9em;
+  }
+
+  .home-sections {
+    padding: 0.5rem;
+  }
+
+  .admin-stats-panel,
+  .admin-inventory-panel,
+  .admin-add-panel {
+    padding: 15px;
+    border-radius: 8px;
+  }
+
+  .stat-val {
+    font-size: 22px;
+  }
+}
