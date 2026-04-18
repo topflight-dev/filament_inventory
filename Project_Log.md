@@ -62,6 +62,25 @@
 **Files Modified:**
 - `mobile-companion/index.html` — Sections reordered via direct file overwrite
 
+---
+
+### 2026-04-18 — Deploy to Production (v1.8.1)
+
+**Task Completed:** Pushed all mobile companion updates to GitHub main branch.
+
+**Commit:** `3854d87` — `feat: implement mobile-optimized admin tool v1.8.1`
+
+**Files Pushed (15 changed, 1219 insertions):**
+- `mobile-companion/index.html`, `style.css`, `manifest.json` — Mobile admin tool
+- `mobile-companion/js/footer.js`, `tracker.js` — Companion JS
+- `mobile-companion/images/` — Companion image assets
+- `mobile-companion/Crafted 3D.ico` — Favicon
+- `CLAUDE.md`, `Project_Log.md` — Documentation
+- `output.txt` — Audit output
+- Removed legacy root `manifest.json`
+
+**Remote:** `https://github.com/blast1221/filament_inventory.git` → `main`
+
 ### Next Step:
 - Address remaining non-critical bugs in root `style.css` (two typos)
 - Consider moving admin API key out of client-side JS in `admin.html`
