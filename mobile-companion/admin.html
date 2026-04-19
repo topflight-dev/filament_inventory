@@ -137,6 +137,9 @@
       font-size: 14px;
       font-weight: bold;
       white-space: nowrap;
+      min-height: 44px;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
     }
 
     .admin-btn:hover { background-color: #2563EB; }
@@ -225,9 +228,13 @@
       padding: 12px 16px;
       background: rgba(172, 224, 249, 0.2);
       cursor: pointer;
+      pointer-events: auto !important;
       user-select: none;
       border-radius: 12px;
       transition: background 0.2s;
+      -webkit-tap-highlight-color: transparent;
+      min-height: 44px;
+      touch-action: manipulation;
     }
 
     .finish-group-header:hover {
@@ -245,6 +252,7 @@
       display: flex;
       align-items: center;
       gap: 10px;
+      pointer-events: none;
     }
 
     .finish-badge {
@@ -262,6 +270,7 @@
       font-size: 12px;
       color: #555;
       transition: transform 0.25s;
+      pointer-events: none;
     }
 
     .finish-group-header.collapsed .finish-chevron {
@@ -288,6 +297,7 @@
       align-items: center;
       padding: 12px 8px;
       border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+      -webkit-tap-highlight-color: transparent;
     }
 
     .admin-item:last-child {
@@ -328,6 +338,11 @@
       border-radius: 4px;
       border: none;
       cursor: pointer;
+      pointer-events: auto !important;
+      -webkit-tap-highlight-color: transparent;
+      min-width: 44px;
+      min-height: 44px;
+      touch-action: manipulation;
     }
 
     .edit-btn:hover { background: #5a6268; }
@@ -361,6 +376,10 @@
       position: relative;
       z-index: 100;
       touch-action: manipulation;
+      pointer-events: auto !important;
+      -webkit-tap-highlight-color: transparent;
+      min-width: 44px;
+      min-height: 44px;
     }
 
     /* =============================================
@@ -694,11 +713,11 @@
             <div class="admin-item-info">
               <div class="admin-item-name">
                 <strong>${item.color}</strong>
-                <button type="button" onclick="openEditModal('${item.id}', 'color', '${escapeAttr(item.color)}')" class="edit-btn">Edit</button>
+                <button type="button" class="edit-btn" data-id="${item.id}" data-field="color" data-val="${escapeAttr(item.color)}">Edit</button>
               </div>
               <div class="admin-item-finish">
                 <small>Finish: ${item.finish}</small>
-                <button type="button" onclick="openEditModal('${item.id}', 'finish', '${escapeAttr(item.finish)}')" class="edit-btn edit-btn-sm">Edit</button>
+                <button type="button" class="edit-btn edit-btn-sm" data-id="${item.id}" data-field="finish" data-val="${escapeAttr(item.finish)}">Edit</button>
               </div>
             </div>
             <div class="admin-item-actions">
@@ -711,7 +730,7 @@
 
         return `
           <div class="finish-group">
-            <div class="finish-group-header" onclick="toggleGroup('${groupId}')" id="hdr-${groupId}">
+            <div class="finish-group-header" data-group-id="${groupId}" id="hdr-${groupId}">
               <span class="finish-group-title">
                 ${finishName}
                 <span class="finish-badge">${count}</span>
@@ -728,10 +747,16 @@
 
     // --- TOGGLE GROUP ---
     function toggleGroup(groupId) {
+      console.log('[toggleGroup] called with groupId:', groupId);
       const body = document.getElementById(groupId);
       const header = document.getElementById(`hdr-${groupId}`);
-      if (!body || !header) return;
+      console.log('[toggleGroup] body element:', body, '| header element:', header);
+      if (!body || !header) {
+        console.warn('[toggleGroup] Could not find body or header for groupId:', groupId);
+        return;
+      }
       const isCollapsed = body.classList.contains('collapsed');
+      console.log('[toggleGroup] currently collapsed:', isCollapsed, '→ toggling to:', !isCollapsed);
       body.classList.toggle('collapsed', !isCollapsed);
       header.classList.toggle('collapsed', !isCollapsed);
     }
@@ -950,36 +975,56 @@
       setTimeout(() => { toast.className = toast.className.replace("show", ""); }, 2500);
     }
 
-    // --- DELEGATED LISTENERS FOR DELETE & CHECKBOX (touch + click safe) ---
+    // --- SHARED TOUCH+CLICK HANDLER (delegated on inventory container) ---
     const inventoryContainer = document.getElementById('adminInventoryResults');
 
-    function handleDeleteAction(target) {
-      const btn = target.closest('.delete-btn');
-      if (!btn) return;
-      const id = btn.dataset.id;
-      const name = btn.dataset.name;
-      if (id && name) deleteItem(id, name);
-    }
-
-    function handleCheckboxAction(target) {
-      const cb = target.closest('.stock-toggle');
-      if (!cb) return;
-      const id = cb.dataset.id;
-      if (id) toggleStock(id, cb.checked);
-    }
-
-    inventoryContainer.addEventListener('click', (e) => {
-      handleDeleteAction(e.target);
-      handleCheckboxAction(e.target);
-    });
-
-    inventoryContainer.addEventListener('touchstart', (e) => {
-      const btn = e.target.closest('.delete-btn');
-      if (btn) {
+    function handleInventoryEvent(e) {
+      // --- DELETE BUTTON ---
+      const deleteBtn = e.target.closest('.delete-btn');
+      if (deleteBtn) {
         e.preventDefault();
-        const id = btn.dataset.id;
-        const name = btn.dataset.name;
+        e.stopPropagation();
+        const id = deleteBtn.dataset.id;
+        const name = deleteBtn.dataset.name;
         if (id && name) deleteItem(id, name);
+        return;
+      }
+
+      // --- EDIT BUTTON ---
+      const editBtn = e.target.closest('.edit-btn');
+      if (editBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        const id = editBtn.dataset.id;
+        const field = editBtn.dataset.field;
+        const val = editBtn.dataset.val;
+        if (id && field) openEditModal(id, field, val || '');
+        return;
+      }
+
+      // --- COLLAPSIBLE HEADER ---
+      const header = e.target.closest('.finish-group-header');
+      if (header) {
+        const groupId = header.dataset.groupId;
+        if (groupId) toggleGroup(groupId);
+        return;
+      }
+
+      // --- CHECKBOX ---
+      const cb = e.target.closest('.stock-toggle');
+      if (cb) {
+        const id = cb.dataset.id;
+        if (id) toggleStock(id, cb.checked);
+        return;
+      }
+    }
+
+    // Listen for both click and touchstart on the inventory container
+    inventoryContainer.addEventListener('click', handleInventoryEvent);
+    inventoryContainer.addEventListener('touchstart', (e) => {
+      // Only intercept non-checkbox touches to avoid double-firing
+      if (!e.target.closest('.stock-toggle')) {
+        handleInventoryEvent(e);
       }
     }, { passive: false });
 
