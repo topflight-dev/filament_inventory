@@ -356,8 +356,11 @@
       color: #dc3545;
       cursor: pointer;
       font-size: 20px;
-      padding: 4px;
+      padding: 15px;
       line-height: 1;
+      position: relative;
+      z-index: 100;
+      touch-action: manipulation;
     }
 
     /* =============================================
@@ -699,9 +702,9 @@
               </div>
             </div>
             <div class="admin-item-actions">
-              <input type="checkbox" ${item.inStock ? 'checked' : ''} class="stock-toggle"
-                onchange="toggleStock('${item.id}', this.checked)">
-              <button onclick="deleteItem('${item.id}', '${escapeAttr(item.color)}')" class="delete-btn">🗑️</button>
+              <input type="checkbox" class="stock-toggle" data-id="${item.id}"
+                ${item.inStock === true ? 'checked' : ''}>
+              <button type="button" class="delete-btn" data-id="${item.id}" data-name="${escapeAttr(item.color)}">🗑️</button>
             </div>
           </div>
         `).join('');
@@ -946,6 +949,39 @@
       toast.className = "show";
       setTimeout(() => { toast.className = toast.className.replace("show", ""); }, 2500);
     }
+
+    // --- DELEGATED LISTENERS FOR DELETE & CHECKBOX (touch + click safe) ---
+    const inventoryContainer = document.getElementById('adminInventoryResults');
+
+    function handleDeleteAction(target) {
+      const btn = target.closest('.delete-btn');
+      if (!btn) return;
+      const id = btn.dataset.id;
+      const name = btn.dataset.name;
+      if (id && name) deleteItem(id, name);
+    }
+
+    function handleCheckboxAction(target) {
+      const cb = target.closest('.stock-toggle');
+      if (!cb) return;
+      const id = cb.dataset.id;
+      if (id) toggleStock(id, cb.checked);
+    }
+
+    inventoryContainer.addEventListener('click', (e) => {
+      handleDeleteAction(e.target);
+      handleCheckboxAction(e.target);
+    });
+
+    inventoryContainer.addEventListener('touchstart', (e) => {
+      const btn = e.target.closest('.delete-btn');
+      if (btn) {
+        e.preventDefault();
+        const id = btn.dataset.id;
+        const name = btn.dataset.name;
+        if (id && name) deleteItem(id, name);
+      }
+    }, { passive: false });
 
     // --- EVENT LISTENERS ---
     document.getElementById('colorName').addEventListener('input', (e) => renderDataList(e.target.value));
