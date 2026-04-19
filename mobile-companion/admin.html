@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#28A745">
   <title>Crafted 3D | Admin</title>
-  <link rel="stylesheet" href="style.css?v=1.1.5">
+  <link rel="stylesheet" href="style.css?v=1.1.6">
   <link rel="icon" href="Crafted 3D.ico" type="image/x-icon">
   <link rel="manifest" href="manifest.json">
   <style>
@@ -565,9 +565,6 @@
         <div id="adminInventoryResults"></div>
       </section>
 
-      <footer style="font-size: 11px; color: #999; text-align: center; margin-top: 40px; padding-bottom: 20px;">
-        &copy; 2026 | v1.1.5
-      </footer>
     </main>
   </div>
 
@@ -749,18 +746,16 @@
 
     // --- TOGGLE GROUP ---
     function toggleGroup(groupId) {
-      console.log('[toggleGroup] called with groupId:', groupId);
       const body = document.getElementById(groupId);
       const header = document.getElementById(`hdr-${groupId}`);
-      console.log('[toggleGroup] body element:', body, '| header element:', header);
-      if (!body || !header) {
-        console.warn('[toggleGroup] Could not find body or header for groupId:', groupId);
-        return;
-      }
+      if (!body || !header) return;
       const isCollapsed = body.classList.contains('collapsed');
-      console.log('[toggleGroup] currently collapsed:', isCollapsed, '→ toggling to:', !isCollapsed);
       body.classList.toggle('collapsed', !isCollapsed);
       header.classList.toggle('collapsed', !isCollapsed);
+      // Persist collapse state to localStorage
+      const collapsed = JSON.parse(localStorage.getItem('adminCollapsedGroups') || '{}');
+      collapsed[groupId] = !isCollapsed;
+      localStorage.setItem('adminCollapsedGroups', JSON.stringify(collapsed));
     }
 
     // --- ESCAPE HELPER ---
@@ -1038,14 +1033,49 @@
     document.getElementById('adminRefreshBtn').addEventListener('click', fetchForAdmin);
     document.getElementById('statsRefreshBtn').addEventListener('click', loadStats);
 
+    // --- RESTORE COLLAPSED STATE ---
+    function restoreCollapsedState() {
+      const collapsed = JSON.parse(localStorage.getItem('adminCollapsedGroups') || '{}');
+      Object.keys(collapsed).forEach(groupId => {
+        if (collapsed[groupId]) {
+          const body = document.getElementById(groupId);
+          const header = document.getElementById(`hdr-${groupId}`);
+          if (body) body.classList.add('collapsed');
+          if (header) header.classList.add('collapsed');
+        }
+      });
+    }
+
     // --- INIT ---
     window.addEventListener("DOMContentLoaded", async () => {
       await populateFinishDropdown();
       await fetchForAdmin();
+      restoreCollapsedState();
       await loadStats();
     });
   </script>
 
-  <script src="../js/footer.js?v=1.1.5"></script>
+  <script>
+    // Override the global footer injected by footer.js
+    // We wait for it to be injected, then replace its content
+    window.addEventListener("DOMContentLoaded", () => {
+      // Hide any footer injected by footer.js (it appends to body end)
+      // We use a MutationObserver to catch it when it arrives
+      const observer = new MutationObserver(() => {
+        const footers = document.querySelectorAll('footer');
+        footers.forEach(f => {
+          // If it's the global footer (has the C3DW text), replace its content
+          if (f.textContent.includes('C3DW') || f.textContent.includes('Last Updated')) {
+            f.removeAttribute('style');
+            f.style.cssText = 'font-size: 11px; color: #999; text-align: center; margin-top: 40px; padding-bottom: 20px; border-top: none;';
+            f.innerHTML = '&copy; 2026 | v1.1.6';
+            observer.disconnect();
+          }
+        });
+      });
+      observer.observe(document.body, { childList: true, subtree: false });
+    });
+  </script>
+  <script src="../js/footer.js?v=1.1.6"></script>
 </body>
 </html>
