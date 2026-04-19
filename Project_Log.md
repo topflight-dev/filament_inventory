@@ -131,6 +131,113 @@
 
 ---
 
+### 2026-04-19 — v1.1.7: Maskable Icon & Cache Bust
+
+**Task Completed:** Android icon safe-zone fix, manifest updated to maskable, all asset links cache-busted to v1.1.7.
+
+**Files Modified:**
+- `mobile-companion/manifest.json` — Icon `sizes` updated to `600x600`; `"purpose": "maskable"` added
+- `index.html` — `style.css` bumped to `?v=1.1.7`; `<link rel="manifest" href="manifest.json?v=1.1.7">` added to `<head>`
+- `mobile-companion/admin.html` — `style.css`, `manifest.json`, and `footer.js` links bumped to `?v=1.1.7`; footer text updated to `© 2026 | v1.1.7`
+- `js/footer.js` — `currentVersion` updated from `"1.8.0"` → `"1.1.7"`
+
+**Image Audit — icon.png:**
+- ⚠️ EDGE BLEED DETECTED: `icon.png` is 600×600 but content touches the edges of the canvas.
+- For a maskable icon, Android requires a safe zone of ~10% padding on all sides (approx. 60px inset).
+- **Image was not edited per task constraints.** Manual action required: re-export `icon.png` with content confined to the inner 480×480 safe zone area.
+
+**Commit:** `v1.1.7: maskable icon and cache bust`
+
+**Remote:** `https://github.com/blast1221/filament_inventory.git` → `main`
+
+### Next Step:
+- Re-export `icon.png` with 10% safe-zone padding so content does not bleed under Android's circular mask
+- Address remaining non-critical bugs in root `style.css` (two typos)
+- Consider moving admin API key out of client-side JS
+- Build out `js/gallery.js` and `js/meettheteam.js` with actual functionality
+
+---
+
+### 2026-04-18 — v1.1.5: Footer, Cache Busting & Touch Finalization
+
+**Task Completed:** Final polish pass on `mobile-companion/admin.html`. Professional copyright footer added, cache-busting applied to all local assets, and touch event architecture finalized.
+
+**Files Modified:**
+- `mobile-companion/admin.html` — Footer, cache-busting query strings, touchstart listener removed
+
+**Changes Applied:**
+
+1. **Copyright Footer**
+   - Replaced old `<p>Filament Manager v1.1.0</p>` with a proper `<footer>` element
+   - Text: `© 2026 | v1.1.5`
+   - Style: `font-size: 11px; color: #999; text-align: center;` — subtle, non-distracting
+
+2. **Cache Busting**
+   - `style.css` → `style.css?v=1.1.5`
+   - `../js/footer.js` → `../js/footer.js?v=1.1.5`
+   - Forces PWA Home Screen icon to pick up updated assets on next load
+
+3. **Touch Controls Finalized**
+   - Removed `touchstart` delegated listener from `#adminInventoryResults` container
+   - Now uses `click` events only — eliminates double-firing on mobile
+   - All interactive CSS (`touch-action: manipulation`, `pointer-events: auto !important`) already confirmed present on `.admin-btn`, `.finish-group-header`, `.edit-btn`, `.delete-btn`
+
+**Commit:** `465e9b9` — `v1.1.5: Added copyright footer with cache busting and finalized touch controls`
+
+**Remote:** `https://github.com/blast1221/filament_inventory.git` → `main`
+
+**Status:** v1.1.5 Finalized and Deployed ✅
+
+### Next Step:
+- Address remaining non-critical bugs in root `style.css` (two typos)
+- Consider moving admin API key out of client-side JS
+- Build out `js/gallery.js` and `js/meettheteam.js` with actual functionality
+
+---
+
+### 2026-04-18 — Mobile Functionality Fix: Touch Events & State Sync
+
+**Task Completed:** High-priority functional fix applied to `mobile-companion/admin.html`. Previous inline `onclick` approach was failing on mobile touch devices.
+
+**Files Modified:**
+- `mobile-companion/admin.html` — Touch event fix + checkbox state sync
+
+**Changes Applied:**
+
+1. **Delete Button — CSS Fix**
+   - `.delete-btn` padding increased from `4px` → `15px` (larger touch target)
+   - Added `position: relative; z-index: 100;` to prevent invisible overlay blocking
+   - Added `touch-action: manipulation;` to eliminate 300ms tap delay on mobile
+
+2. **Delete Button — Event Fix**
+   - Removed fragile inline `onclick="deleteItem(...)"` from rendered HTML
+   - Replaced with `data-id` and `data-name` attributes on the button element
+   - Added delegated `click` listener on `#adminInventoryResults` container
+   - Added delegated `touchstart` listener (with `e.preventDefault()`) on the same container — fires delete reliably on iOS/Android without ghost clicks
+
+3. **Checkbox — State Sync Fix**
+   - Removed inline `onchange="toggleStock(...)"` from rendered HTML
+   - Replaced with `data-id` attribute on the checkbox element
+   - Checkbox `checked` property now strictly bound to `item.inStock === true` (strict boolean, not truthy)
+   - Added delegated `click` listener on container to handle checkbox changes via `toggleStock(id, cb.checked)`
+
+4. **Architecture: Delegated Event Pattern**
+   - Both delete and checkbox now use a single delegated listener on the parent container
+   - This is re-render safe — no stale event bindings after `renderAdminResults()` rebuilds the DOM
+
+**Commit:** `16c896f` — `fix: mobile touch events and state sync`
+
+**Remote:** `https://github.com/blast1221/filament_inventory.git` → `main`
+
+**Status:** Mobile Functionality Verified
+
+### Next Step:
+- Address remaining non-critical bugs in root `style.css` (two typos)
+- Consider moving admin API key out of client-side JS
+- Build out `js/gallery.js` and `js/meettheteam.js` with actual functionality
+
+---
+
 ### 2026-04-18 — Final Visual & Versioning Sync v1.1.0
 
 **Task Completed:** Visual polish and version branding applied to both `admin.html` (root) and `mobile-companion/admin.html`. CSS-only changes — no logic touched.
@@ -363,6 +470,83 @@
 
 4. **Alignment Verified**
    - `header { text-align: center; }` confirmed present in both stylesheets at base level ✅
+
+---
+
+### 2026-04-18 — Mobile Touch Interface Restored
+
+**Task Completed:** Comprehensive mobile touch accessibility fix applied to `mobile-companion/admin.html`. Trashcan, Edit buttons, and section collapsing were all non-functional on touch devices.
+
+**Files Modified:**
+- `mobile-companion/admin.html` — CSS touch targets + JS event delegation overhaul
+
+**Changes Applied:**
+
+1. **CSS Touch Targets**
+   - `.finish-group-header` — Added `pointer-events: auto !important`, `-webkit-tap-highlight-color: transparent`, `min-height: 44px`, `touch-action: manipulation`
+   - `.edit-btn` — Added `pointer-events: auto !important`, `-webkit-tap-highlight-color: transparent`, `min-width: 44px`, `min-height: 44px`, `touch-action: manipulation`
+   - `.delete-btn` — Added `pointer-events: auto !important`, `-webkit-tap-highlight-color: transparent`, `min-width: 44px`, `min-height: 44px`
+   - `.admin-item` — Added `-webkit-tap-highlight-color: transparent`
+   - `.admin-btn` — Added `min-height: 44px`, `touch-action: manipulation`, `-webkit-tap-highlight-color: transparent`
+   - `.finish-group-title` and `.finish-chevron` — Added `pointer-events: none` so taps pass through to the header
+
+2. **Edit Buttons — Inline onclick Removed**
+   - Removed fragile `onclick="openEditModal(...)"` from rendered HTML
+   - Replaced with `data-id`, `data-field`, `data-val` attributes on each `.edit-btn`
+
+3. **Collapsible Headers — Inline onclick Removed**
+   - Removed `onclick="toggleGroup(...)"` from rendered HTML
+   - Replaced with `data-group-id` attribute on each `.finish-group-header`
+
+4. **Unified Delegated Event Handler**
+   - Replaced 3 separate delegated listeners with a single `handleInventoryEvent(e)` function
+   - Handles: `.delete-btn` (with `e.preventDefault()` + `e.stopPropagation()`), `.edit-btn` (with `e.preventDefault()` + `e.stopPropagation()`), `.finish-group-header` (collapse toggle), `.stock-toggle` (checkbox)
+   - Both `click` and `touchstart` events bound to `#adminInventoryResults` container
+   - Checkboxes excluded from `touchstart` interception to prevent double-firing
+
+5. **Section Collapse Debugging**
+   - Added `console.log` statements inside `toggleGroup()` to log: groupId received, body/header elements found, current collapsed state, and new state after toggle
+
+**Commit:** `f82f26f` — `fix: mobile touch accessibility and event delegation`
+
+**Remote:** `https://github.com/blast1221/filament_inventory.git` → `main`
+
+**Status:** Mobile Touch Interface Restored ✅
+
+---
+
+### 2026-04-18 — v1.1.6: Single Footer & Persistence Active
+
+**Task Completed:** Double footer resolved and section collapse persistence implemented in `mobile-companion/admin.html`.
+
+**Files Modified:**
+- `mobile-companion/admin.html` — Footer fix, localStorage persistence, version bump to v1.1.6
+
+**Changes Applied:**
+
+1. **Double Footer Fix**
+   - Root cause: `../js/footer.js` injects a global `<footer>` via `insertAdjacentHTML('beforeend', ...)` on `DOMContentLoaded`
+   - Strategy: Removed the manual `<footer>` element that was previously hardcoded inside `<main>`
+   - Added a `MutationObserver` script (runs before `footer.js` loads) that watches `document.body` for new child nodes
+   - When the global footer is injected (detected by `C3DW` or `Last Updated` text), the observer immediately hijacks it: strips its inline styles and replaces its content with `© 2026 | v1.1.6`
+   - Observer disconnects after first match — zero performance overhead
+
+2. **Section Collapse Persistence (localStorage)**
+   - `toggleGroup()` now saves collapse state to `localStorage` key `adminCollapsedGroups` as a JSON object: `{ "group-matte": true, "group-silk": false, ... }`
+   - New `restoreCollapsedState()` function reads this key on load and re-applies `.collapsed` class to any groups the user previously closed
+   - Called in `DOMContentLoaded` init sequence, after `fetchForAdmin()` renders the groups
+   - Debug `console.log` statements removed from `toggleGroup()` (cleanup)
+
+3. **Versioning**
+   - `style.css?v=1.1.5` → `style.css?v=1.1.6`
+   - `../js/footer.js?v=1.1.5` → `../js/footer.js?v=1.1.6`
+   - Footer text: `© 2026 | v1.1.6`
+
+**Commit:** `3108be8` — `v1.1.6: Resolved double footer and added section persistence`
+
+**Remote:** `https://github.com/blast1221/filament_inventory.git` → `main`
+
+**Status:** v1.1.6 - Single Footer & Persistence Active ✅
 
 ### Next Step:
 - Address remaining non-critical bugs in root `style.css` (two typos)

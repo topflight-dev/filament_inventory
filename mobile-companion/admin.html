@@ -7,9 +7,9 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#28A745">
   <title>Crafted 3D | Admin</title>
-  <link rel="stylesheet" href="style.css?v=1.1.6">
+  <link rel="stylesheet" href="style.css?v=1.1.7">
   <link rel="icon" href="Crafted 3D.ico" type="image/x-icon">
-  <link rel="manifest" href="manifest.json">
+  <link rel="manifest" href="manifest.json?v=1.1.7">
   <style>
     /* =============================================
        GLOBAL OVERRIDES — BRAND ALIGNMENT v1.1.0
@@ -1068,7 +1068,7 @@
           if (f.textContent.includes('C3DW') || f.textContent.includes('Last Updated')) {
             f.removeAttribute('style');
             f.style.cssText = 'font-size: 11px; color: #999; text-align: center; margin-top: 40px; padding-bottom: 20px; border-top: none;';
-            f.innerHTML = '&copy; 2026 | v1.1.6';
+            f.innerHTML = '&copy; 2026 | v1.1.7';
             observer.disconnect();
           }
         });
@@ -1076,6 +1076,6 @@
       observer.observe(document.body, { childList: true, subtree: false });
     });
   </script>
-  <script src="../js/footer.js?v=1.1.6"></script>
+  <script src="../js/footer.js?v=1.1.7"></script>
 </body>
 </html>
