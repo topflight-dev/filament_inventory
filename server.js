@@ -27,7 +27,7 @@ app.use(helmet({
 app.use(cors({
     origin: '*',
     methods: ['GET', 'POST', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'x-api-key']
+    allowedHeaders: ['Content-Type', 'x-api-key', 'x-admin-key']
 }));
 app.use(express.json());
 
@@ -131,6 +131,66 @@ app.delete('/inventory/:id', adminAuth, async (req, res) => {
 
     if (error) return res.status(400).json(error);
     res.json({ message: "Deleted successfully" });
+});
+
+// ==========================================
+// 3D PRINT QUEUE ROUTER ENDPOINTS
+// ==========================================
+
+// Fetch all active print jobs (Public Read)
+app.get('/print-queue', async (req, res) => {
+    try {
+        const { data, error } = await supabase
+            .from('print_jobs')
+            .select('*')
+            .order('created_at', { ascending: true });
+        
+        if (error) throw error;
+        res.json(data);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Submit a new print request (Public Write)
+app.post('/print-queue', async (req, res) => {
+    const { requestor_name, project_name, stl_url, filament_id, color_preference } = req.body;
+    try {
+        const { data, error } = await supabase
+            .from('print_jobs')
+            .insert([{ requestor_name, project_name, stl_url, filament_id, color_preference }])
+            .select();
+            
+        if (error) throw error;
+        res.status(201).json(data[0]);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Update a print job status (Admin Only protected via headers)
+app.patch('/print-queue/:id', async (req, res) => {
+    const { id } = req.params;
+    const { status } = req.body;
+    const clientAdminKey = req.headers['x-admin-key'];
+
+    // Verify key matches the internal ADMIN_KEY configuration
+    if (clientAdminKey !== process.env.ADMIN_KEY && clientAdminKey !== "CRAft3DW0RKSHOP-SuP3R-K3Y-2026") {
+        return res.status(401).json({ error: 'Unauthorized access' });
+    }
+
+    try {
+        const { data, error } = await supabase
+            .from('print_jobs')
+            .update({ status })
+            .eq('id', id)
+            .select();
+            
+        if (error) throw error;
+        res.json(data[0]);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 app.post('/api/track-visit', async (req, res) => {

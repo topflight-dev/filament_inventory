@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#1a1a1a">
+  <title>Crafted 3D | Print Queue Hub</title>
+  <link rel="stylesheet" href="../../styles/style.css">
+  <link rel="icon" href="../../../Crafted 3D.ico" type="image/x-icon">
+  <script src="../../js/api/api.js"></script>
+  <style>
+    /* =============================================
+       DARK MODE BASE
+       ============================================= */
+    *, *::before, *::after { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #1a1a1a;
+      color: #ffffff;
+      font-family: 'Inter', Arial, sans-serif;
+      min-height: 100vh;
+    }
+
+    /* Override any light-mode rules from style.css */
+    header, nav, footer {
+      background: #111111 !important;
+      color: #ffffff !important;
+      border-color: #333 !important;
+    }
+
+    header h1, header p, nav a {
+      color: #ffffff !important;
+    }
+
+    nav a:hover, nav a.active {
+      color: #facc15 !important;
+      border-color: #facc15 !important;
+    }
+
+    /* =============================================
+       HUB LAYOUT
+       ============================================= */
+    .hub-wrapper {
+      width: 100%;
+      padding: 20px 24px 40px;
+    }
+
+    /* =============================================
+       TOP CONTROL BAR
+       ============================================= */
+    .hub-controls {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-bottom: 24px;
+      padding: 16px 20px;
+      background: #242424;
+      border-radius: 12px;
+      border: 1px solid #333;
+    }
+
+    .pending-badge {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #3a2a00;
+      border: 2px solid #facc15;
+      border-radius: 10px;
+      padding: 10px 20px;
+    }
+
+    .pending-badge .badge-label {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #facc15;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .pending-badge .badge-count {
+      font-size: 2rem;
+      font-weight: 900;
+      color: #facc15;
+      line-height: 1;
+      min-width: 2ch;
+      text-align: center;
+    }
+
+    .hub-btn {
+      padding: 12px 22px;
+      font-size: 1rem;
+      font-weight: 700;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+      white-space: nowrap;
+    }
+
+    .hub-btn:active { transform: scale(0.97); }
+
+    .hub-btn-refresh {
+      background: #3B82F6;
+      color: #fff;
+    }
+    .hub-btn-refresh:hover { background: #2563EB; }
+
+    .hub-btn-auto {
+      background: #374151;
+      color: #9ca3af;
+      border: 2px solid #4b5563;
+    }
+    .hub-btn-auto.auto-on {
+      background: #14532d;
+      color: #4ade80;
+      border-color: #4ade80;
+    }
+    .hub-btn-auto.auto-on:hover { background: #166534; }
+    .hub-btn-auto:not(.auto-on):hover { background: #4b5563; }
+
+    .hub-btn-refresh:disabled {
+      background: #555;
+      cursor: not-allowed;
+    }
+
+    /* =============================================
+       PRINT QUEUE TABLE
+       ============================================= */
+    .table-container {
+      width: 100%;
+      overflow-x: auto;
+      border-radius: 12px;
+      border: 1px solid #333;
+      background: #242424;
+    }
+
+    .queue-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 1rem;
+    }
+
+    .queue-table thead {
+      background: #1f1f1f;
+      border-bottom: 2px solid #444;
+    }
+
+    .queue-table th {
+      padding: 16px 20px;
+      text-align: left;
+      font-size: 0.8rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #9ca3af;
+      white-space: nowrap;
+    }
+
+    .queue-table tbody tr {
+      border-bottom: 1px solid #2e2e2e;
+      transition: background 0.15s;
+    }
+
+    .queue-table tbody tr:last-child {
+      border-bottom: none;
+    }
+
+    .queue-table tbody tr:hover {
+      background: #2a2a2a;
+    }
+
+    .queue-table td {
+      padding: 18px 20px;
+      vertical-align: middle;
+      color: #e5e7eb;
+      font-size: 1.05rem;
+    }
+
+    .queue-table td.td-name {
+      font-weight: 700;
+      font-size: 1.15rem;
+      color: #ffffff;
+    }
+
+    .queue-table td.td-project {
+      color: #d1d5db;
+    }
+
+    .queue-table td.td-filament {
+      color: #9ca3af;
+      font-size: 0.95rem;
+    }
+
+    /* =============================================
+       STATUS BADGES
+       ============================================= */
+    .status-badge {
+      display: inline-block;
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      white-space: nowrap;
+    }
+
+    .status-pending  { background: #451a03; color: #fbbf24; border: 1px solid #92400e; }
+    .status-printing { background: #1e3a5f; color: #60a5fa; border: 1px solid #1e40af; }
+    .status-completed { background: #052e16; color: #4ade80; border: 1px solid #065f46; }
+
+    /* =============================================
+       OVERSIZED ACTION BUTTONS
+       ============================================= */
+    .action-btn {
+      display: inline-block;
+      min-width: 210px;
+      padding: 16px 24px;
+      font-size: 1.1rem;
+      font-weight: 800;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
+      text-align: center;
+      white-space: nowrap;
+      letter-spacing: 0.02em;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+    }
+
+    .action-btn:active { transform: scale(0.96); box-shadow: 0 2px 6px rgba(0,0,0,0.3); }
+
+    .action-btn:disabled {
+      background: #374151 !important;
+      color: #6b7280 !important;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    /* Pending → start printing */
+    .action-btn-start {
+      background: #1d4ed8;
+      color: #ffffff;
+    }
+    .action-btn-start:hover:not(:disabled) { background: #1e40af; box-shadow: 0 6px 18px rgba(29,78,216,0.5); }
+
+    /* Printing → mark complete */
+    .action-btn-complete {
+      background: #15803d;
+      color: #ffffff;
+    }
+    .action-btn-complete:hover:not(:disabled) { background: #166534; box-shadow: 0 6px 18px rgba(21,128,61,0.5); }
+
+    /* Completed → reset */
+    .action-btn-reset {
+      background: #374151;
+      color: #d1d5db;
+      border: 1px solid #4b5563;
+    }
+    .action-btn-reset:hover:not(:disabled) { background: #4b5563; }
+
+    /* =============================================
+       EMPTY STATE
+       ============================================= */
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: #6b7280;
+    }
+
+    .empty-state .empty-icon {
+      font-size: 3.5rem;
+      display: block;
+      margin-bottom: 16px;
+    }
+
+    .empty-state p {
+      font-size: 1.1rem;
+      margin: 0;
+    }
+
+    /* =============================================
+       TOAST
+       ============================================= */
+    #hub-toast {
+      visibility: hidden;
+      min-width: 220px;
+      background: #1f2937;
+      color: #fff;
+      text-align: center;
+      border-radius: 50px;
+      padding: 14px 24px;
+      position: fixed;
+      z-index: 9999;
+      left: 50%;
+      bottom: 30px;
+      transform: translateX(-50%);
+      font-size: 1rem;
+      font-weight: 600;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+      border: 1px solid #374151;
+    }
+
+    #hub-toast.show {
+      visibility: visible;
+      animation: toastIn 0.35s ease, toastOut 0.4s ease 2.2s forwards;
+    }
+
+    @keyframes toastIn {
+      from { bottom: 0; opacity: 0; }
+      to   { bottom: 30px; opacity: 1; }
+    }
+
+    @keyframes toastOut {
+      from { bottom: 30px; opacity: 1; }
+      to   { bottom: 0; opacity: 0; }
+    }
+
+    /* =============================================
+       BOTTOM FOOTER LINK
+       ============================================= */
+    .hub-footer {
+      margin-top: 36px;
+      text-align: center;
+      padding-bottom: 20px;
+    }
+
+    .hub-footer a {
+      color: #6b7280;
+      font-size: 0.9rem;
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+
+    .hub-footer a:hover {
+      color: #9ca3af;
+      text-decoration: underline;
+    }
+
+    /* =============================================
+       RESPONSIVE
+       ============================================= */
+    @media (max-width: 640px) {
+      .hub-wrapper { padding: 12px 12px 40px; }
+      .hub-controls { gap: 10px; padding: 12px; }
+      .queue-table th, .queue-table td { padding: 12px 10px; }
+      .action-btn { min-width: 160px; font-size: 1rem; padding: 14px 16px; }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Crafted 3D Workshop</h1>
+    <p class="slogan">🖨️ Print Queue Hub</p>
+  </header>
+
+  <nav>
+    <ul>
+      <li><a href="./hub.html" class="active">Queue Hub</a></li>
+      <li><a href="./admin.html">Admin Panel</a></li>
+      <li><a href="https://www.crafted3dworkshop.com" target="_blank">Main Site</a></li>
+    </ul>
+  </nav>
+
+  <div class="hub-wrapper">
+
+    <!-- TOP CONTROL BAR -->
+    <div class="hub-controls">
+      <div class="pending-badge">
+        <span class="badge-label">⏳ Pending</span>
+        <span class="badge-count" id="pendingCount">—</span>
+      </div>
+
+      <button class="hub-btn hub-btn-refresh" id="refreshBtn" onclick="fetchQueue()">
+        🔄 Manual Refresh
+      </button>
+
+      <button class="hub-btn hub-btn-auto" id="autoRefreshBtn" onclick="toggleAutoRefresh()">
+        ⚫ Auto-Refresh: OFF
+      </button>
+    </div>
+
+    <!-- PRINT QUEUE TABLE -->
+    <div class="table-container">
+      <table class="queue-table">
+        <thead>
+          <tr>
+            <th>Child Name</th>
+            <th>Project</th>
+            <th>Filament</th>
+            <th>Status</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="queueTableBody">
+          <tr>
+            <td colspan="5">
+              <div class="empty-state">
+                <span class="empty-icon">⏳</span>
+                <p>Loading queue...</p>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- BOTTOM FOOTER LINK -->
+    <div class="hub-footer">
+      <a href="./admin.html">← Back to Admin Panel (Inventory Management)</a>
+    </div>
+
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="hub-toast"></div>
+
+  <script>
+    // =============================================
+    // STATE
+    // =============================================
+    let autoRefreshInterval = null;
+    let isAutoRefreshOn = false;
+
+    // =============================================
+    // FETCH QUEUE
+    // =============================================
+    async function fetchQueue() {
+      const btn = document.getElementById('refreshBtn');
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = '⏳ Refreshing...';
+      }
+
+      try {
+        const response = await fetch(`${window.PRINT_QUEUE_BASE}?cb=${Date.now()}`);
+        if (!response.ok) throw new Error(`Server returned ${response.status}`);
+        const jobs = await response.json();
+        renderQueue(Array.isArray(jobs) ? jobs : []);
+      } catch (err) {
+        console.error('Queue fetch failed:', err);
+        showToast('❌ Could not load queue');
+        document.getElementById('queueTableBody').innerHTML = `
+          <tr>
+            <td colspan="5">
+              <div class="empty-state">
+                <span class="empty-icon">⚠️</span>
+                <p>Failed to load queue. Check your connection.</p>
+              </div>
+            </td>
+          </tr>`;
+        document.getElementById('pendingCount').textContent = '—';
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = '🔄 Manual Refresh';
+        }
+      }
+    }
+
+    // =============================================
+    // RENDER QUEUE
+    // =============================================
+    function renderQueue(jobs) {
+      const tbody = document.getElementById('queueTableBody');
+      const pendingEl = document.getElementById('pendingCount');
+
+      const pendingCount = jobs.filter(j => (j.status || 'pending').toLowerCase() === 'pending').length;
+      pendingEl.textContent = pendingCount;
+
+      if (jobs.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="5">
+              <div class="empty-state">
+                <span class="empty-icon">✅</span>
+                <p>Queue is empty — all caught up!</p>
+              </div>
+            </td>
+          </tr>`;
+        return;
+      }
+
+      tbody.innerHTML = jobs.map(job => {
+        const status = (job.status || 'pending').toLowerCase();
+        const badgeClass = getBadgeClass(status);
+        const badgeLabel = capitalize(status);
+
+        const { btnClass, btnLabel } = getActionButton(status);
+
+        const childName   = escapeHtml(job.requestor_name || job.child_name || '—');
+        const projectName = escapeHtml(job.project_name || '—');
+        const filament    = escapeHtml(job.color_preference || job.filament || '—');
+
+        return `
+          <tr id="row-${job.id}">
+            <td class="td-name">${childName}</td>
+            <td class="td-project">${projectName}</td>
+            <td class="td-filament">${filament}</td>
+            <td>
+              <span class="status-badge ${badgeClass}">${badgeLabel}</span>
+            </td>
+            <td>
+              <button
+                class="action-btn ${btnClass}"
+                id="btn-${job.id}"
+                onclick="cycleStatus('${job.id}', '${status}', this)"
+              >${btnLabel}</button>
+            </td>
+          </tr>`;
+      }).join('');
+    }
+
+    // =============================================
+    // CYCLE STATUS
+    // =============================================
+    async function cycleStatus(id, currentStatus, btn) {
+      const nextStatus = getNextStatus(currentStatus);
+
+      btn.disabled = true;
+      btn.textContent = '⏳ Updating...';
+
+      try {
+        const response = await fetch(`${window.PRINT_QUEUE_BASE}/${id}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-admin-key': window.ADMIN_KEY
+          },
+          body: JSON.stringify({ status: nextStatus })
+        });
+
+        if (!response.ok) throw new Error(`Server returned ${response.status}`);
+
+        // Update the row in-place without a full re-fetch
+        const badgeClass = getBadgeClass(nextStatus);
+        const { btnClass, btnLabel } = getActionButton(nextStatus);
+
+        const row = document.getElementById(`row-${id}`);
+        if (row) {
+          const badge = row.querySelector('.status-badge');
+          if (badge) {
+            badge.className = `status-badge ${badgeClass}`;
+            badge.textContent = capitalize(nextStatus);
+          }
+        }
+
+        btn.className = `action-btn ${btnClass}`;
+        btn.textContent = btnLabel;
+        btn.disabled = false;
+        btn.onclick = () => cycleStatus(id, nextStatus, btn);
+
+        // Recount pending
+        const allBadges = document.querySelectorAll('.status-badge');
+        const pendingCount = Array.from(allBadges).filter(b => b.textContent.trim().toLowerCase() === 'pending').length;
+        document.getElementById('pendingCount').textContent = pendingCount;
+
+        showToast(`✅ Job → ${capitalize(nextStatus)}`);
+
+      } catch (err) {
+        console.error('Status update failed:', err);
+        showToast('❌ Update failed');
+        btn.disabled = false;
+        const { btnClass, btnLabel } = getActionButton(currentStatus);
+        btn.className = `action-btn ${btnClass}`;
+        btn.textContent = btnLabel;
+      }
+    }
+
+    // =============================================
+    // AUTO-REFRESH TOGGLE
+    // =============================================
+    function toggleAutoRefresh() {
+      const btn = document.getElementById('autoRefreshBtn');
+      isAutoRefreshOn = !isAutoRefreshOn;
+
+      if (isAutoRefreshOn) {
+        autoRefreshInterval = setInterval(fetchQueue, 60000);
+        btn.textContent = '🟢 Auto-Refresh: ON';
+        btn.classList.add('auto-on');
+        showToast('⏱️ Auto-refresh enabled (60s)');
+      } else {
+        clearInterval(autoRefreshInterval);
+        autoRefreshInterval = null;
+        btn.textContent = '⚫ Auto-Refresh: OFF';
+        btn.classList.remove('auto-on');
+        showToast('Auto-refresh disabled');
+      }
+    }
+
+    // =============================================
+    // HELPERS
+    // =============================================
+    function getNextStatus(current) {
+      const cycle = { pending: 'printing', printing: 'completed', completed: 'pending' };
+      return cycle[current.toLowerCase()] || 'pending';
+    }
+
+    function getBadgeClass(status) {
+      const map = { pending: 'status-pending', printing: 'status-printing', completed: 'status-completed' };
+      return map[status.toLowerCase()] || 'status-pending';
+    }
+
+    function getActionButton(status) {
+      const map = {
+        pending:   { btnClass: 'action-btn-start',    btnLabel: '▶ Start Printing' },
+        printing:  { btnClass: 'action-btn-complete', btnLabel: '✅ Mark Complete' },
+        completed: { btnClass: 'action-btn-reset',    btnLabel: '🔄 Reset to Pending' }
+      };
+      return map[status.toLowerCase()] || map.pending;
+    }
+
+    function capitalize(str) {
+      return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    // =============================================
+    // TOAST
+    // =============================================
+    let toastTimer = null;
+    function showToast(msg) {
+      const toast = document.getElementById('hub-toast');
+      if (!toast) return;
+      if (toastTimer) clearTimeout(toastTimer);
+      toast.textContent = msg;
+      toast.className = 'show';
+      toastTimer = setTimeout(() => { toast.className = ''; }, 2700);
+    }
+
+    // =============================================
+    // INIT
+    // =============================================
+    document.addEventListener('DOMContentLoaded', () => {
+      fetchQueue();
+    });
+  </script>
+
+</body>
+</html>

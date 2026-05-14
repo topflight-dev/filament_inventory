@@ -2,132 +2,263 @@
 
 ---
 
-### 2026-04-17 — Critical Path Repair: Mobile Companion Synchronized (Claude Sonnet 4.6)
+### 2026-05-14 — Print Queue Hub Page Created (Cline)
 
-**Task Completed:** Mobile companion rebuilt as a self-contained mobile admin tool (Option C). All critical bugs cleared.
+**Task Completed:** Created `src/pages/admin/hub.html` — a dedicated, dark-mode Print Queue Hub designed for use at the printer station.
 
-**Files Created / Modified:**
-- `mobile-companion/index.html` — Completely rewritten as a mobile admin tool (stats, inventory management, add filament, edit modal, toast notifications)
-- `mobile-companion/style.css` — Rewritten from scratch; clean, mobile-optimized, no media query nesting bugs
-- `mobile-companion/images/` — New directory; copied `luis1.jpg`, `ellen.jpg`, `jordiluis1.jpg`, `placeholder.jpg` from root
-- `mobile-companion/js/` — New directory; copied `footer.js` and `tracker.js` from root
-- `mobile-companion/Crafted 3D.ico` — Favicon copied from root
-- `CLAUDE.md` — Updated with completed repair status and remaining non-critical bugs
+**Files Created:**
+- `src/pages/admin/hub.html` — New standalone admin hub page with:
+  - **Dark Mode Theme:** `body` background `#1a1a1a`, text `#ffffff`; full dark overrides for `header`, `nav`, `footer` from `style.css`
+  - **Head:** `<link rel="stylesheet" href="../../styles/style.css">` and `<script src="../../js/api/api.js"></script>` (exposes `window.PRINT_QUEUE_BASE` and `window.ADMIN_KEY`)
+  - **Top Control Bar:** Yellow `⏳ Pending: N` badge counter, `🔄 Manual Refresh` button, `⚫/🟢 Auto-Refresh: OFF/ON` toggle button
+  - **Full-Width Table:** Columns — Child Name, Project, Filament, Status Badge, Action; `width: 100%` with no max-width constraint
+  - **Oversized Action Buttons:** `min-width: 210px`, `font-size: 1.1rem`, `padding: 16px 24px` — readable from across the room
+  - **Status Badges:** Yellow (Pending), Blue (Printing), Green (Completed)
+  - **`fetchQueue()`:** GETs from `window.PRINT_QUEUE_BASE` with cache-bust on `DOMContentLoaded`
+  - **`cycleStatus(id, currentStatus, btn)`:** Cycles `pending → printing → completed → pending` via `PATCH ${window.PRINT_QUEUE_BASE}/${id}` with `x-admin-key: window.ADMIN_KEY`; updates row in-place without full re-fetch
+  - **`toggleAutoRefresh()`:** `setInterval` / `clearInterval` at 60-second interval; button reflects ON/OFF state
+  - **Empty/Error states:** Graceful messaging for empty queue and network failures
+  - **Toast notifications** for status updates and auto-refresh toggle
+  - **Bottom footer link:** `← Back to Admin Panel (Inventory Management)` → `./admin.html`
 
-**Verification Results (Automated):**
-- ✅ All 10 required files present and non-zero
-- ✅ CSS braces balanced: 65 open = 65 close (no nesting bug)
-- ✅ Nav links use absolute URLs to `crafted3dworkshop.com` (no broken relative links)
-- ✅ Favicon, manifest, and footer.js all correctly referenced
+**Verification:**
+- ✅ File created at `C:\Projects\filament_inventory_site\src\pages\admin\hub.html`
+- ✅ Correct relative paths for `src/pages/admin/` location (2 levels deep)
+- ✅ `api.js` loaded in `<head>` so `window.PRINT_QUEUE_BASE` and `window.ADMIN_KEY` available to inline script
+- ✅ PATCH uses `x-admin-key` header (matching server.js auth check)
+- ✅ Action button labels cycle contextually: `▶ Start Printing` → `✅ Mark Complete` → `🔄 Reset to Pending`
+- ✅ Pending count updates live after each status change
 
-**Critical Bugs Cleared:**
-1. ✅ `mobile-companion/index.html` — 6+ broken asset paths → FIXED (rewritten)
-2. ✅ `mobile-companion/style.css` — unclosed `@media` nesting bug → FIXED (rewritten)
+**Next Step:**
+- Add a nav link to `hub.html` from `admin.html` for easy navigation between the two admin tools
 
-**Remaining Non-Critical Bugs (documented in CLAUDE.md):**
-- `style.css` root: two typos (`sas-serif`, `1 =px`)
-- `admin.html`: API key hardcoded in client-side JS
-- `js/gallery.js`, `js/meettheteam.js`: empty stub files
-- `package.json`: legacy `airtable` dependency
-
----
-
-### 2026-04-17 — Clean House Audit (Claude Sonnet 4.6)
-
-**Task Completed:** Full discovery audit of the project. Created `CLAUDE.md` as the Source of Truth.
-
-**What Was Done:**
-- Listed and read all files in the root directory and `mobile-companion/`
-- Read all HTML pages: `index.html`, `inventory.html`, `gallery.html`, `contact.html`, `meettheteam.html`, `admin.html`
-- Read all JS files: `footer.js`, `inventory.js`, `tracker.js`, `home.js`, `contact.js` (gallery.js and meettheteam.js are empty stubs)
-- Compared `./style.css` vs `mobile-companion/style.css` — found a CSS nesting bug in the mobile copy
-- Compared `./index.html` vs `mobile-companion/index.html` — found they are identical with 6+ broken paths in the mobile version
-- Read `server.js`, `package.json`, `manifest.json`, `README.md`
-- Created `CLAUDE.md` documenting: full project structure, tech stack, API endpoints, Supabase tables, shared asset audit, and known bugs
 
 ---
 
-### 2026-04-18 — Mobile Companion Layout Swap
+### 2026-05-14 — Public Nav Audit: request.html Visibility Check (Cline)
 
-**Task Completed:** Reordered sections in `mobile-companion/index.html`.
+**Task Completed:** Performed a search-and-remove audit across all 5 public-facing HTML files to ensure zero public visibility of the `request.html` print request feature.
 
-**New Section Order:**
-1. Header
-2. Navigation Bar
-3. Add New Filament
-4. Site Stats
-5. Manage Inventory
-6. Footer
+**Files Scanned:**
+- `src/pages/public/index.html`
+- `src/pages/public/inventory.html`
+- `src/pages/public/gallery.html`
+- `src/pages/public/contact.html`
+- `src/pages/public/meettheteam.html`
+
+**Action:** Scanned all `<nav>` and `<footer>` sections for any `<li>` or `<a>` tags referencing `request.html`.
+
+**Result:** No references found in any file. All 5 pages are clean — `request.html` has zero public visibility and is not linked from any public-facing navigation or footer.
+
+**Files Modified:** None (no changes required).
+
+**Next Step:**
+- Build the `print_jobs` table in Supabase with columns: `id`, `requestor_name`, `project_name`, `stl_url`, `filament_id`, `color_preference`, `status`, `created_at`
+
+---
+
+### 2026-05-14 — Print Queue Admin Section Added (Cline)
+
+**Task Completed:** Added a "🖨️ Pending Print Jobs" section to `src/pages/admin/admin.html`, below the existing Manage Inventory panel.
 
 **Files Modified:**
-- `mobile-companion/index.html` — Sections reordered via direct file overwrite
+- `src/pages/admin/admin.html` — Added:
+  - **CSS:** `.print-queue-table`, `.pq-status-badge` (with `.pq-status-pending`, `.pq-status-printing`, `.pq-status-completed` color variants), and `.pq-update-btn` styles
+  - **HTML:** New `<section class="glass-panel">` with `id="printQueueResults"` and a "🔄 Refresh Queue" button
+  - **JS:** `fetchPrintQueue()` — GETs from `window.PRINT_QUEUE_BASE` with cache-bust; `renderPrintQueue(jobs)` — builds a 5-column table (Requestor, Project, Filament Choice, Status, Action); `cycleStatus(id, currentStatus, btn)` — cycles `Pending → Printing → Completed → Pending` via PATCH to `${window.PRINT_QUEUE_BASE}/${id}` with `x-admin-key: window.ADMIN_KEY` header
+  - `pqRefreshBtn` event listener wired up
+  - `fetchPrintQueue()` called in `DOMContentLoaded` init sequence
+
+**Verification:**
+- ✅ Section placed below Manage Inventory, above version footer
+- ✅ PATCH request uses `x-admin-key` header with `window.ADMIN_KEY`
+- ✅ Status badge colors: yellow (Pending), blue (Printing), green (Completed)
+- ✅ Button label updates contextually per current status
+- ✅ Graceful error handling if queue endpoint is unreachable
+
+**Next Step:**
+- Create the `print_jobs` table in Supabase with columns: `id`, `requestor_name`, `project_name`, `stl_url`, `filament_id`, `color_preference`, `status`, `created_at`
+- Add a nav link to `request.html` in the other public pages if desired
 
 ---
 
-### 2026-04-18 — Deploy to Production (v1.8.1)
+### 2026-05-14 — Print Request Page Created (Cline)
 
-**Task Completed:** Pushed all mobile companion updates to GitHub main branch.
+**Task Completed:** Created `src/pages/public/request.html` — a public-facing print request form that lets users select a filament from live inventory and submit a print job to the queue.
 
-**Commit:** `3854d87` — `feat: implement mobile-optimized admin tool v1.8.1`
+**Files Created:**
+- `src/pages/public/request.html` — New public page with:
+  - Inline `.glass-panel` CSS (matching `admin.html` pattern) — frosted glass card container
+  - Filament `<select id="filamentSelect">` dropdown populated on `DOMContentLoaded` via `fetch(window.API_BASE)` — only in-stock filaments shown; option text = `"${color} — ${finish}"`, value = `id`
+  - Inputs for: Requestor Name (required), Project Name (required), Link to Model (optional)
+  - `POST` submission to `window.PRINT_QUEUE_BASE` with payload: `{ requestor_name, project_name, stl_url, filament_id }`
+  - Submit button with loading state (disabled + text change to "Submitting..." during fetch)
+  - Inline success (green `#d1fae5`) and error (red `#fee2e2`) `#statusMessage` display
+  - Form reset on successful submission
+  - Nav includes "Print Request" link with `.active` class
+  - Correct relative paths: `../../styles/style.css`, `../../js/api/api.js`, `../../js/utils/footer.js`, `../../../Crafted 3D.ico`
 
-**Files Pushed (15 changed, 1219 insertions):**
-- `mobile-companion/index.html`, `style.css`, `manifest.json` — Mobile admin tool
-- `mobile-companion/js/footer.js`, `tracker.js` — Companion JS
-- `mobile-companion/images/` — Companion image assets
-- `mobile-companion/Crafted 3D.ico` — Favicon
-- `CLAUDE.md`, `Project_Log.md` — Documentation
-- `output.txt` — Audit output
-- Removed legacy root `manifest.json`
+**Verification:**
+- ✅ File created at `C:\Projects\filament_inventory_site\src\pages\public\request.html`
+- ✅ All relative paths verified against `src/pages/public/` (3 levels deep) location
+- ✅ `api.js` loaded in `<head>` so `window.API_BASE` and `window.PRINT_QUEUE_BASE` are available to inline script
+- ✅ `footer.js` loaded at bottom of `<body>`
+- ✅ Payload fields match backend: `requestor_name`, `project_name`, `stl_url`, `filament_id`
+- ✅ Glass panel style consistent with `admin.html` design language
 
-**Remote:** `https://github.com/blast1221/filament_inventory.git` → `main`
+**Next Step:**
+- Add a nav link to `request.html` in the other public pages (`index.html`, `inventory.html`, etc.) if desired
+- Create the `print_jobs` table in Supabase with columns: `id`, `requestor_name`, `project_name`, `stl_url`, `filament_id`, `color_preference`, `status`, `created_at`
+
+---
+
+### 2026-05-14 — 3D Print Queue: Backend Routing & API Config (Cline)
+
+**Task Completed:** Implemented backend routing and frontend API configuration for the new 3D Print Queue feature.
+
+**Files Modified:**
+
+- `src/js/api/api.js` — Appended `PRINT_QUEUE_BASE` constant (`https://filament-inventory.onrender.com/print-queue`) and exposed it on `window.PRINT_QUEUE_BASE` for use by inline scripts.
+- `server.js` — Inserted three new Express route handlers immediately after the existing `/inventory` CRUD routes:
+  - `GET /print-queue` — Public read; fetches all print jobs from `print_jobs` table ordered by `created_at` ascending.
+  - `POST /print-queue` — Public write; inserts a new print job with fields: `requestor_name`, `project_name`, `stl_url`, `filament_id`, `color_preference`.
+  - `PATCH /print-queue/:id` — Admin-only; updates `status` field on a job, authenticated via `x-admin-key` request header.
+- `server.js` (CORS) — Added `'x-admin-key'` to the `allowedHeaders` array so browser preflight requests for the PATCH route are not blocked.
+
+**Verification:**
+- ✅ `node --check server.js` — No syntax errors
+- ✅ All three routes inserted after `DELETE /inventory/:id` and before `POST /api/track-visit`
+- ✅ `window.PRINT_QUEUE_BASE` available globally in frontend
+
+**Next Step:**
+- Build the frontend Print Queue UI page (`src/pages/public/print-queue.html`) that consumes `window.PRINT_QUEUE_BASE`
+- Create the `print_jobs` table in Supabase with columns: `id`, `requestor_name`, `project_name`, `stl_url`, `filament_id`, `color_preference`, `status`, `created_at`
+
+
+---
+
+### 2026-05-11 — Step 2: Physical Reorganization (Cline)
+
+**Task Completed:** Full directory restructure. All source files moved to organized subdirectories. `mobile-companion/` deleted. All relative paths updated.
+
+**New Directory Structure:**
+```
+/src/pages/public/   → index.html, inventory.html, gallery.html, contact.html, meettheteam.html
+/src/pages/admin/    → admin.html (single source for desktop + mobile PWA)
+/src/styles/         → style.css
+/src/js/api/         → api.js
+/src/js/utils/       → footer.js, tracker.js
+/src/js/             → inventory.js
+/public/images/      → all images (moved from /images/)
+```
+
+**Files Moved:**
+- `index.html` → `src/pages/public/index.html`
+- `inventory.html` → `src/pages/public/inventory.html`
+- `gallery.html` → `src/pages/public/gallery.html`
+- `contact.html` → `src/pages/public/contact.html`
+- `meettheteam.html` → `src/pages/public/meettheteam.html`
+- `admin.html` → `src/pages/admin/admin.html`
+- `style.css` → `src/styles/style.css`
+- `js/api.js` → `src/js/api/api.js`
+- `js/footer.js` → `src/js/utils/footer.js`
+- `js/tracker.js` → `src/js/utils/tracker.js`
+- `js/inventory.js` → `src/js/inventory.js`
+- `images/*` → `public/images/*`
+
+**Paths Updated (per file):**
+- `src/pages/public/index.html` — style: `../../styles/style.css`, icon: `../../../Crafted 3D.ico`, manifest: `../../../manifest.json`, images: `../../../public/images/`, footer: `../../js/utils/footer.js`
+- `src/pages/public/inventory.html` — style: `../../styles/style.css`, icon: `../../../Crafted 3D.ico`, scripts: `../../js/api/api.js`, `../../js/inventory.js`, `../../js/utils/footer.js`
+- `src/pages/public/gallery.html` — style: `../../styles/style.css`, icon: `../../../Crafted 3D.ico`, gallery img: `../../../gallery/Spool-Holder.jpg`, footer: `../../js/utils/footer.js`
+- `src/pages/public/contact.html` — style: `../../styles/style.css`, icon: `../../../Crafted 3D.ico`, footer: `../../js/utils/footer.js`
+- `src/pages/public/meettheteam.html` — style: `../../styles/style.css`, icon: `../../../Crafted 3D.ico`, images: `../../../public/images/`, footer: `../../js/utils/footer.js`
+- `src/pages/admin/admin.html` — style: `../../styles/style.css`, icon: `../../../Crafted 3D.ico`, manifest: `../../../manifest.json`, api: `../../js/api/api.js`, footer: `../../js/utils/footer.js`
+- `src/js/utils/footer.js` — tracker path updated to `../../js/utils/tracker.js`
+
+**Deleted:**
+- `mobile-companion/` — entire folder removed. `src/pages/admin/admin.html` is now the single source for both desktop and mobile PWA.
+
+**Preserved (root-level, untouched):**
+- `manifest.json` — root manifest preserved
+- `CNAME` — root CNAME preserved
+- `Crafted 3D.ico` — root favicon preserved
+
+**Verification:**
+- ✅ `mobile-companion/` confirmed deleted
+- ✅ All 6 HTML files updated with correct relative paths
+- ✅ `footer.js` tracker injection path updated
+- ✅ `manifest.json` and `CNAME` untouched at root
 
 ### Next Step:
-- Address remaining non-critical bugs in root `style.css` (two typos)
-- Consider moving admin API key out of client-side JS in `admin.html`
-- Build out `js/gallery.js` and `js/meettheteam.js` with actual functionality
+- Step 3: Update `server.js` and any deployment config to serve from the new `src/pages/public/` entry point
+- Consider adding a root-level redirect `index.html` that points to `src/pages/public/index.html` for GitHub Pages compatibility
 
 ---
 
-### 2026-04-18 — Stealth Admin Rename & PWA Sync
+### 2026-05-11 — Step 1: Logic Consolidation (Cline)
 
-**Task Completed:** Renamed mobile admin entry point from `index.html` to `admin.html` for stealth deployment. PWA manifest updated to match.
+**Task Completed:** API Gateway created, CSS typos fixed, orphaned JS files pruned.
+
+**Files Created:**
+- `js/api.js` — New API Gateway file. Contains `API_BASE` and `ADMIN_KEY` as the single source of truth for all backend communication. Exposes both on `window` for use by inline scripts.
 
 **Files Modified:**
-- `mobile-companion/index.html` → `mobile-companion/admin.html` — Renamed via PowerShell Copy-Item + Remove-Item
-- `mobile-companion/manifest.json` — Updated `start_url` from `"index.html"` to `"admin.html"` so the installed PWA phone icon continues to work
+- `admin.html` — Removed hardcoded `API_BASE` and `ADMIN_KEY` constants from inline `<script>`. Added `<script src="./js/api.js"></script>` before the main script block.
+- `mobile-companion/admin.html` — Same refactor; uses `<script src="../js/api.js"></script>` (correct relative path for subdirectory).
+- `inventory.html` — Added `<script src="js/api.js"></script>` before `inventory.js` so `window.API_BASE` is available.
+- `js/inventory.js` — Updated `fetch()` call to use `window.API_BASE || "https://filament-inventory.onrender.com/inventory"` (fallback preserves backward compatibility).
+- `style.css` — Fixed two long-standing CSS typos:
+  - Line 86: `sas-serif` → `sans-serif` (`.contact-intro` font-family)
+  - Line 148: `1 =px` → `1px` (`footer` border-top)
 
-**Security Check:**
-- ✅ Searched all root `.html` and `.js` files — zero references to `mobile-companion/` or `admin.html` found in public navigation
+**Files Deleted (Orphaned/Empty Stubs):**
+- `js/home.js` — Nav active-state helper; not referenced in any HTML file
+- `js/contact.js` — Nav active-state helper; not referenced in any HTML file
+- `js/gallery.js` — Empty stub (0 bytes)
+- `js/meettheteam.js` — Empty stub (0 bytes)
 
-**Commit:** `50b85b5` — `feat: stealth admin rename and pwa sync`
-
-**Remote:** `https://github.com/blast1221/filament_inventory.git` → `main`
-
-**Status:** Stealth App Ready
+**Verification:**
+- ✅ `js/` directory now contains only: `api.js`, `footer.js`, `inventory.js`, `tracker.js`
+- ✅ No HTML files referenced the deleted JS files (confirmed via search before deletion)
+- ✅ Both admin tools (`admin.html` and `mobile-companion/admin.html`) now load `API_BASE` and `ADMIN_KEY` from `js/api.js`
+- ✅ `inventory.js` uses `window.API_BASE` with a safe fallback — no breaking change
 
 ---
 
-### 2026-04-18 — Global Admin Sync: Root admin.html Replaced
+### 2026-04-19 — v1.1.8: Ghost Dropdown Arrow Fix
 
-**Task Completed:** Root `admin.html` was outdated (legacy inline-CSS version). Replaced with the clean, modern `mobile-companion/admin.html` and corrected all relative paths for root-level serving.
+**Task Completed:** Suppressed ghost dropdown/calendar picker arrows that appeared in the Color text field on some mobile browsers (Chrome Android, Samsung Internet).
 
 **Files Modified:**
-- `admin.html` — Overwritten with mobile-companion version; paths corrected:
-  - `style.css` → `./style.css`
-  - `Crafted 3D.ico` → `./Crafted 3D.ico`
-  - `manifest.json` → `./manifest.json`
-  - `js/footer.js` → `./js/footer.js`
+- `mobile-companion/admin.html` — CSS block added; version bumped to v1.1.8
 
-**No logic changes made** — copy, path-fix, and push only.
+**Changes Applied:**
 
-**Commit:** `8b28d24` — `feat: sync mobile admin tool to root`
+1. **CSS Injection — Suppress Browser Decorations**
+   - Added new `/* SUPPRESS GHOST DROPDOWN / SEARCH DECORATIONS */` block to the inline `<style>` section (placed before the `@media` responsive block):
+     ```css
+     input::-webkit-calendar-picker-indicator,
+     input::-webkit-list-button,
+     input::-webkit-inner-spin-button,
+     input::-webkit-clear-button {
+       display: none !important;
+       -webkit-appearance: none !important;
+       margin: 0;
+     }
+     ```
+   - Targets all four WebKit pseudo-elements responsible for ghost UI decorations on `<input>` elements with `list` attributes or type-specific controls
+
+2. **Version Bump — v1.1.8**
+   - `style.css?v=1.1.7` → `style.css?v=1.1.8`
+   - `manifest.json?v=1.1.7` → `manifest.json?v=1.1.8`
+   - `../js/footer.js?v=1.1.7` → `../js/footer.js?v=1.1.8`
+   - Footer text: `© 2026 | v1.1.7` → `© 2026 | v1.1.8`
+
+**Commit:** `3b1605d` — `fix: remove ghost dropdown arrows and v1.1.8 bump`
 
 **Remote:** `https://github.com/blast1221/filament_inventory.git` → `main`
 
-### Next Step:
-- Address remaining non-critical bugs in root `style.css` (two typos)
-- Consider moving admin API key out of client-side JS
-- Build out `js/gallery.js` and `js/meettheteam.js` with actual functionality
+**Status:** v1.1.8 Deployed ✅
 
 ---
 
@@ -149,369 +280,6 @@
 **Commit:** `v1.1.7: maskable icon and cache bust`
 
 **Remote:** `https://github.com/blast1221/filament_inventory.git` → `main`
-
-### Next Step:
-- Re-export `icon.png` with 10% safe-zone padding so content does not bleed under Android's circular mask
-- Address remaining non-critical bugs in root `style.css` (two typos)
-- Consider moving admin API key out of client-side JS
-- Build out `js/gallery.js` and `js/meettheteam.js` with actual functionality
-
----
-
-### 2026-04-18 — v1.1.5: Footer, Cache Busting & Touch Finalization
-
-**Task Completed:** Final polish pass on `mobile-companion/admin.html`. Professional copyright footer added, cache-busting applied to all local assets, and touch event architecture finalized.
-
-**Files Modified:**
-- `mobile-companion/admin.html` — Footer, cache-busting query strings, touchstart listener removed
-
-**Changes Applied:**
-
-1. **Copyright Footer**
-   - Replaced old `<p>Filament Manager v1.1.0</p>` with a proper `<footer>` element
-   - Text: `© 2026 | v1.1.5`
-   - Style: `font-size: 11px; color: #999; text-align: center;` — subtle, non-distracting
-
-2. **Cache Busting**
-   - `style.css` → `style.css?v=1.1.5`
-   - `../js/footer.js` → `../js/footer.js?v=1.1.5`
-   - Forces PWA Home Screen icon to pick up updated assets on next load
-
-3. **Touch Controls Finalized**
-   - Removed `touchstart` delegated listener from `#adminInventoryResults` container
-   - Now uses `click` events only — eliminates double-firing on mobile
-   - All interactive CSS (`touch-action: manipulation`, `pointer-events: auto !important`) already confirmed present on `.admin-btn`, `.finish-group-header`, `.edit-btn`, `.delete-btn`
-
-**Commit:** `465e9b9` — `v1.1.5: Added copyright footer with cache busting and finalized touch controls`
-
-**Remote:** `https://github.com/blast1221/filament_inventory.git` → `main`
-
-**Status:** v1.1.5 Finalized and Deployed ✅
-
-### Next Step:
-- Address remaining non-critical bugs in root `style.css` (two typos)
-- Consider moving admin API key out of client-side JS
-- Build out `js/gallery.js` and `js/meettheteam.js` with actual functionality
-
----
-
-### 2026-04-18 — Mobile Functionality Fix: Touch Events & State Sync
-
-**Task Completed:** High-priority functional fix applied to `mobile-companion/admin.html`. Previous inline `onclick` approach was failing on mobile touch devices.
-
-**Files Modified:**
-- `mobile-companion/admin.html` — Touch event fix + checkbox state sync
-
-**Changes Applied:**
-
-1. **Delete Button — CSS Fix**
-   - `.delete-btn` padding increased from `4px` → `15px` (larger touch target)
-   - Added `position: relative; z-index: 100;` to prevent invisible overlay blocking
-   - Added `touch-action: manipulation;` to eliminate 300ms tap delay on mobile
-
-2. **Delete Button — Event Fix**
-   - Removed fragile inline `onclick="deleteItem(...)"` from rendered HTML
-   - Replaced with `data-id` and `data-name` attributes on the button element
-   - Added delegated `click` listener on `#adminInventoryResults` container
-   - Added delegated `touchstart` listener (with `e.preventDefault()`) on the same container — fires delete reliably on iOS/Android without ghost clicks
-
-3. **Checkbox — State Sync Fix**
-   - Removed inline `onchange="toggleStock(...)"` from rendered HTML
-   - Replaced with `data-id` attribute on the checkbox element
-   - Checkbox `checked` property now strictly bound to `item.inStock === true` (strict boolean, not truthy)
-   - Added delegated `click` listener on container to handle checkbox changes via `toggleStock(id, cb.checked)`
-
-4. **Architecture: Delegated Event Pattern**
-   - Both delete and checkbox now use a single delegated listener on the parent container
-   - This is re-render safe — no stale event bindings after `renderAdminResults()` rebuilds the DOM
-
-**Commit:** `16c896f` — `fix: mobile touch events and state sync`
-
-**Remote:** `https://github.com/blast1221/filament_inventory.git` → `main`
-
-**Status:** Mobile Functionality Verified
-
-### Next Step:
-- Address remaining non-critical bugs in root `style.css` (two typos)
-- Consider moving admin API key out of client-side JS
-- Build out `js/gallery.js` and `js/meettheteam.js` with actual functionality
-
----
-
-### 2026-04-18 — Final Visual & Versioning Sync v1.1.0
-
-**Task Completed:** Visual polish and version branding applied to both `admin.html` (root) and `mobile-companion/admin.html`. CSS-only changes — no logic touched.
-
-**Files Modified:**
-- `admin.html` — Visual polish + version footer
-- `mobile-companion/admin.html` — Visual polish + dark body + version footer
-
-**Changes Applied (both files):**
-1. **Label Color** — `.form-group label` updated from `#ccc` → `#E0E0E0` for high contrast
-2. **Input Background** — `.admin-input` background changed from `#1a1a1a` → `rgba(255, 255, 255, 0.07)` (true glass effect)
-3. **Input Border** — `.admin-input` border changed from `1px solid #333` → `1px solid rgba(255, 255, 255, 0.1)` (subtle glass border)
-4. **Blue Glow Focus** — `.admin-input:focus` upgraded with `box-shadow: 0 0 10px rgba(59, 130, 246, 0.5)` and `transition: 0.3s`
-5. **Version Footer** — `<p style='opacity: 0.4; font-size: 10px; margin-top: 40px; text-align: center;'>Filament Manager v1.1.0</p>` added at bottom of `<main>`
-
-**Mobile-Only Change:**
-- `<body>` tag given `style="background: #121212;"` so glass cards render correctly against a dark canvas
-
-**Path Verification:**
-- Root `admin.html` → `./js/footer.js` ✅
-- Mobile `admin.html` → `js/footer.js` ✅
-
-### Next Step:
-- Address remaining non-critical bugs in root `style.css` (two typos)
-- Consider moving admin API key out of client-side JS
-- Build out `js/gallery.js` and `js/meettheteam.js` with actual functionality
-
----
-
-### 2026-04-18 — Admin Panel Consistency Pass
-
-**Task Completed:** Full styling consistency pass on `admin.html`.
-
-**Changes Made:**
-- `.admin-input` — Added `display: block`, `width: 100%`, `box-sizing: border-box`, `font-size: 14px` for proper full-width alignment
-- `.glass-panel` — Confirmed `padding: 20px` and `border-radius: 15px`; added `margin-bottom: 20px` for section spacing
-- `.glass-panel label` — Added `display: block`, `margin-bottom: 15px`, `font-size: 14px`, `color: #ccc`; inputs nested inside labels for semantic spacing
-- Stats panel and Inventory panel — Both given `glass-panel` class to match Add New Filament section
-- `.container` — Added `max-width: 600px` and `margin: 0 auto` for centered layout on desktop and mobile
-- Inventory list items — Added consistent `font-size: 14px` and `color` rules matching the form section
-
-### Next Step:
-- Address remaining non-critical bugs in root `style.css` (two typos)
-- Consider moving admin API key out of client-side JS
-- Build out `js/gallery.js` and `js/meettheteam.js` with actual functionality
-
----
-
-### 2026-04-18 — Admin Panel Glass UI Styling
-
-**Task Completed:** Styled `admin.html` "Add New Filament" section with glassmorphism panel and dark input fields.
-
-**Files Modified:**
-- `admin.html` — Added `<style>` block with `.glass-panel` and `.admin-input` classes; applied `glass-panel` to the Add New Filament `<section>`; applied `admin-input` to all form fields (text inputs, select, textarea); styled `#submitBtn` with `border-radius: 20px` and blue background (`#1a6fd4`).
-
-**CSS Added:**
-- `.glass-panel` — `rgba(0,0,0,0.3)` background, `backdrop-filter: blur(10px)`, `border-radius: 15px`, subtle white border
-- `.admin-input` — `#1a1a1a` background, white text, `border-radius: 10px`, dark border, full width
-- `#submitBtn` — `border-radius: 20px`, blue background `#1a6fd4`
-
----
-
-### 2026-04-18 — Dynamic Workshop Suite Finalized
-
-**Task Completed:** Full Dynamic Collapsible Master Build applied to both `admin.html` (root) and `mobile-companion/admin.html`.
-
-**Files Modified:**
-- `admin.html` — Complete rewrite with all 4 feature pillars
-- `mobile-companion/admin.html` — Identical logic rewrite with mobile-correct asset paths (`style.css`, `Crafted 3D.ico`, `manifest.json`, `js/footer.js` — no `./` prefix)
-
-**Features Implemented:**
-
-1. **Dynamic Grouping & Badge Logic**
-   - `renderAdminResults()` now dynamically groups all inventory items by their `finish` field — no hardcoded material names
-   - Each group header displays a blue pill badge with the live count of items in that group
-   - Groups are sorted alphabetically; items with no finish fall into an `Unknown` group
-   - All groups default to **open** on load
-
-2. **Collapsible Headers**
-   - `toggleGroup(groupId)` function toggles `.collapsed` class on both the header and body
-   - Chevron `▼` rotates `-90deg` when collapsed via CSS transition
-   - Click target is the full header bar for easy mobile tapping
-
-3. **Smart Duplicate Prevention**
-   - Upload now blocks only when **both** `color_name` AND `finish` match an existing entry
-   - Same color name with a different finish is allowed through
-   - `renderDataList()` also updated: red border warning fires only on exact color+finish combo match
-   - Finish dropdown change event re-triggers duplicate check in real time
-
-4. **Professional UI Sync — Glassmorphism**
-   - All panels use `glass-panel` class: `rgba(0,0,0,0.3)` background, `backdrop-filter: blur(10px)`, `border-radius: 16px`, subtle white border
-   - `.home-sections` set to `max-width: 800px; margin: 0 auto` for premium centered layout on laptop and mobile
-   - Modal upgraded to dark theme (`#1e1e2e` background, white text, dark inputs)
-   - Admin search input styled dark to match glass aesthetic
-
-5. **Edit & Delete Preserved**
-   - `openEditModal()`, `closeModal()`, `deleteItem()`, `toggleStock()` all fully preserved inside new card structure
-   - `escapeAttr()` helper added to safely handle apostrophes and quotes in color/finish names within inline `onclick` attributes
-
-**Path Verification:**
-- Root `admin.html` → `./style.css`, `./Crafted 3D.ico`, `./manifest.json`, `./js/footer.js` ✅
-- Mobile `admin.html` → `style.css`, `Crafted 3D.ico`, `manifest.json`, `js/footer.js` ✅
-
----
-
-### 2026-04-18 — v1.1.0 Final Master Build
-
-**Task Completed:** Final authorized v1.1.0 Master Build applied to both `admin.html` (root) and `mobile-companion/admin.html`. Includes smart duplicate prevention logic and full UI color restoration to the site's light-theme brand identity.
-
-**Files Modified:**
-- `admin.html` — All v1.1.0 logic and visual changes applied
-- `mobile-companion/admin.html` — All v1.1.0 logic and visual changes applied (mobile-correct paths preserved)
-
-**Changes Applied (both files):**
-
-1. **Dropdown Fix & Alphabetization**
-   - Static `<option>` list in Finish dropdown reordered alphabetically: Basic, Galaxy, Matte, Satin, Silk, Solid, Translucent
-   - `standardFinishes` array in `populateFinishDropdown()` updated to match: `["Basic", "Galaxy", "Matte", "Satin", "Silk", "Solid", "Translucent"]`
-   - CSS fix: `select.admin-input` and `select.admin-input option` set to `background: #1e293b; color: #f8fafc` — eliminates white-on-white text in native browser dropdowns
-
-2. **Smart Duplicate Prevention (New Logic)**
-   - Upload now blocks only when **both** `color_name` AND `finish` match an existing entry simultaneously — same color with a different finish is allowed through
-   - `renderDataList()` updated: red border warning fires only on exact color + finish combo match (not color alone)
-   - Finish dropdown `change` event re-triggers the duplicate check in real time so the warning clears or appears instantly as the user switches finish types
-   - Default border in `renderDataList()` reset from `"1px solid #333"` → `"1px solid #ccc"` to match the light theme
-
-3. **Visual Sync — The 'Glass' Look (Dark → Light Brand Restoration)**
-   - Body background restored from `#0f172a` (dark navy) to `linear-gradient(to bottom, #fff1eb, #ace0f9)` — matches the site's light brand gradient
-   - Hardcoded `style="background: #0f172a;"` removed from `<body>` tag
-   - `.glass-panel` updated to light glassmorphism: `background: rgba(255, 255, 255, 0.9)`, `backdrop-filter: blur(8px)`, `border-radius: 12px`, `box-shadow: 0 4px 20px rgba(0,0,0,0.1)`
-   - `.glass-panel h2` color changed from `#f0f0f0` → `hsl(25, 36%, 37%)` (brand brown)
-   - `.finish-group-header` background changed from dark `rgba(255,255,255,0.07)` → light `rgba(172, 224, 249, 0.2)` (brand sky blue tint)
-   - `.finish-group-body` background changed from `rgba(0,0,0,0.15)` → `rgba(255, 255, 255, 0.6)`
-   - `.admin-input`: `background: white`, `color: #333`, `border: 1px solid #ccc`, `border-radius: 6px`
-   - `.admin-input:focus`: `border-color: #ace0f9`, `box-shadow: 0 0 8px rgba(172, 224, 249, 0.6)`
-   - `select.admin-input` and `option`: `background: white`, `color: #333`
-   - `.admin-search`: `background: white`, `color: #333`, `border: 1px solid #ccc`
-   - All text labels (`.form-group label`, `.stat-lbl`, `.finish-group-title`, `.admin-item-name strong`, `.admin-item-finish small`, `.finish-chevron`) updated to `#333` / `#555` for full light-theme visibility
-   - Modal: `background: white`, `color: #333`; `#toast`: `background-color: hsl(25, 36%, 37%)` (brand brown)
-
-4. **Stats Labels**
-   - `.stat-lbl` color updated from `#94A3B8` → `#333` (light theme high-contrast)
-
-5. **Version Footer**
-   - `Filament Manager v1.1.0` confirmed present in both files and preserved
-
-**Path Verification:**
-- Root `admin.html` → `./js/footer.js` ✅
-- Mobile `admin.html` → `js/footer.js` ✅
-
----
-
-### 2026-04-18 — Full Brand Alignment v1.1.0 Complete
-
-**Task Completed:** Final CSS restoration applied to both `admin.html` (root) and `mobile-companion/admin.html` to align perfectly with the site's light-theme brand identity.
-
-**Files Modified:**
-- `admin.html` — Full CSS overhaul; dark theme replaced with light brand theme
-- `mobile-companion/admin.html` — Identical CSS overhaul; mobile-correct paths preserved (`../js/footer.js`)
-
-**Changes Applied (both files):**
-
-1. **Body & Global Styles**
-   - `body` set to: `background: linear-gradient(to bottom, #fff1eb, #ace0f9); min-height: 100vh; margin: 0; font-family: 'Inter', sans-serif;`
-   - Removed hardcoded `style="background: #0f172a;"` from `<body>` tag
-
-2. **Glassmorphism — Light Theme**
-   - `.glass-panel` updated to match site's `.text-box` style: `background: rgba(255, 255, 255, 0.9)`, `backdrop-filter: blur(8px)`, `border-radius: 12px`, `box-shadow: 0 4px 20px rgba(0,0,0,0.1)`, `border: 1px solid rgba(255, 255, 255, 0.3)`
-   - `.glass-panel h2` color changed from `#f0f0f0` → `hsl(25, 36%, 37%)` (brand brown)
-   - `.finish-group-header` background changed from dark `rgba(255,255,255,0.07)` → light `rgba(172, 224, 249, 0.2)` (brand sky blue tint)
-   - `.finish-group-body` background changed from `rgba(0,0,0,0.15)` → `rgba(255, 255, 255, 0.6)`
-
-3. **Input & Dropdown Styling**
-   - `.admin-input`: `background: white`, `color: #333`, `border: 1px solid #ccc`, `border-radius: 6px`
-   - `.admin-input:focus`: `border-color: #ace0f9`, `box-shadow: 0 0 8px rgba(172, 224, 249, 0.6)`
-   - `select.admin-input` and `option`: `background: white`, `color: #333`
-   - `.admin-search`: `background: white`, `color: #333`, `border: 1px solid #ccc`
-
-4. **Text Visibility**
-   - `.form-group label`: `color: #333`
-   - `.stat-lbl`: `color: #333`
-   - `.finish-group-title`: `color: #333`
-   - `.admin-item-name strong`: `color: #333`
-   - `.admin-item-finish small`: `color: #555`
-   - `.finish-chevron`: `color: #555`
-
-5. **Modal & Toast — Light Theme**
-   - `.modal-content`: `background: white`, `color: #333`, `box-shadow: 0 10px 30px rgba(0,0,0,0.2)`
-   - `#modalTitle` inline style: `color: hsl(25, 36%, 37%)`
-   - `#toast`: `background-color: hsl(25, 36%, 37%)` (brand brown)
-   - Modal inputs (dynamically created): `background: white`, `color: #333`, `border: 1px solid #ccc`
-
-6. **Duplicate Warning Border**
-   - `renderDataList()` default border reset from `"1px solid #333"` → `"1px solid #ccc"`
-
-**Logic Preserved (untouched):**
-- ✅ Alphabetized finish dropdown (`populateFinishDropdown`)
-- ✅ Collapsible material grouping (`toggleGroup`, `renderAdminResults`)
-- ✅ Smart duplicate prevention (color + finish combo check)
-- ✅ All CRUD operations (add, edit, delete, stock toggle)
-
-**Path Verification:**
-- Root `admin.html` → `./js/footer.js` ✅
-- Mobile `admin.html` → `../js/footer.js` ✅
-
----
-
-### 2026-04-18 — Universal Admin Header Sync Complete
-
-**Task Completed:** Surgical text and style update applied to both `admin.html` (root) and `mobile-companion/admin.html`. No JavaScript logic or background gradients were touched.
-
-**Files Modified:**
-- `admin.html` — Subheader text updated; no CSS changes needed (inline `<style>` block has no header h1 media queries)
-- `mobile-companion/admin.html` — Subheader text updated
-- `style.css` — Header h1 font-size updated in both media query breakpoints
-- `mobile-companion/style.css` — Header h1 font-size updated; new `@media (max-width: 768px)` block added
-
-**Changes Applied:**
-
-1. **Text Update (both HTML files)**
-   - `<p class="slogan">Mobile Admin Tool</p>` → `<p class="slogan">Workshop Admin Tool</p>`
-
-2. **Goldilocks Header Sync — `style.css` (root)**
-   - `@media (max-width: 768px)` — `header h1` font-size: `1.5em` → `1.8em`
-   - `@media (max-width: 480px)` — `header h1` font-size: `1.2em` → `1.8em`
-
-3. **Goldilocks Header Sync — `mobile-companion/style.css`**
-   - Added new `@media (max-width: 768px)` block with `header { text-align: center; }` and `header h1 { font-size: 1.8em; }`
-   - `@media (max-width: 480px)` — `header h1` font-size: `1.3em` → `1.8em`
-
-4. **Alignment Verified**
-   - `header { text-align: center; }` confirmed present in both stylesheets at base level ✅
-
----
-
-### 2026-04-18 — Mobile Touch Interface Restored
-
-**Task Completed:** Comprehensive mobile touch accessibility fix applied to `mobile-companion/admin.html`. Trashcan, Edit buttons, and section collapsing were all non-functional on touch devices.
-
-**Files Modified:**
-- `mobile-companion/admin.html` — CSS touch targets + JS event delegation overhaul
-
-**Changes Applied:**
-
-1. **CSS Touch Targets**
-   - `.finish-group-header` — Added `pointer-events: auto !important`, `-webkit-tap-highlight-color: transparent`, `min-height: 44px`, `touch-action: manipulation`
-   - `.edit-btn` — Added `pointer-events: auto !important`, `-webkit-tap-highlight-color: transparent`, `min-width: 44px`, `min-height: 44px`, `touch-action: manipulation`
-   - `.delete-btn` — Added `pointer-events: auto !important`, `-webkit-tap-highlight-color: transparent`, `min-width: 44px`, `min-height: 44px`
-   - `.admin-item` — Added `-webkit-tap-highlight-color: transparent`
-   - `.admin-btn` — Added `min-height: 44px`, `touch-action: manipulation`, `-webkit-tap-highlight-color: transparent`
-   - `.finish-group-title` and `.finish-chevron` — Added `pointer-events: none` so taps pass through to the header
-
-2. **Edit Buttons — Inline onclick Removed**
-   - Removed fragile `onclick="openEditModal(...)"` from rendered HTML
-   - Replaced with `data-id`, `data-field`, `data-val` attributes on each `.edit-btn`
-
-3. **Collapsible Headers — Inline onclick Removed**
-   - Removed `onclick="toggleGroup(...)"` from rendered HTML
-   - Replaced with `data-group-id` attribute on each `.finish-group-header`
-
-4. **Unified Delegated Event Handler**
-   - Replaced 3 separate delegated listeners with a single `handleInventoryEvent(e)` function
-   - Handles: `.delete-btn` (with `e.preventDefault()` + `e.stopPropagation()`), `.edit-btn` (with `e.preventDefault()` + `e.stopPropagation()`), `.finish-group-header` (collapse toggle), `.stock-toggle` (checkbox)
-   - Both `click` and `touchstart` events bound to `#adminInventoryResults` container
-   - Checkboxes excluded from `touchstart` interception to prevent double-firing
-
-5. **Section Collapse Debugging**
-   - Added `console.log` statements inside `toggleGroup()` to log: groupId received, body/header elements found, current collapsed state, and new state after toggle
-
-**Commit:** `f82f26f` — `fix: mobile touch accessibility and event delegation`
-
-**Remote:** `https://github.com/blast1221/filament_inventory.git` → `main`
-
-**Status:** Mobile Touch Interface Restored ✅
 
 ---
 
@@ -548,7 +316,79 @@
 
 **Status:** v1.1.6 - Single Footer & Persistence Active ✅
 
-### Next Step:
-- Address remaining non-critical bugs in root `style.css` (two typos)
-- Consider moving admin API key out of client-side JS
-- Build out `js/gallery.js` and `js/meettheteam.js` with actual functionality
+---
+
+### 2026-04-18 — Mobile Touch Interface Restored
+
+**Task Completed:** Comprehensive mobile touch accessibility fix applied to `mobile-companion/admin.html`. Trashcan, Edit buttons, and section collapsing were all non-functional on touch devices.
+
+**Files Modified:**
+- `mobile-companion/admin.html` — CSS touch targets + JS event delegation overhaul
+
+---
+
+### 2026-04-18 — v1.1.5: Footer, Cache Busting & Touch Finalization
+
+**Task Completed:** Final polish pass on `mobile-companion/admin.html`. Professional copyright footer added, cache-busting applied to all local assets, and touch event architecture finalized.
+
+**Commit:** `465e9b9` — `v1.1.5: Added copyright footer with cache busting and finalized touch controls`
+
+**Remote:** `https://github.com/blast1221/filament_inventory.git` → `main`
+
+**Status:** v1.1.5 Finalized and Deployed ✅
+
+---
+
+### 2026-04-18 — Mobile Functionality Fix: Touch Events & State Sync
+
+**Task Completed:** High-priority functional fix applied to `mobile-companion/admin.html`. Previous inline `onclick` approach was failing on mobile touch devices.
+
+**Commit:** `16c896f` — `fix: mobile touch events and state sync`
+
+**Remote:** `https://github.com/blast1221/filament_inventory.git` → `main`
+
+**Status:** Mobile Functionality Verified
+
+---
+
+### 2026-04-18 — Dynamic Workshop Suite Finalized
+
+**Task Completed:** Full Dynamic Collapsible Master Build applied to both `admin.html` (root) and `mobile-companion/admin.html`.
+
+---
+
+### 2026-04-18 — Global Admin Sync: Root admin.html Replaced
+
+**Task Completed:** Root `admin.html` was outdated (legacy inline-CSS version). Replaced with the clean, modern `mobile-companion/admin.html` and corrected all relative paths for root-level serving.
+
+**Commit:** `8b28d24` — `feat: sync mobile admin tool to root`
+
+**Remote:** `https://github.com/blast1221/filament_inventory.git` → `main`
+
+---
+
+### 2026-04-18 — Stealth Admin Rename & PWA Sync
+
+**Task Completed:** Renamed mobile admin entry point from `index.html` to `admin.html` for stealth deployment. PWA manifest updated to match.
+
+**Commit:** `50b85b5` — `feat: stealth admin rename and pwa sync`
+
+**Remote:** `https://github.com/blast1221/filament_inventory.git` → `main`
+
+**Status:** Stealth App Ready
+
+---
+
+### 2026-04-17 — Critical Path Repair: Mobile Companion Synchronized (Claude Sonnet 4.6)
+
+**Task Completed:** Mobile companion rebuilt as a self-contained mobile admin tool (Option C). All critical bugs cleared.
+
+**Commit:** `3854d87` — `feat: implement mobile-optimized admin tool v1.8.1`
+
+**Remote:** `https://github.com/blast1221/filament_inventory.git` → `main`
+
+---
+
+### 2026-04-17 — Clean House Audit (Claude Sonnet 4.6)
+
+**Task Completed:** Full discovery audit of the project. Created `CLAUDE.md` as the Source of Truth.
