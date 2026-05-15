@@ -2,6 +2,34 @@
 
 ---
 
+### 2026-05-14 — Fix: Moved Assets into Public Directory to Resolve Render Pathing Errors (Cline)
+
+**Task Completed:** Moved `src/styles/` and `src/js/` into `src/pages/public/` so that Render serves them correctly relative to the HTML files. Updated all HTML asset paths accordingly.
+
+**Files Moved:**
+- `src/styles/` → `src/pages/public/styles/` (contains `style.css`)
+- `src/js/` → `src/pages/public/js/` (contains `inventory.js`, `api/api.js`, `utils/footer.js`, `utils/tracker.js`)
+
+**HTML Files Updated (removed `../../` prefix from all local asset paths):**
+- `src/pages/public/request.html` — `styles/style.css`, `js/api/api.js`, `js/utils/footer.js`
+- `src/pages/public/index.html` — `styles/style.css?v=1.1.7`, `js/utils/footer.js`
+- `src/pages/public/inventory.html` — `styles/style.css`, `js/api/api.js`, `js/inventory.js`, `js/utils/footer.js`
+- `src/pages/public/gallery.html` — `styles/style.css`, `js/utils/footer.js`
+- `src/pages/public/contact.html` — `styles/style.css`, `js/utils/footer.js`
+- `src/pages/public/meettheteam.html` — `styles/style.css`, `js/utils/footer.js`
+
+**Commit:** `beccc3a` — `Fix: Moved assets into public directory to resolve Render pathing errors`
+
+**Remote:** `https://github.com/blast1221/filament_inventory.git` → `main`
+
+**Status:** Deployed to production ✅
+
+**Next Step:**
+- Verify live site on Render to confirm CSS and JS assets load correctly (no more raw HTML rendering)
+
+
+---
+
 ### 2026-05-14 — Git Push: request.html Styling Fix Deployed (Cline)
 
 **Task Completed:** Staged, committed, and pushed the container/glass-panel styling fix for `src/pages/public/request.html` to the production `main` branch on GitHub.
