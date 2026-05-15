@@ -83,7 +83,7 @@ body {
 }
 
 .contact-intro {
-  font-family: 'Inter', sas-serif;
+  font-family: 'Inter', sans-serif;
   max-width: 800px;
   margin: 40px auto;
   padding: 20px;
@@ -145,7 +145,7 @@ footer {
   text-align: center;
   padding: 20px;
   margin-top: 40px;
-  border-top: 1 =px solid #ddd;
+  border-top: 1px solid #ddd;
   font-size: 0.8rem;
   color: #666;
 }

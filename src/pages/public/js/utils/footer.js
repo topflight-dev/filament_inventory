@@ -1,8 +1,8 @@
-const currentVersion = "1.8.0";
+const currentVersion = "1.1.7";
 
 function injectTracker() {
     const script = document.createElement('script');
-    script.src = `js/tracker.js?v=${currentVersion}`;
+    script.src = `../../js/utils/tracker.js?v=${currentVersion}`;
     document.head.appendChild(script);
 }
 injectTracker();

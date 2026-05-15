@@ -2,6 +2,45 @@
 
 ---
 
+### 2026-05-14 — Git Push: request.html Styling Fix Deployed (Cline)
+
+**Task Completed:** Staged, committed, and pushed the container/glass-panel styling fix for `src/pages/public/request.html` to the production `main` branch on GitHub.
+
+**Commit:** `f5c46af` — `Fix: Applied container and glass-panel styling to request form`
+
+**Remote:** `https://github.com/blast1221/filament_inventory.git` → `main`
+
+**Files Pushed:**
+- `src/pages/public/request.html` — 3 insertions, 1 deletion (container wrapper + btn classes)
+
+**Status:** Deployed to production ✅
+
+**Next Step:**
+- Verify visual rendering of `request.html` in the live production environment to confirm the glass-panel theme is applied correctly
+
+---
+
+### 2026-05-14 — request.html: Visual Theme Structural Repair (Cline)
+
+**Task Completed:** Applied CSS class wrapper fix to `src/pages/public/request.html` to restore the site's visual theme. The `.glass-panel` styles were being ignored because the required outer `.container` div was missing, and the submit button lacked the global `btn btn-primary` classes.
+
+**Files Modified:**
+- `src/pages/public/request.html` — Two targeted structural changes:
+  1. **Added `<div class="container">` wrapper** around the existing `<div class="glass-panel">` inside `<main>`, creating the required `container > glass-panel` double-nested structure.
+  2. **Updated submit button** from `class="submit-btn"` to `class="submit-btn btn btn-primary"` to apply global theme button styles.
+
+**Verification:**
+- ✅ All existing IDs preserved: `#filamentSelect`, `#requestForm`, `#statusMessage`, `#submitBtn`
+- ✅ All JavaScript logic (filament fetch, form submission, status display) completely untouched
+- ✅ Structure: `<main> > <div class="container"> > <div class="glass-panel"> > <form id="requestForm">`
+- ✅ Button: `class="submit-btn btn btn-primary"`
+
+**Next Step:**
+- Verify visual rendering of `request.html` in the browser to confirm theme is applied correctly
+
+
+---
+
 ### 2026-05-14 — Print Queue Hub Page Created (Cline)
 
 **Task Completed:** Created `src/pages/admin/hub.html` — a dedicated, dark-mode Print Queue Hub designed for use at the printer station.

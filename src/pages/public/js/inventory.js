@@ -1,6 +1,6 @@
 async function loadInventory() {
     try {
-        const response = await fetch ("https://filament-inventory.onrender.com/inventory");
+        const response = await fetch(window.API_BASE || "https://filament-inventory.onrender.com/inventory");
         const data = await response.json();
 
         const allItems = data.map(record => ({

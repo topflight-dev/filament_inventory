@@ -16,6 +16,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@cline/sdk": "^0.0.41",
     "@supabase/supabase-js": "^2.89.0",
     "airtable": "^0.12.2",
     "cors": "^2.8.5",
