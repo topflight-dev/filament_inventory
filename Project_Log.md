@@ -2,6 +2,30 @@
 
 ---
 
+### 2026-05-15 — Fix: Re-linked Admin & Hub Assets to New Public Directory (Cline)
+
+**Task Completed:** Updated asset paths in both admin files to point to the new `public/` directory location after `styles/` and `js/` were moved from `src/` into `src/pages/public/`.
+
+**Files Modified:**
+- `src/pages/admin/admin.html` — Updated 3 paths:
+  - `<link rel="stylesheet">`: `../../styles/style.css` → `../public/styles/style.css`
+  - API script: `../../js/api/api.js` → `../public/js/api/api.js`
+  - Footer script: `../../js/utils/footer.js` → `../public/js/utils/footer.js`
+- `src/pages/admin/hub.html` — Updated 2 paths:
+  - `<link rel="stylesheet">`: `../../styles/style.css` → `../public/styles/style.css`
+  - API script: `../../js/api/api.js` → `../public/js/api/api.js`
+
+**Commit:** `9036392` — `Fix: Re-linked admin and hub assets to the new public directory location`
+
+**Remote:** `https://github.com/blast1221/filament_inventory.git` → `main`
+
+**Status:** Deployed to production ✅
+
+**Next Step:**
+- Verify admin.html and hub.html load correctly in the browser with CSS and JS assets resolving from the new `public/` paths
+
+---
+
 ### 2026-05-14 — Fix: Moved Assets into Public Directory to Resolve Render Pathing Errors (Cline)
 
 **Task Completed:** Moved `src/styles/` and `src/js/` into `src/pages/public/` so that Render serves them correctly relative to the HTML files. Updated all HTML asset paths accordingly.
