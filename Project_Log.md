@@ -2,6 +2,57 @@
 
 ---
 
+### 2026-05-15 — HOTFIX: Restored Live Site CSS with Explicit Relative Paths (Cline)
+
+**Task Completed:** Emergency fix for 'Site Down' — live domain was not loading CSS or JS. All 6 public HTML files had bare relative paths (`styles/style.css`, `js/api/api.js`) which failed to resolve correctly in production. Added explicit `./` prefix to all affected paths.
+
+**Files Modified:**
+- `src/pages/public/index.html` — CSS: `styles/style.css?v=1.1.7` → `./styles/style.css?v=1.1.7`
+- `src/pages/public/contact.html` — CSS: `styles/style.css` → `./styles/style.css`
+- `src/pages/public/gallery.html` — CSS: `styles/style.css` → `./styles/style.css`
+- `src/pages/public/inventory.html` — CSS: `styles/style.css` → `./styles/style.css`; JS: `js/api/api.js` → `./js/api/api.js`
+- `src/pages/public/meettheteam.html` — CSS: `styles/style.css` → `./styles/style.css`
+- `src/pages/public/request.html` — CSS: `styles/style.css` → `./styles/style.css`; JS: `js/api/api.js` → `./js/api/api.js`
+
+**Commit:** `181ba15` — `FIX: Restoring live site styling with explicit relative paths`
+
+**Remote:** `https://github.com/blast1221/filament_inventory.git` → `main`
+
+**Status:** Deployed to production ✅
+
+**Next Step:**
+- Verify live site at crafted3dworkshop.com to confirm CSS and JS are loading correctly on all pages
+
+---
+
+### 2026-05-15 — Fix: Re-linked Admin & Hub Assets to New Public Directory (Cline)
+## Project Log
+
+---
+
+### 2026-05-15 — HOTFIX: Restored Live Site CSS with Explicit Relative Paths (Cline)
+
+**Task Completed:** Emergency fix for 'Site Down' — live domain was not loading CSS or JS. All 6 public HTML files had bare relative paths (`styles/style.css`, `js/api/api.js`) which failed to resolve correctly in production. Added explicit `./` prefix to all affected paths.
+
+**Files Modified:**
+- `src/pages/public/index.html` — CSS: `styles/style.css?v=1.1.7` → `./styles/style.css?v=1.1.7`
+- `src/pages/public/contact.html` — CSS: `styles/style.css` → `./styles/style.css`
+- `src/pages/public/gallery.html` — CSS: `styles/style.css` → `./styles/style.css`
+- `src/pages/public/inventory.html` — CSS: `styles/style.css` → `./styles/style.css`; JS: `js/api/api.js` → `./js/api/api.js`
+- `src/pages/public/meettheteam.html` — CSS: `styles/style.css` → `./styles/style.css`
+- `src/pages/public/request.html` — CSS: `styles/style.css` → `./styles/style.css`; JS: `js/api/api.js` → `./js/api/api.js`
+
+**Commit:** `181ba15` — `FIX: Restoring live site styling with explicit relative paths`
+
+**Remote:** `https://github.com/blast1221/filament_inventory.git` → `main`
+
+**Status:** Deployed to production ✅
+
+**Next Step:**
+- Verify live site at crafted3dworkshop.com to confirm CSS and JS are loading correctly on all pages
+
+---
+
 ### 2026-05-15 — Fix: Re-linked Admin & Hub Assets to New Public Directory (Cline)
 
 **Task Completed:** Updated asset paths in both admin files to point to the new `public/` directory location after `styles/` and `js/` were moved from `src/` into `src/pages/public/`.
