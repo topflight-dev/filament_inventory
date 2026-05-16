@@ -164,6 +164,7 @@ app.post('/print-queue', async (req, res) => {
         if (error) throw error;
         res.status(201).json(data[0]);
     } catch (err) {
+        console.error("DETAILED SERVER ERROR [POST /print-queue]:", err);
         res.status(500).json({ error: err.message });
     }
 });
