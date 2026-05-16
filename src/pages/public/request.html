@@ -273,6 +273,7 @@
                 const projectName = document.getElementById('projectName').value.trim();
                 const stlUrl = document.getElementById('modelLink').value.trim();
                 const filamentId = filamentSelect.value;
+                const colorPreference = filamentSelect.options[filamentSelect.selectedIndex].text;
 
                 // Basic validation
                 if (!requestorName || !projectName || !filamentId) {
@@ -289,7 +290,8 @@
                     requestor_name: requestorName,
                     project_name: projectName,
                     stl_url: stlUrl,
-                    filament_id: filamentId
+                    filament_id: filamentId,
+                    color_preference: colorPreference
                 };
 
                 try {
