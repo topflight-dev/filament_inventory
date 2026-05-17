@@ -171,7 +171,7 @@ app.post('/print-queue', async (req, res) => {
 
 // Update a print job status (Admin Only protected via headers)
 app.patch('/print-queue/:id', async (req, res) => {
-    const { id } = req.params;
+    const id = req.params.id; // UUID string — print_jobs.id is a UUID, not a BIGINT
     const { status } = req.body;
     const clientAdminKey = req.headers['x-admin-key'];
 
@@ -188,8 +188,14 @@ app.patch('/print-queue/:id', async (req, res) => {
             .select();
             
         if (error) throw error;
+
+        if (!data || data.length === 0) {
+            return res.status(404).json({ error: 'Job not found or no rows updated' });
+        }
+
         res.json(data[0]);
     } catch (err) {
+        console.error('Status update error [PATCH /print-queue/:id]:', err);
         res.status(500).json({ error: err.message });
     }
 });
