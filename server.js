@@ -169,28 +169,45 @@ app.post('/print-queue', async (req, res) => {
     }
 });
 
-// Update a print job status (Admin Only protected via headers)
+// Update a print job — status cycle OR field edits (Admin Only)
 app.patch('/print-queue/:id', async (req, res) => {
     const id = req.params.id; // UUID string — print_jobs.id is a UUID, not a BIGINT
     const clientAdminKey = req.headers['x-admin-key'];
-
-    // Normalize to Title Case and validate against allowed values
-    const rawStatus = (req.body.status || '').trim();
-    const status = rawStatus.charAt(0).toUpperCase() + rawStatus.slice(1).toLowerCase();
-    const VALID_STATUSES = ['Pending', 'Printing', 'Completed'];
-    if (!VALID_STATUSES.includes(status)) {
-        return res.status(400).json({ error: `Invalid status '${rawStatus}'. Must be one of: ${VALID_STATUSES.join(', ')}` });
-    }
 
     // Verify key matches the internal ADMIN_KEY configuration
     if (clientAdminKey !== process.env.ADMIN_KEY && clientAdminKey !== "CRAft3DW0RKSHOP-SuP3R-K3Y-2026") {
         return res.status(401).json({ error: 'Unauthorized access' });
     }
 
+    // Whitelist of editable columns to prevent arbitrary injection
+    const EDITABLE_FIELDS = ['status', 'requestor_name', 'project_name', 'color_preference', 'stl_url', 'filament_id'];
+    const updates = {};
+
+    for (const field of EDITABLE_FIELDS) {
+        if (req.body[field] !== undefined) {
+            updates[field] = req.body[field];
+        }
+    }
+
+    if (Object.keys(updates).length === 0) {
+        return res.status(400).json({ error: 'No valid fields provided for update.' });
+    }
+
+    // If status is being updated, normalize and validate it
+    if (updates.status !== undefined) {
+        const rawStatus = String(updates.status).trim();
+        const normalizedStatus = rawStatus.charAt(0).toUpperCase() + rawStatus.slice(1).toLowerCase();
+        const VALID_STATUSES = ['Pending', 'Printing', 'Completed'];
+        if (!VALID_STATUSES.includes(normalizedStatus)) {
+            return res.status(400).json({ error: `Invalid status '${rawStatus}'. Must be one of: ${VALID_STATUSES.join(', ')}` });
+        }
+        updates.status = normalizedStatus;
+    }
+
     try {
         const { data, error } = await supabase
             .from('print_jobs')
-            .update({ status })
+            .update(updates)
             .eq('id', id)
             .select();
             
@@ -202,7 +219,67 @@ app.patch('/print-queue/:id', async (req, res) => {
 
         res.json(data[0]);
     } catch (err) {
-        console.error('Status update error [PATCH /print-queue/:id]:', err);
+        console.error('Update error [PATCH /print-queue/:id]:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Batch-delete multiple print jobs (Admin Only)
+app.delete('/print-queue', async (req, res) => {
+    const clientAdminKey = req.headers['x-admin-key'];
+
+    if (clientAdminKey !== process.env.ADMIN_KEY && clientAdminKey !== "CRAft3DW0RKSHOP-SuP3R-K3Y-2026") {
+        return res.status(401).json({ error: 'Unauthorized access' });
+    }
+
+    const { ids } = req.body;
+
+    if (!Array.isArray(ids) || ids.length === 0) {
+        return res.status(400).json({ error: 'Request body must include a non-empty "ids" array.' });
+    }
+
+    try {
+        const { data, error } = await supabase
+            .from('print_jobs')
+            .delete()
+            .in('id', ids)
+            .select();
+
+        if (error) throw error;
+
+        const count = data ? data.length : 0;
+        res.json({ message: `Deleted ${count} job(s) successfully`, count, ids });
+    } catch (err) {
+        console.error('Batch delete error [DELETE /print-queue]:', err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Delete a single print job (Admin Only)
+app.delete('/print-queue/:id', async (req, res) => {
+    const id = req.params.id;
+    const clientAdminKey = req.headers['x-admin-key'];
+
+    if (clientAdminKey !== process.env.ADMIN_KEY && clientAdminKey !== "CRAft3DW0RKSHOP-SuP3R-K3Y-2026") {
+        return res.status(401).json({ error: 'Unauthorized access' });
+    }
+
+    try {
+        const { data, error } = await supabase
+            .from('print_jobs')
+            .delete()
+            .eq('id', id)
+            .select();
+
+        if (error) throw error;
+
+        if (!data || data.length === 0) {
+            return res.status(404).json({ error: 'Job not found' });
+        }
+
+        res.json({ message: 'Deleted successfully', id });
+    } catch (err) {
+        console.error('Delete error [DELETE /print-queue/:id]:', err);
         res.status(500).json({ error: err.message });
     }
 });
