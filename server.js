@@ -172,8 +172,15 @@ app.post('/print-queue', async (req, res) => {
 // Update a print job status (Admin Only protected via headers)
 app.patch('/print-queue/:id', async (req, res) => {
     const id = req.params.id; // UUID string — print_jobs.id is a UUID, not a BIGINT
-    const { status } = req.body;
     const clientAdminKey = req.headers['x-admin-key'];
+
+    // Normalize to Title Case and validate against allowed values
+    const rawStatus = (req.body.status || '').trim();
+    const status = rawStatus.charAt(0).toUpperCase() + rawStatus.slice(1).toLowerCase();
+    const VALID_STATUSES = ['Pending', 'Printing', 'Completed'];
+    if (!VALID_STATUSES.includes(status)) {
+        return res.status(400).json({ error: `Invalid status '${rawStatus}'. Must be one of: ${VALID_STATUSES.join(', ')}` });
+    }
 
     // Verify key matches the internal ADMIN_KEY configuration
     if (clientAdminKey !== process.env.ADMIN_KEY && clientAdminKey !== "CRAft3DW0RKSHOP-SuP3R-K3Y-2026") {
