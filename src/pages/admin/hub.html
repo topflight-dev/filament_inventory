@@ -17,28 +17,48 @@
     *, *::before, *::after { box-sizing: border-box; }
 
     html, body {
+      height: 100%;
       margin: 0;
       padding: 0;
+      overflow: hidden; /* Stops the main window from ever showing a ghost scroll bar */
+    }
+
+    body {
       background: #1a1a1a;
       color: #ffffff;
       font-family: 'Inter', Arial, sans-serif;
-      min-height: 100vh;
     }
 
     /* Override any light-mode rules from style.css */
-    header, nav, footer {
+    header, footer {
       background: #111111 !important;
       color: #ffffff !important;
       border-color: #333 !important;
     }
 
-    header h1, header p, nav a {
+    header h1, header p {
       color: #ffffff !important;
     }
 
-    nav a:hover, nav a.active {
-      color: #facc15 !important;
-      border-color: #facc15 !important;
+    /* =============================================
+       BRAND BAR (replaces nav — static, no links)
+       ============================================= */
+    .hub-brand-bar {
+      background: #111111;
+      border-bottom: 1px solid #2a2a2a;
+      padding: 10px 24px;
+      display: flex;
+      align-items: center;
+    }
+
+    .hub-brand-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #9ca3af;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      user-select: none;
+      pointer-events: none;
     }
 
     /* =============================================
@@ -46,7 +66,10 @@
        ============================================= */
     .hub-wrapper {
       width: 100%;
+      height: 100vh;
+      box-sizing: border-box;
       padding: 20px 24px 40px;
+      overflow-y: auto; /* Scroll bar will ONLY appear here when print jobs overflow the screen */
     }
 
     /* =============================================
@@ -128,6 +151,26 @@
       cursor: not-allowed;
     }
 
+    /* Delete Selected Button */
+    .hub-btn-delete-selected {
+      background: #7f1d1d;
+      color: #fca5a5;
+      border: 2px solid #ef4444;
+      margin-left: auto; /* push to right side of flex row */
+    }
+    .hub-btn-delete-selected:hover:not(:disabled) {
+      background: #991b1b;
+      color: #fff;
+      border-color: #f87171;
+    }
+    .hub-btn-delete-selected:disabled {
+      background: #2a2a2a;
+      color: #4b5563;
+      border-color: #374151;
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+
     /* =============================================
        PRINT QUEUE TABLE
        ============================================= */
@@ -142,7 +185,7 @@
     .queue-table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 1rem;
+      font-size: 0.9rem;
     }
 
     .queue-table thead {
@@ -151,9 +194,9 @@
     }
 
     .queue-table th {
-      padding: 16px 20px;
+      padding: 8px 12px;
       text-align: left;
-      font-size: 0.8rem;
+      font-size: 0.75rem;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.08em;
@@ -161,8 +204,15 @@
       white-space: nowrap;
     }
 
+    .queue-table th.th-checkbox,
+    .queue-table td.td-checkbox {
+      width: 40px;
+      text-align: center;
+      padding: 8px 10px;
+    }
+
     .queue-table tbody tr {
-      border-bottom: 1px solid #2e2e2e;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
       transition: background 0.15s;
     }
 
@@ -174,16 +224,21 @@
       background: #2a2a2a;
     }
 
+    .queue-table tbody tr.row-selected {
+      background: #1e2a3a;
+    }
+
     .queue-table td {
-      padding: 18px 20px;
+      padding: 8px 12px;
       vertical-align: middle;
+      text-align: left;
       color: #e5e7eb;
-      font-size: 1.05rem;
+      font-size: 0.9rem;
     }
 
     .queue-table td.td-name {
       font-weight: 700;
-      font-size: 1.15rem;
+      font-size: 0.9rem;
       color: #ffffff;
     }
 
@@ -193,7 +248,34 @@
 
     .queue-table td.td-filament {
       color: #9ca3af;
-      font-size: 0.95rem;
+      font-size: 0.9rem;
+    }
+
+    /* Inline edit inputs */
+    .inline-edit-input {
+      background: #1a1a1a;
+      border: 1px solid #4b5563;
+      border-radius: 6px;
+      color: #ffffff;
+      font-size: 0.9rem;
+      padding: 4px 8px;
+      width: 100%;
+      min-width: 80px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .inline-edit-input:focus {
+      border-color: #3B82F6;
+      box-shadow: 0 0 0 2px rgba(59,130,246,0.25);
+    }
+
+    /* Checkboxes */
+    .job-checkbox,
+    #select-all-downloads {
+      width: 16px;
+      height: 16px;
+      cursor: pointer;
+      accent-color: #3B82F6;
     }
 
     /* =============================================
@@ -219,18 +301,18 @@
        ============================================= */
     .action-btn {
       display: inline-block;
-      min-width: 210px;
-      padding: 16px 24px;
-      font-size: 1.1rem;
-      font-weight: 800;
+      min-width: 140px;
+      padding: 8px 16px;
+      font-size: 0.85rem;
+      font-weight: 700;
       border: none;
-      border-radius: 12px;
+      border-radius: 8px;
       cursor: pointer;
       transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
       text-align: center;
       white-space: nowrap;
       letter-spacing: 0.02em;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
     }
 
     .action-btn:active { transform: scale(0.96); box-shadow: 0 2px 6px rgba(0,0,0,0.3); }
@@ -263,6 +345,33 @@
       border: 1px solid #4b5563;
     }
     .action-btn-reset:hover:not(:disabled) { background: #4b5563; }
+
+    /* Edit button */
+    .action-btn-edit {
+      background: #1e3a5f;
+      color: #93c5fd;
+      border: 1px solid #1e40af;
+      min-width: 60px;
+    }
+    .action-btn-edit:hover:not(:disabled) { background: #1e40af; color: #fff; }
+
+    /* Save button */
+    .action-btn-save {
+      background: #14532d;
+      color: #4ade80;
+      border: 1px solid #065f46;
+      min-width: 60px;
+    }
+    .action-btn-save:hover:not(:disabled) { background: #166534; color: #fff; }
+
+    /* Cancel edit button */
+    .action-btn-cancel {
+      background: #374151;
+      color: #9ca3af;
+      border: 1px solid #4b5563;
+      min-width: 60px;
+    }
+    .action-btn-cancel:hover:not(:disabled) { background: #4b5563; }
 
     /* =============================================
        EMPTY STATE
@@ -322,24 +431,14 @@
     }
 
     /* =============================================
-       BOTTOM FOOTER LINK
+       BOTTOM FOOTER
        ============================================= */
     .hub-footer {
       margin-top: 36px;
       text-align: center;
       padding-bottom: 20px;
-    }
-
-    .hub-footer a {
-      color: #6b7280;
-      font-size: 0.9rem;
-      text-decoration: none;
-      transition: color 0.2s;
-    }
-
-    .hub-footer a:hover {
-      color: #9ca3af;
-      text-decoration: underline;
+      color: #4b5563;
+      font-size: 0.8rem;
     }
 
     /* =============================================
@@ -348,8 +447,93 @@
     @media (max-width: 640px) {
       .hub-wrapper { padding: 12px 12px 40px; }
       .hub-controls { gap: 10px; padding: 12px; }
-      .queue-table th, .queue-table td { padding: 12px 10px; }
-      .action-btn { min-width: 160px; font-size: 1rem; padding: 14px 16px; }
+      .queue-table th, .queue-table td { padding: 6px 8px; }
+      .action-btn { min-width: 110px; font-size: 0.8rem; padding: 6px 10px; }
+      .hub-btn-delete-selected { margin-left: 0; }
+    }
+
+    /* =============================================
+       TABLET RESPONSIVE — BLOCK 1
+       iPad Landscape & small laptops (≤1024px)
+       Additive only — no existing rules modified
+       ============================================= */
+    @media (max-width: 1024px) {
+      /* Reduce action button min-width to give the 7-column table more breathing room */
+      .action-btn { min-width: 120px; }
+    }
+
+    /* =============================================
+       TABLET RESPONSIVE — BLOCK 2
+       iPad Portrait — PRIMARY TABLET TARGET (≤768px)
+       Additive only — no existing rules modified
+       ============================================= */
+    @media (max-width: 768px) {
+      /* FIX 1: Unlock body scroll for tablet browsers.
+         On desktop Electron the window is always >768px so this never fires there.
+         On iOS/Android the overflow:hidden on body locks touch-scroll entirely. */
+      html, body { overflow: auto; }
+
+      /* FIX 2: Replace rigid 100vh with safe dynamic viewport height.
+         iOS Safari's 100vh includes the browser chrome, clipping bottom content.
+         'auto' + min-height with dvh fallback resolves the iOS viewport bug. */
+      .hub-wrapper {
+        height: auto;
+        min-height: calc(100vh - 60px);       /* fallback for older iOS Safari */
+        min-height: calc(100dvh - 60px);      /* modern dynamic viewport height */
+        padding-bottom: env(safe-area-inset-bottom, 40px); /* notch/home-bar safety */
+      }
+
+      /* FIX 3: Collapse inherited header margin to reclaim vertical space on tablet */
+      header { margin: 0.5rem 0; }
+
+      /* FIX 4: Normalize Delete button — margin-left:auto breaks on wrapped flex rows */
+      .hub-btn-delete-selected { margin-left: 0; width: 100%; }
+
+      /* FIX 5: Tighten controls bar padding and gap */
+      .hub-controls { padding: 12px 14px; gap: 10px; }
+
+      /* FIX 6: Reduce brand bar padding */
+      .hub-brand-bar { padding: 8px 16px; }
+
+      /* FIX 7: Tighten table cell padding — horizontal only.
+         Vertical padding is intentionally preserved for touch-target comfort. */
+      .queue-table th { padding: 8px 8px; }
+      .queue-table td { padding: 7px 8px; }
+
+      /* FIX 8: Reduce action button min-width for 7-column table on 768px viewport */
+      .action-btn { min-width: 110px; font-size: 0.82rem; padding: 7px 10px; }
+
+      /* TOUCH TARGET 1: Increase checkbox hit-box to 24×24px (finger-friendly) */
+      .job-checkbox,
+      #select-all-downloads {
+        width: 24px;
+        height: 24px;
+      }
+
+      /* TOUCH TARGET 2: Enforce 40px minimum height on all table action buttons
+         (40px is the mobile touch standard per Apple HIG and Material Design) */
+      .queue-table .action-btn {
+        min-height: 40px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+    }
+
+    /* =============================================
+       TABLET RESPONSIVE — BLOCK 3
+       Phone augmentation (≤640px)
+       Augments the existing block above — additive only
+       ============================================= */
+    @media (max-width: 640px) {
+      /* Stack all control bar items vertically for very small screens */
+      .hub-controls { flex-direction: column; align-items: stretch; }
+      .hub-btn { width: 100%; justify-content: center; }
+      .pending-badge { justify-content: center; }
+
+      /* Hide the Filament column on phones to reduce horizontal overflow */
+      .queue-table th:nth-child(4),
+      .queue-table td:nth-child(4) { display: none; }
     }
   </style>
 </head>
@@ -360,13 +544,9 @@
     <p class="slogan">🖨️ Print Queue Hub</p>
   </header>
 
-  <nav>
-    <ul>
-      <li><a href="./hub.html" class="active">Queue Hub</a></li>
-      <li><a href="./admin.html">Admin Panel</a></li>
-      <li><a href="https://www.crafted3dworkshop.com" target="_blank">Main Site</a></li>
-    </ul>
-  </nav>
+  <div class="hub-brand-bar">
+    <span class="hub-brand-title">🖨️ C3DW Print Queue Dashboard</span>
+  </div>
 
   <div class="hub-wrapper">
 
@@ -384,6 +564,10 @@
       <button class="hub-btn hub-btn-auto" id="autoRefreshBtn" onclick="toggleAutoRefresh()">
         ⚫ Auto-Refresh: OFF
       </button>
+
+      <button class="hub-btn hub-btn-delete-selected" id="deleteSelectedBtn" disabled onclick="deleteSelected()">
+        🗑️ Delete Selected
+      </button>
     </div>
 
     <!-- PRINT QUEUE TABLE -->
@@ -391,16 +575,20 @@
       <table class="queue-table">
         <thead>
           <tr>
+            <th class="th-checkbox">
+              <input type="checkbox" id="select-all-downloads" title="Select all">
+            </th>
             <th>Child Name</th>
             <th>Project</th>
             <th>Filament</th>
             <th>Status</th>
             <th>Action</th>
+            <th>Edit</th>
           </tr>
         </thead>
         <tbody id="queueTableBody">
           <tr>
-            <td colspan="5">
+            <td colspan="7">
               <div class="empty-state">
                 <span class="empty-icon">⏳</span>
                 <p>Loading queue...</p>
@@ -411,9 +599,9 @@
       </table>
     </div>
 
-    <!-- BOTTOM FOOTER LINK -->
+    <!-- BOTTOM FOOTER -->
     <div class="hub-footer">
-      <a href="./admin.html">← Back to Admin Panel (Inventory Management)</a>
+      C3DW Workshop &mdash; Print Queue Manager
     </div>
 
   </div>
@@ -450,7 +638,7 @@
         showToast('❌ Could not load queue');
         document.getElementById('queueTableBody').innerHTML = `
           <tr>
-            <td colspan="5">
+            <td colspan="7">
               <div class="empty-state">
                 <span class="empty-icon">⚠️</span>
                 <p>Failed to load queue. Check your connection.</p>
@@ -476,10 +664,15 @@
       const pendingCount = jobs.filter(j => (j.status || 'pending').toLowerCase() === 'pending').length;
       pendingEl.textContent = pendingCount;
 
+      // Reset master checkbox and delete button
+      const masterCb = document.getElementById('select-all-downloads');
+      if (masterCb) masterCb.checked = false;
+      updateDeleteBtnState();
+
       if (jobs.length === 0) {
         tbody.innerHTML = `
           <tr>
-            <td colspan="5">
+            <td colspan="7">
               <div class="empty-state">
                 <span class="empty-icon">✅</span>
                 <p>Queue is empty — all caught up!</p>
@@ -502,9 +695,12 @@
 
         return `
           <tr id="row-${job.id}">
-            <td class="td-name">${childName}</td>
-            <td class="td-project">${projectName}</td>
-            <td class="td-filament">${filament}</td>
+            <td class="td-checkbox">
+              <input type="checkbox" class="job-checkbox" data-id="${job.id}" onchange="onCheckboxChange()">
+            </td>
+            <td class="td-name" data-field="requestor_name">${childName}</td>
+            <td class="td-project" data-field="project_name">${projectName}</td>
+            <td class="td-filament" data-field="color_preference">${filament}</td>
             <td>
               <span class="status-badge ${badgeClass}">${badgeLabel}</span>
             </td>
@@ -515,8 +711,176 @@
                 onclick="cycleStatus('${job.id}', '${status}', this)"
               >${btnLabel}</button>
             </td>
+            <td>
+              <button
+                class="action-btn action-btn-edit"
+                onclick="editRow('${job.id}', this)"
+              >✏️ Edit</button>
+            </td>
           </tr>`;
       }).join('');
+
+      // Wire up master checkbox after render
+      const masterCheckbox = document.getElementById('select-all-downloads');
+      if (masterCheckbox) {
+        masterCheckbox.onchange = function() {
+          document.querySelectorAll('.job-checkbox').forEach(cb => {
+            cb.checked = this.checked;
+            const row = cb.closest('tr');
+            if (row) row.classList.toggle('row-selected', this.checked);
+          });
+          updateDeleteBtnState();
+        };
+      }
+    }
+
+    // =============================================
+    // CHECKBOX MANAGEMENT
+    // =============================================
+    function onCheckboxChange() {
+      const allBoxes = document.querySelectorAll('.job-checkbox');
+      const checkedBoxes = document.querySelectorAll('.job-checkbox:checked');
+      const masterCb = document.getElementById('select-all-downloads');
+
+      // Update row highlight
+      allBoxes.forEach(cb => {
+        const row = cb.closest('tr');
+        if (row) row.classList.toggle('row-selected', cb.checked);
+      });
+
+      // Sync master checkbox state
+      if (masterCb) {
+        masterCb.checked = allBoxes.length > 0 && checkedBoxes.length === allBoxes.length;
+        masterCb.indeterminate = checkedBoxes.length > 0 && checkedBoxes.length < allBoxes.length;
+      }
+
+      updateDeleteBtnState();
+    }
+
+    function updateDeleteBtnState() {
+      const deleteBtn = document.getElementById('deleteSelectedBtn');
+      if (!deleteBtn) return;
+      const checkedCount = document.querySelectorAll('.job-checkbox:checked').length;
+      deleteBtn.disabled = checkedCount === 0;
+    }
+
+    // =============================================
+    // DELETE SELECTED (BATCH)
+    // =============================================
+    async function deleteSelected() {
+      const checkedBoxes = document.querySelectorAll('.job-checkbox:checked');
+      const ids = Array.from(checkedBoxes).map(cb => cb.dataset.id);
+
+      if (ids.length === 0) return;
+
+      const confirmed = confirm(`Are you sure you want to permanently delete the ${ids.length} selected print job${ids.length > 1 ? 's' : ''}?`);
+      if (!confirmed) return;
+
+      const deleteBtn = document.getElementById('deleteSelectedBtn');
+      deleteBtn.disabled = true;
+      deleteBtn.textContent = '⏳ Deleting...';
+
+      try {
+        const response = await fetch(`${window.PRINT_QUEUE_BASE}`, {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-admin-key': window.ADMIN_KEY
+          },
+          body: JSON.stringify({ ids })
+        });
+
+        if (!response.ok) {
+          const errData = await response.json().catch(() => ({}));
+          throw new Error(errData.error || `Server returned ${response.status}`);
+        }
+
+        const result = await response.json();
+        showToast(`🗑️ Deleted ${result.count} job${result.count !== 1 ? 's' : ''}`);
+        await fetchQueue();
+
+      } catch (err) {
+        console.error('Batch delete failed:', err);
+        showToast('❌ Delete failed: ' + err.message);
+        deleteBtn.disabled = false;
+        deleteBtn.textContent = '🗑️ Delete Selected';
+      }
+    }
+
+    // =============================================
+    // INLINE EDIT
+    // =============================================
+    function editRow(id, editBtn) {
+      const row = document.getElementById(`row-${id}`);
+      if (!row) return;
+
+      // Editable fields: name, project, filament
+      const editableFields = ['requestor_name', 'project_name', 'color_preference'];
+      editableFields.forEach(field => {
+        const td = row.querySelector(`td[data-field="${field}"]`);
+        if (!td) return;
+        const currentText = td.textContent.trim();
+        td.innerHTML = `<input type="text" class="inline-edit-input" data-field="${field}" value="${escapeAttr(currentText)}">`;
+      });
+
+      // Swap Edit button for Save + Cancel
+      const editTd = editBtn.closest('td');
+      editTd.innerHTML = `
+        <button class="action-btn action-btn-save" onclick="saveRow('${id}', this)">💾 Save</button>
+        <button class="action-btn action-btn-cancel" style="margin-top:4px;" onclick="cancelEdit('${id}')">✖ Cancel</button>
+      `;
+
+      // Disable the status action button while editing
+      const actionBtn = document.getElementById(`btn-${id}`);
+      if (actionBtn) actionBtn.disabled = true;
+
+      // Focus first input
+      const firstInput = row.querySelector('.inline-edit-input');
+      if (firstInput) firstInput.focus();
+    }
+
+    function cancelEdit(id) {
+      // Re-fetch to restore original values cleanly
+      fetchQueue();
+    }
+
+    async function saveRow(id, saveBtn) {
+      const row = document.getElementById(`row-${id}`);
+      if (!row) return;
+
+      const inputs = row.querySelectorAll('.inline-edit-input');
+      const payload = {};
+      inputs.forEach(input => {
+        payload[input.dataset.field] = input.value.trim();
+      });
+
+      saveBtn.disabled = true;
+      saveBtn.textContent = '⏳ Saving...';
+
+      try {
+        const response = await fetch(`${window.PRINT_QUEUE_BASE}/${id}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-admin-key': window.ADMIN_KEY
+          },
+          body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+          const errData = await response.json().catch(() => ({}));
+          throw new Error(errData.error || `Server returned ${response.status}`);
+        }
+
+        showToast('✅ Job updated successfully');
+        await fetchQueue();
+
+      } catch (err) {
+        console.error('Save failed:', err);
+        showToast('❌ Save failed: ' + err.message);
+        saveBtn.disabled = false;
+        saveBtn.textContent = '💾 Save';
+      }
     }
 
     // =============================================
@@ -629,6 +993,15 @@
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#39;');
+    }
+
+    function escapeAttr(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
     }
 
     // =============================================

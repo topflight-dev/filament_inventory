@@ -1,31 +1,27 @@
-PROJECT CORE
-Structure: Root = Desktop; ./mobile-companion/ = Mobile PWA.
+# C3DW WORKSHOP ECOSYSTEM CORE DEFINITIONS
 
-Stack: HTML5, CSS3, JavaScript, Supabase.
+BRANCH_ARCHITECTURE:
+- 💻 DESKTOP APP: Controlled by 'main.cjs' in the root. Renders the local admin panel at './src/pages/admin/hub.html'. Built using Electron.
+- 📱 MOBILE WEB (PWA): Public facing pages ('request.html', 'inventory.html', 'gallery.html'). Uses PWA parameters via 'manifest.json' and root-level icon masks.
+- ⚙️ BACKEND NODE SERVER: Managed via 'server.js' to process server-side logic and Supabase API data synchronization.
 
-PATH & BOUNDARY RULES
-PROJECT_ROOT: The absolute folder containing this file.
+PATH & BOUNDARY RULES:
+- PROJECT_ROOT: The absolute folder containing this file.
+- NO SYSTEM ACCESS: Never write to C:\ or outside this project folder.
+- RELATIVE PATHS: Always use './' syntax for local files.
+- SCOPE ISOLATION: When optimizing web styles/scripts, do not modify desktop configuration components ('main.cjs', electron settings) unless explicitly ordered.
 
-NO SYSTEM ACCESS: Never write to C:\ or outside this project folder.
+TERMINAL & ENVIRONMENT:
+- ALWAYS use PowerShell. Do not use CMD.
+- Always ignore 'node_modules', '.git', 'package-lock.json', and 'dist/'.
 
-RELATIVE PATHS: Always use './' syntax for local files.
+PERSISTENT MEMORY & REPORTING:
+- At the end of every major completed task, update 'PROJECT_LOG.md' with progress and the exact 'Next Step'.
+- Do not update the log for the act of updating the log itself.
+- NO SHIFTING BURDEN: Never ask the user to find a technical or layout error. Use Select-String or Get-Content to investigate yourself first.
 
-VERIFY LOCATION: Use 'Get-Location' before write operations if unsure.
-
-TERMINAL & ENVIRONMENT
-ALWAYS use PowerShell. Do not use CMD.
-
-Always ignore 'node_modules', '.git', and 'package-lock.json'.
-
-BEHAVIORAL RULES
-CLEAN BREAK: Keep mobile and desktop code strictly separated.
-
-PERSISTENT MEMORY: 
-- At the end of every task, update 'PROJECT_LOG.md' with progress and the 'Next Step'.
-- Only update 'Project_Log.md' when a major task is completed (e.g., extracting CSS, moving files, fixing a bug). Do not update the log for the act of updating the log itself.
-
-EDITING POLICY: If a file edit fails twice, generate a PowerShell script to perform the edit instead.
-
-NO SHIFTING BURDEN: 
-- Never ask the user to 'find' a technical error. If an error is suspected, use grep, Select-String, or Get-Content to investigate the files yourself before reporting.
-```
+# ⚠️ CRITICAL DUAL-TARGET CONSTRAINTS & BOUNDARIES
+- PRODUCTION ISOLATION: The live marketing/business website (www.crafted3dworkshop.com) is completely OUT OF SCOPE. No modifications, configuration changes, or deployment paths in this repository should ever impact or target that live domain.
+- DATABASE INTEGRITY: The current Supabase database tables ('colors', 'site_traffic', 'requests') are actively connected to production systems. The schemas, table names, and existing columns are SACRED AND IMMUTABLE. Any adjustments must be strictly additive and backward-compatible.
+- CURRENT ENVIRONMENT: Work exclusively inside the active Git sandbox branch 'feature/universal-web-target'. The 'main' branch must remain pristine for the working desktop build.
+- DUAL-TARGET STYLE SCOPING: When modifying styles or scripts for 'hub.html' to support tablet responsive design, ensure all rules are additive (using media queries). Do not break, delete, or disrupt the existing layout rules used by the Electron application framework.

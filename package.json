@@ -3,10 +3,28 @@
   "version": "1.0.0",
   "type": "module",
   "description": "Crafted 3D Printing – Filament Inventory Site\r A web-based inventory and gallery for managing 3D printing filament and showcasing printed projects. Built with HTML, CSS, and modular JavaScript, with Airtable integration for live inventory data.",
-  "main": "server.js",
+  "main": "main.cjs",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
+    "start": "electron .",
+    "serve": "node server.js",
+    "dist": "electron-builder"
+  },
+  "build": {
+    "appId": "com.crafted3d.workshophub",
+    "productName": "C3DW Hub",
+    "win": {
+      "target": "portable",
+      "icon": "icon.png"
+    },
+    "files": [
+      "main.cjs",
+      "package.json",
+      "src/pages/admin/**/*",
+      "styles/**/*",
+      "js/**/*",
+      "icon.png"
+    ]
   },
   "repository": {
     "type": "git",
@@ -27,5 +45,9 @@
   "bugs": {
     "url": "https://github.com/blast1221/filament_inventory/issues"
   },
-  "homepage": "https://github.com/blast1221/filament_inventory#readme"
+  "homepage": "https://github.com/blast1221/filament_inventory#readme",
+  "devDependencies": {
+    "electron": "^42.1.0",
+    "electron-builder": "^26.8.1"
+  }
 }
