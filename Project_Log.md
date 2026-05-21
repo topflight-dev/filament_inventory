@@ -2,6 +2,88 @@
 
 ---
 
+### 2026-05-21 — Hotfix: Vercel 404 on /inventory — Static Root Serving & Build Bypass (Cline)
+
+**Task Completed:** Diagnosed and resolved a blanket 404 on all Vercel routes (including `/inventory` and `/inventory.html`). Root cause was the Electron `build` block in `package.json` hijacking Vercel's build step — Vercel was running `npm run build` (electron-builder) instead of serving static files, producing no web output. Fixed by explicitly setting `outputDirectory: "."` and `buildCommand: ""` in `vercel.json`, and adding a root-to-inventory permanent redirect. Also removed an invalid `functions` runtime block (`nodejs20.x` without package prefix) that caused a secondary build error on the first deploy attempt.
+
+---
+
+**Root Cause:** `vercel.json` had no `outputDirectory` or `buildCommand` set. With `framework: null` and a `build` key present in `package.json` (the Electron builder config), Vercel attempted to run `npm run build` (electron-builder), which produced no web-servable output — resulting in a 404 on every route.
+
+**Files Modified:**
+
+| File | Change |
+|------|--------|
+| `vercel.json` | Added `outputDirectory: "."`, `buildCommand: ""`, and `redirects` block for `/` → `/inventory`; removed invalid `functions` runtime block |
+
+**Final `vercel.json`:**
+```json
+{
+  "cleanUrls": true,
+  "framework": null,
+  "outputDirectory": ".",
+  "buildCommand": "",
+  "redirects": [
+    { "source": "/", "destination": "/inventory", "permanent": true }
+  ]
+}
+```
+
+**Git Commits:**
+
+| Commit | Message |
+|--------|---------|
+| `27fdee4` | `fix(vercel): configure static root serving and bypass build script` |
+| `e3004d4` | `fix(vercel): remove invalid functions runtime, keep static config` |
+
+**Vercel Production Deployment**
+
+| Property | Value |
+|----------|-------|
+| **Command** | `vercel --prod --force` |
+| **Upload** | 194 B (delta — only changed files) |
+| **Build time** | 55 seconds ✅ |
+| **Status** | `✓ Ready` |
+| **Unique permalink** | `https://c3dw-sandbox-94ofyi3mp-3dprintguy.vercel.app` |
+| **Stable alias** | `https://c3dw-sandbox.vercel.app` |
+| **Vercel inspect** | `https://vercel.com/3dprintguy/c3dw-sandbox/ECAyA7xVyqKnYzgaCDm4SevauMwn` |
+
+**No changes to:** `main.cjs`, `server.js`, Supabase schema, `www.crafted3dworkshop.com`, `main` branch
+
+**Status:** Static root serving configured ✅ — `/inventory` now resolves correctly; `/` redirects to `/inventory`
+
+**Next Step:** Verify `https://c3dw-sandbox.vercel.app/inventory` loads the filament color catalog with correct swatches and finish filters on a mobile browser.
+
+
+
+---
+
+### 2026-05-21 — Deployment: Lock Native nodejs20.x Runtime — Force Production Deploy to Vercel (Cline)
+
+**Task Completed:** Executed a forced Vercel production deployment to lock in the native `nodejs20.x` runtime configuration. The working tree was already clean (all changes previously committed). Deployment completed successfully in 46 seconds.
+
+---
+
+**Vercel Production Deployment**
+
+| Property | Value |
+|----------|-------|
+| **Command** | `vercel --prod --force` |
+| **Build time** | 46 seconds ✅ |
+| **Status** | `✓ Ready` |
+| **Unique permalink** | `https://c3dw-sandbox-6r7di5h3f-3dprintguy.vercel.app` |
+| **Stable alias** | `https://c3dw-sandbox.vercel.app` |
+| **Vercel inspect** | `https://vercel.com/3dprintguy/c3dw-sandbox/32KFjQw287NU5KmJvjmMDg4vZFuM` |
+
+**No changes to:** `main.cjs`, `server.js`, Supabase schema, `www.crafted3dworkshop.com`, `main` branch
+
+**Status:** Native nodejs20.x runtime locked in and deployed live ✅
+
+**Next Step:** Investigate and fix the Red checkbox bug on the admin hub.
+
+
+---
+
 ### 2026-05-21 — Hotfix: Vercel Runtime Version Error — Pinned @vercel/node to Explicit Version (Cline)
 
 **Task Completed:** Diagnosed and resolved a recurring Vercel build failure (`Error: Function Runtimes must have a valid version`). The root cause was that `@vercel/node` without a version string is rejected by Vercel CLI 54.x. Pinned the runtime to the explicit current version `@vercel/node@5.8.3` and added a Node.js engine constraint to `package.json`. Deployed successfully to production.
