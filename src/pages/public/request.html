@@ -529,9 +529,16 @@
 
                     // -----------------------------------------------
                     // DISCORD WEBHOOK NOTIFICATION (fire-and-forget)
+                    // URL is injected at runtime via window.DISCORD_WEBHOOK_URL:
+                    //   • Electron: main.cjs injects from local .env
+                    //   • Vercel:   api/env.js reads from Vercel Dashboard env vars
                     // -----------------------------------------------
-                    const DISCORD_WEBHOOK_URL = 'https://discordapp.com/api/webhooks/1506691211526799461/P-u8X22O7GgVJehCUPKaPzxszekqMYcCTECUcHC3U1--rliPyTJbqExB8nGkScxqIUZ3';
+                    const DISCORD_WEBHOOK_URL = window.DISCORD_WEBHOOK_URL;
+                    if (!DISCORD_WEBHOOK_URL) {
+                        console.warn('[C3DW] Discord webhook URL not configured — notification skipped.');
+                    }
                     try {
+                        if (!DISCORD_WEBHOOK_URL) throw new Error('DISCORD_WEBHOOK_URL not set');
                         await fetch(DISCORD_WEBHOOK_URL, {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },

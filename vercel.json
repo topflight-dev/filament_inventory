@@ -1,5 +1,10 @@
 {
   "cleanUrls": true,
   "framework": null,
-  "outputDirectory": "."
+  "outputDirectory": ".",
+  "functions": {
+    "api/env.js": {
+      "runtime": "nodejs20.x"
+    }
+  }
 }
