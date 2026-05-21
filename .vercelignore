@@ -1,0 +1,16 @@
+node_modules/
+dist/
+build-output/
+Backups/
+Old_Site/
+Downloads/
+Documents/
+.git/
+package-lock.json
+*.exe
+*.asar
+*.dll
+*.dat
+output.txt
+test_ignore_file.txt
+server.js

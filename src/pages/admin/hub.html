@@ -18,10 +18,12 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="theme-color" content="#1a1a1a">
-  <title>Crafted 3D | Print Queue Hub</title>
+  <title>Crafted 3D | Admin Hub</title>
   <link rel="stylesheet" href="../../../styles/style.css">
   <link rel="icon" href="../../../Crafted 3D.ico" type="image/x-icon">
   <script src="../../../js/api/api.js"></script>
+  <!-- Supabase JS SDK — required for Realtime subscription -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <style>
     /* =============================================
        DARK MODE BASE
@@ -81,15 +83,53 @@
     }
 
     /* =============================================
+       TAB NAVIGATION BAR
+       ============================================= */
+    .hub-tab-nav {
+      display: flex;
+      align-items: stretch;
+      background: #161616;
+      border-bottom: 2px solid #2a2a2a;
+      padding: 0 24px;
+      gap: 4px;
+    }
+
+    .hub-tab-btn {
+      padding: 12px 22px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: #6b7280;
+      background: transparent;
+      border: none;
+      border-bottom: 3px solid transparent;
+      margin-bottom: -2px; /* overlap the nav border */
+      cursor: pointer;
+      letter-spacing: 0.03em;
+      transition: color 0.2s, border-color 0.2s, background 0.2s;
+      white-space: nowrap;
+      user-select: none;
+    }
+
+    .hub-tab-btn:hover {
+      color: #d1d5db;
+      background: rgba(255,255,255,0.04);
+    }
+
+    .hub-tab-btn.active {
+      color: #ffffff;
+      border-bottom-color: #3B82F6;
+    }
+
+    /* =============================================
        HUB LAYOUT
        ============================================= */
     .hub-wrapper {
       width: 100%;
-      /* calc subtracts the header (~60px) + brand bar (~41px) + a small safety buffer = 110px total */
-      height: calc(100vh - 110px);
+      /* calc subtracts: header (~60px) + brand bar (~41px) + tab nav (~47px) + safety buffer = 158px total */
+      height: calc(100vh - 158px);
       box-sizing: border-box;
       padding: 20px 24px 40px;
-      overflow-y: auto; /* Scroll bar will ONLY appear here when print jobs overflow the screen */
+      overflow-y: auto; /* Scroll bar will ONLY appear here when content overflows the screen */
       /* Firefox minimal scrollbar */
       scrollbar-width: thin;
       scrollbar-color: transparent transparent;
@@ -530,6 +570,501 @@
     }
 
     /* =============================================
+       INVENTORY TAB STYLES — DARK GLASSMORPHISM
+       All rules are new class names — additive only
+       ============================================= */
+
+    /* Section panels */
+    .inv-panel {
+      background: #242424;
+      border: 1px solid #333;
+      border-radius: 12px;
+      padding: 20px 24px;
+      margin-bottom: 20px;
+    }
+
+    .inv-panel h2 {
+      margin: 0 0 16px 0;
+      font-size: 1rem;
+      font-weight: 700;
+      color: #9ca3af;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      border-bottom: 1px solid #333;
+      padding-bottom: 12px;
+    }
+
+    /* Form groups */
+    .inv-form-group {
+      margin-bottom: 16px;
+    }
+
+    .inv-form-group label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 6px;
+      font-size: 0.85rem;
+      color: #9ca3af;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .inv-input {
+      display: block;
+      width: 100%;
+      box-sizing: border-box;
+      background: #1a1a1a;
+      color: #ffffff;
+      border-radius: 8px;
+      padding: 10px 14px;
+      border: 1px solid #4b5563;
+      font-size: 0.9rem;
+      font-family: 'Inter', Arial, sans-serif;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      outline: none;
+    }
+
+    .inv-input:focus {
+      border-color: #3B82F6;
+      box-shadow: 0 0 0 2px rgba(59,130,246,0.25);
+    }
+
+    select.inv-input option {
+      background: #1a1a1a;
+      color: #ffffff;
+    }
+
+    textarea.inv-input {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    /* Color picker row */
+    .inv-color-row {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .inv-color-row input[type="color"] {
+      width: 48px;
+      height: 40px;
+      border: 1px solid #4b5563;
+      cursor: pointer;
+      background: #1a1a1a;
+      padding: 2px;
+      border-radius: 6px;
+      flex-shrink: 0;
+    }
+
+    .inv-color-row input[type="text"] {
+      flex: 1;
+    }
+
+    /* Inventory buttons */
+    .inv-btn {
+      padding: 10px 18px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+      white-space: nowrap;
+    }
+
+    .inv-btn:active { transform: scale(0.97); }
+    .inv-btn:disabled { background: #374151 !important; color: #6b7280 !important; cursor: not-allowed; }
+
+    .inv-btn-primary {
+      background: #3B82F6;
+      color: #fff;
+    }
+    .inv-btn-primary:hover:not(:disabled) { background: #2563EB; }
+
+    .inv-btn-green {
+      background: #15803d;
+      color: #fff;
+      width: 100%;
+      padding: 14px;
+      font-size: 1rem;
+      border-radius: 10px;
+      margin-top: 10px;
+    }
+    .inv-btn-green:hover:not(:disabled) { background: #166534; }
+
+    /* Stats grid */
+    .inv-stat-grid {
+      display: flex;
+      justify-content: space-around;
+      margin-bottom: 16px;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .inv-stat-box {
+      text-align: center;
+      flex: 1;
+      min-width: 80px;
+    }
+
+    .inv-stat-val {
+      display: block;
+      font-size: 2rem;
+      font-weight: 900;
+      color: #4ade80;
+      line-height: 1.1;
+    }
+
+    .inv-stat-lbl {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      color: #6b7280;
+      letter-spacing: 0.06em;
+      margin-top: 4px;
+      display: block;
+    }
+
+    /* Admin controls (search row) */
+    .inv-controls {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    .inv-search {
+      flex: 1;
+      min-width: 150px;
+      padding: 10px 14px;
+      border: 1px solid #4b5563;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      background: #1a1a1a;
+      color: #ffffff;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .inv-search:focus {
+      border-color: #3B82F6;
+      box-shadow: 0 0 0 2px rgba(59,130,246,0.25);
+    }
+
+    .inv-search::placeholder { color: #4b5563; }
+
+    /* Collapsible finish groups */
+    .inv-finish-group {
+      margin-bottom: 10px;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid #333;
+    }
+
+    .inv-finish-group-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      background: #2a2a2a;
+      cursor: pointer;
+      user-select: none;
+      border-radius: 10px;
+      transition: background 0.2s;
+    }
+
+    .inv-finish-group-header:hover {
+      background: #303030;
+    }
+
+    .inv-finish-group-header.collapsed {
+      border-radius: 10px;
+    }
+
+    .inv-finish-group-title {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: #d1d5db;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .inv-finish-badge {
+      background: #3B82F6;
+      color: white;
+      font-size: 0.7rem;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 20px;
+      min-width: 20px;
+      text-align: center;
+    }
+
+    .inv-finish-chevron {
+      font-size: 0.75rem;
+      color: #6b7280;
+      transition: transform 0.25s;
+    }
+
+    .inv-finish-group-header.collapsed .inv-finish-chevron {
+      transform: rotate(-90deg);
+    }
+
+    .inv-finish-group-body {
+      padding: 0 8px;
+      background: #1f1f1f;
+      overflow: hidden;
+    }
+
+    .inv-finish-group-body.collapsed {
+      display: none;
+    }
+
+    /* Inventory items */
+    .inv-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 8px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+
+    .inv-item:last-child {
+      border-bottom: none;
+    }
+
+    .inv-item.out-of-stock .inv-item-name strong {
+      color: #4b5563;
+    }
+
+    .inv-item-info {
+      flex-grow: 1;
+    }
+
+    .inv-item-name,
+    .inv-item-finish {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 3px;
+    }
+
+    .inv-item-name strong {
+      font-size: 0.9rem;
+      color: #e5e7eb;
+    }
+
+    .inv-item-finish small {
+      font-size: 0.8rem;
+      color: #6b7280;
+    }
+
+    .inv-edit-btn {
+      padding: 3px 8px;
+      font-size: 0.7rem;
+      background: #374151;
+      color: #9ca3af;
+      border-radius: 4px;
+      border: 1px solid #4b5563;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .inv-edit-btn:hover { background: #4b5563; color: #fff; }
+
+    .inv-item-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .inv-stock-toggle {
+      width: 20px;
+      height: 20px;
+      cursor: pointer;
+      accent-color: #4ade80;
+    }
+
+    .inv-delete-btn {
+      background: none;
+      border: none;
+      color: #ef4444;
+      cursor: pointer;
+      font-size: 1.1rem;
+      padding: 4px;
+      line-height: 1;
+      transition: color 0.15s;
+    }
+
+    .inv-delete-btn:hover { color: #f87171; }
+
+    /* Edit Modal — dark theme */
+    .inv-modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.7);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .inv-modal-content {
+      background: #242424;
+      color: #e5e7eb;
+      padding: 28px;
+      border-radius: 16px;
+      width: 90%;
+      max-width: 420px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+      border: 1px solid #374151;
+    }
+
+    .inv-modal-content h3 {
+      margin: 0 0 16px 0;
+      font-size: 1rem;
+      color: #9ca3af;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .inv-modal-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    /* =============================================
+       AUTH OVERLAY — GLASSMORPHISM LOCKSCREEN
+       Web-target only; removed from DOM on Electron
+       ============================================= */
+    #auth-overlay {
+      display: none; /* Hidden by default — no flash artifact */
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: 10000;
+      background: rgba(0, 0, 0, 0.88);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      align-items: center;
+      justify-content: center;
+      opacity: 1;
+      transition: opacity 0.4s ease;
+    }
+
+    .auth-panel {
+      background: rgba(26, 26, 26, 0.95);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 20px;
+      padding: 44px 36px 36px;
+      width: 90%;
+      max-width: 380px;
+      box-shadow: 0 24px 64px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(59,130,246,0.15);
+      text-align: center;
+    }
+
+    .auth-lock-icon {
+      font-size: 2.8rem;
+      display: block;
+      margin-bottom: 12px;
+      filter: drop-shadow(0 0 12px rgba(59,130,246,0.5));
+    }
+
+    .auth-title {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: #ffffff;
+      letter-spacing: 0.04em;
+      margin: 0 0 6px 0;
+    }
+
+    .auth-subtitle {
+      font-size: 0.82rem;
+      color: #6b7280;
+      margin: 0 0 28px 0;
+      letter-spacing: 0.02em;
+    }
+
+    #auth-key-input {
+      display: block;
+      width: 100%;
+      box-sizing: border-box;
+      background: #111111;
+      color: #ffffff;
+      border: 1px solid #374151;
+      border-radius: 10px;
+      padding: 13px 16px;
+      font-size: 1rem;
+      font-family: 'Inter', Arial, sans-serif;
+      letter-spacing: 0.08em;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      margin-bottom: 14px;
+      text-align: center;
+    }
+
+    #auth-key-input:focus {
+      border-color: #3B82F6;
+      box-shadow: 0 0 0 3px rgba(59,130,246,0.2);
+    }
+
+    #auth-key-input::placeholder {
+      color: #4b5563;
+      letter-spacing: 0.02em;
+    }
+
+    #auth-submit-btn {
+      display: block;
+      width: 100%;
+      padding: 14px 22px;
+      font-size: 1rem;
+      font-weight: 700;
+      background: #3B82F6;
+      color: #ffffff;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
+      letter-spacing: 0.02em;
+      box-shadow: 0 4px 16px rgba(59,130,246,0.35);
+    }
+
+    #auth-submit-btn:hover {
+      background: #2563EB;
+      box-shadow: 0 6px 20px rgba(59,130,246,0.5);
+    }
+
+    #auth-submit-btn:active {
+      transform: scale(0.97);
+    }
+
+    #auth-error {
+      display: none;
+      margin-top: 14px;
+      font-size: 0.82rem;
+      color: #f87171;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+
+    @keyframes authShake {
+      0%, 100% { transform: translateX(0); }
+      15%       { transform: translateX(-8px); }
+      30%       { transform: translateX(8px); }
+      45%       { transform: translateX(-6px); }
+      60%       { transform: translateX(6px); }
+      75%       { transform: translateX(-3px); }
+      90%       { transform: translateX(3px); }
+    }
+
+    .auth-shake {
+      animation: authShake 0.5s ease;
+    }
+
+    /* =============================================
        RESPONSIVE
        ============================================= */
     @media (max-width: 640px) {
@@ -538,6 +1073,7 @@
       .queue-table th, .queue-table td { padding: 6px 8px; }
       .action-btn { min-width: 110px; font-size: 0.8rem; padding: 6px 10px; }
       .hub-btn-delete-selected { margin-left: 0; }
+      .hub-tab-btn { padding: 10px 14px; font-size: 0.82rem; }
     }
 
     /* =============================================
@@ -566,8 +1102,8 @@
          'auto' + min-height with dvh fallback resolves the iOS viewport bug. */
       .hub-wrapper {
         height: auto;
-        min-height: calc(100vh - 60px);       /* fallback for older iOS Safari */
-        min-height: calc(100dvh - 60px);      /* modern dynamic viewport height */
+        min-height: calc(100vh - 110px);       /* fallback for older iOS Safari */
+        min-height: calc(100dvh - 110px);      /* modern dynamic viewport height */
         padding-bottom: env(safe-area-inset-bottom, 40px); /* notch/home-bar safety */
       }
 
@@ -606,6 +1142,10 @@
         align-items: center;
         justify-content: center;
       }
+
+      /* Tab nav adjustments for tablet */
+      .hub-tab-nav { padding: 0 12px; }
+      .hub-tab-btn { padding: 10px 16px; font-size: 0.85rem; }
     }
 
     /* =============================================
@@ -630,6 +1170,10 @@
       .queue-table th, .queue-table td { padding: 4px 5px; }
       /* Reduce action button min-width aggressively for phone viewports */
       .action-btn { min-width: 80px; font-size: 0.75rem; padding: 5px 6px; }
+
+      /* Inventory panel padding reduction on phones */
+      .inv-panel { padding: 14px 14px; }
+      .inv-stat-val { font-size: 1.6rem; }
     }
   </style>
 </head>
@@ -637,79 +1181,237 @@
 
   <header>
     <h1>Crafted 3D Workshop</h1>
-    <p class="slogan">🖨️ Print Queue Hub</p>
+    <p class="slogan">🖨️ Admin Hub</p>
   </header>
 
   <div class="hub-brand-bar">
-    <span class="hub-brand-title">🖨️ C3DW Print Queue Dashboard</span>
+    <span class="hub-brand-title">⚙️ C3DW Unified Administration Suite</span>
   </div>
+
+  <!-- TAB NAVIGATION -->
+  <nav class="hub-tab-nav" aria-label="Admin Hub Tabs">
+    <button class="hub-tab-btn active" data-tab="queue" onclick="switchTab('queue')">
+      🖨️ Request Queue
+    </button>
+    <button class="hub-tab-btn" data-tab="inventory" onclick="switchTab('inventory')">
+      🎨 Filament Inventory
+    </button>
+  </nav>
 
   <div class="hub-wrapper">
 
-    <!-- TOP CONTROL BAR -->
-    <div class="hub-controls">
-      <div class="pending-badge">
-        <span class="badge-label">⏳ Pending</span>
-        <span class="badge-count" id="pendingCount">—</span>
+    <!-- ==========================================
+         TAB PANE 1: PRINT REQUEST QUEUE
+         Visible by default
+         ========================================== -->
+    <div id="queue-tab-pane">
+
+      <!-- TOP CONTROL BAR -->
+      <div class="hub-controls">
+        <div class="pending-badge">
+          <span class="badge-label">⏳ Pending</span>
+          <span class="badge-count" id="pendingCount">—</span>
+        </div>
+
+        <button class="hub-btn hub-btn-refresh" id="refreshBtn" onclick="fetchQueue()">
+          🔄 Manual Refresh
+        </button>
+
+        <button class="hub-btn hub-btn-auto" id="autoRefreshBtn" onclick="toggleAutoRefresh()">
+          ⚫ Auto-Refresh: OFF
+        </button>
+
+        <button class="hub-btn hub-btn-delete-selected" id="deleteSelectedBtn" disabled onclick="deleteSelected()">
+          🗑️ Delete Selected
+        </button>
       </div>
 
-      <button class="hub-btn hub-btn-refresh" id="refreshBtn" onclick="fetchQueue()">
-        🔄 Manual Refresh
-      </button>
+      <!-- PRINT QUEUE TABLE -->
+      <div class="table-container">
+        <table class="queue-table">
+          <thead>
+            <tr>
+              <th class="th-checkbox">
+                <input type="checkbox" id="select-all-downloads" title="Select all">
+              </th>
+              <th>Child Name</th>
+              <th>Project</th>
+              <th>Filament</th>
+              <th>Status</th>
+              <th>Action</th>
+              <th>Edit</th>
+            </tr>
+          </thead>
+          <tbody id="queueTableBody">
+            <tr>
+              <td colspan="7">
+                <div class="empty-state">
+                  <span class="empty-icon">⏳</span>
+                  <p>Loading queue...</p>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
 
-      <button class="hub-btn hub-btn-auto" id="autoRefreshBtn" onclick="toggleAutoRefresh()">
-        ⚫ Auto-Refresh: OFF
-      </button>
+      <!-- BOTTOM FOOTER -->
+      <div class="hub-footer">
+        C3DW Workshop &mdash; Print Queue Manager
+      </div>
 
-      <button class="hub-btn hub-btn-delete-selected" id="deleteSelectedBtn" disabled onclick="deleteSelected()">
-        🗑️ Delete Selected
-      </button>
+    </div><!-- /#queue-tab-pane -->
+
+    <!-- ==========================================
+         TAB PANE 2: FILAMENT INVENTORY
+         Hidden until "Filament Inventory" tab clicked
+         ========================================== -->
+    <div id="inventory-tab-pane" style="display:none;">
+
+      <!-- ADD NEW FILAMENT FORM -->
+      <section class="inv-panel">
+        <h2>➕ Add New Filament</h2>
+        <form id="addFilamentForm">
+          <div class="inv-form-group">
+            <label for="colorName">Color Name</label>
+            <input type="text" id="colorName" list="existing-colors" placeholder="e.g., Galaxy Black" autocomplete="off" required class="inv-input">
+            <datalist id="existing-colors"></datalist>
+          </div>
+
+          <div class="inv-form-group">
+            <label for="finish">Finish</label>
+            <select id="finish" onchange="toggleNewFinishInput(this.value)" class="inv-input">
+              <option value="Basic">Basic</option>
+              <option value="Galaxy">Galaxy</option>
+              <option value="Matte">Matte</option>
+              <option value="Satin">Satin</option>
+              <option value="Silk">Silk</option>
+              <option value="Solid">Solid</option>
+              <option value="Translucent">Translucent</option>
+              <option value="ADD_NEW">+ Add New Finish...</option>
+            </select>
+            <input type="text" id="newFinishInput" placeholder="Type new finish name..." class="inv-input" style="display:none; margin-top:10px;">
+          </div>
+
+          <div class="inv-form-group">
+            <label>Primary Color</label>
+            <div class="inv-color-row">
+              <input type="color" id="picker1" value="#3b82f6">
+              <input type="text" id="text1" placeholder="#3B82F6" class="inv-input">
+            </div>
+          </div>
+
+          <div class="inv-form-group">
+            <label>Secondary Color <small style="color:#4b5563;">(optional)</small></label>
+            <div class="inv-color-row">
+              <input type="color" id="picker2" value="#cccccc">
+              <input type="text" id="text2" placeholder="Optional" class="inv-input">
+            </div>
+          </div>
+
+          <div class="inv-form-group">
+            <label>Tertiary Color <small style="color:#4b5563;">(optional)</small></label>
+            <div class="inv-color-row">
+              <input type="color" id="picker3" value="#cccccc">
+              <input type="text" id="text3" placeholder="Optional" class="inv-input">
+            </div>
+          </div>
+
+          <div class="inv-form-group">
+            <label for="description">Description</label>
+            <textarea id="description" rows="3" placeholder="Brief description..." class="inv-input"></textarea>
+          </div>
+
+          <button type="submit" id="submitBtn" class="inv-btn inv-btn-green">➕ Publish Filament</button>
+        </form>
+      </section>
+
+      <!-- MANAGE INVENTORY -->
+      <section class="inv-panel">
+        <h2>🎨 Manage Inventory</h2>
+        <div class="inv-controls">
+          <input type="text" id="adminSearchInput" placeholder="Search colors..." class="inv-search">
+          <button id="adminRefreshBtn" class="inv-btn inv-btn-primary">🔄 Sync Colors</button>
+        </div>
+        <div id="adminInventoryResults">
+          <div class="empty-state" style="padding: 40px 20px;">
+            <span class="empty-icon" style="font-size:2.5rem;">🎨</span>
+            <p style="font-size:0.95rem;">Click "Sync Colors" to load inventory.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- BOTTOM FOOTER -->
+      <div class="hub-footer">
+        C3DW Workshop &mdash; Filament Inventory Manager
+      </div>
+
+    </div><!-- /#inventory-tab-pane -->
+
+  </div><!-- /.hub-wrapper -->
+
+  <!-- AUTH OVERLAY — Glassmorphism Lockscreen (Web target only) -->
+  <!-- Hidden by default; shown on web, removed from DOM on Electron -->
+  <div id="auth-overlay">
+    <div class="auth-panel">
+      <span class="auth-lock-icon">🔒</span>
+      <h2 class="auth-title">C3DW Admin Hub</h2>
+      <p class="auth-subtitle">Secure access required to continue</p>
+      <input
+        type="password"
+        id="auth-key-input"
+        placeholder="Enter access key..."
+        autocomplete="current-password"
+        spellcheck="false"
+      >
+      <button id="auth-submit-btn">🔓 Authenticate Session</button>
+      <p id="auth-error">❌ Invalid access key. Please try again.</p>
     </div>
-
-    <!-- PRINT QUEUE TABLE -->
-    <div class="table-container">
-      <table class="queue-table">
-        <thead>
-          <tr>
-            <th class="th-checkbox">
-              <input type="checkbox" id="select-all-downloads" title="Select all">
-            </th>
-            <th>Child Name</th>
-            <th>Project</th>
-            <th>Filament</th>
-            <th>Status</th>
-            <th>Action</th>
-            <th>Edit</th>
-          </tr>
-        </thead>
-        <tbody id="queueTableBody">
-          <tr>
-            <td colspan="7">
-              <div class="empty-state">
-                <span class="empty-icon">⏳</span>
-                <p>Loading queue...</p>
-              </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <!-- BOTTOM FOOTER -->
-    <div class="hub-footer">
-      C3DW Workshop &mdash; Print Queue Manager
-    </div>
-
   </div>
 
   <!-- Toast Notification -->
   <div id="hub-toast"></div>
 
+  <!-- Inventory Edit Modal — dark theme -->
+  <div id="invEditModal" class="inv-modal-overlay">
+    <div class="inv-modal-content">
+      <h3 id="invModalTitle">Edit Field</h3>
+      <div id="invModalBody"></div>
+      <div class="inv-modal-actions">
+        <button type="button" class="inv-btn inv-btn-primary" style="background:#374151; color:#9ca3af; border:1px solid #4b5563;" onclick="closeInvModal()">Cancel</button>
+        <button type="button" class="inv-btn inv-btn-primary" id="invSaveEditBtn">Save Changes</button>
+      </div>
+    </div>
+  </div>
+
   <script src="../../../js/utils/footer.js"></script>
 
   <script>
     // =============================================
-    // STATE
+    // TAB SWITCHING
+    // =============================================
+    let inventoryInitialized = false;
+
+    function switchTab(tabName) {
+      // Swap pane visibility
+      document.getElementById('queue-tab-pane').style.display    = (tabName === 'queue')     ? 'block' : 'none';
+      document.getElementById('inventory-tab-pane').style.display = (tabName === 'inventory') ? 'block' : 'none';
+
+      // Update active tab button state
+      document.querySelectorAll('.hub-tab-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.tab === tabName);
+      });
+
+      // Lazy-initialize inventory data on first visit to the tab
+      if (tabName === 'inventory' && !inventoryInitialized) {
+        inventoryInitialized = true;
+        populateFinishDropdown();
+        fetchForAdmin();
+      }
+    }
+
+    // =============================================
+    // STATE — QUEUE
     // =============================================
     let autoRefreshInterval = null;
     let isAutoRefreshOn = false;
@@ -1102,7 +1804,7 @@
     }
 
     // =============================================
-    // HELPERS
+    // QUEUE HELPERS
     // =============================================
     function getNextStatus(current) {
       const cycle = { pending: 'printing', printing: 'completed', completed: 'pending' };
@@ -1159,11 +1861,567 @@
     }
 
     // =============================================
-    // INIT
+    // INVENTORY — COLOR PICKER SYNC
+    // =============================================
+    const setupSync = (pickerId, textId) => {
+      const picker = document.getElementById(pickerId);
+      const text = document.getElementById(textId);
+      if (!picker || !text) return;
+      picker.addEventListener('input', () => { text.value = picker.value.toUpperCase(); });
+      text.addEventListener('input', () => {
+        if (/^#[0-9A-F]{6}$/i.test(text.value)) { picker.value = text.value; }
+      });
+    };
+    setupSync('picker1', 'text1');
+    setupSync('picker2', 'text2');
+    setupSync('picker3', 'text3');
+
+    // =============================================
+    // INVENTORY — FINISH DROPDOWN
+    // =============================================
+    async function populateFinishDropdown() {
+      try {
+        const response = await fetch(`${window.API_BASE}?cb=${Date.now()}`);
+        if (!response.ok) throw new Error('Fetch failed');
+        const data = await response.json();
+        const standardFinishes = ['Basic', 'Galaxy', 'Matte', 'Satin', 'Silk', 'Solid', 'Translucent'];
+        const existingFinishes = Array.isArray(data)
+          ? data.map(item => item.finish).filter(f => f && f.trim() !== '')
+          : [];
+        const combined = [...new Set([...standardFinishes, ...existingFinishes])].sort();
+        const mainSelect = document.getElementById('finish');
+        if (mainSelect) {
+          mainSelect.innerHTML = combined.map(f =>
+            `<option value="${f}">${f}</option>`
+          ).join('') + '<option value="ADD_NEW">+ Add New Finish...</option>';
+        }
+        window.availableFinishes = combined;
+      } catch (err) {
+        console.error('Finish sync failed:', err);
+      }
+    }
+
+    function toggleNewFinishInput(value) {
+      const input = document.getElementById('newFinishInput');
+      if (input) {
+        input.style.display = (value === 'ADD_NEW') ? 'block' : 'none';
+        input.required = (value === 'ADD_NEW');
+        if (value === 'ADD_NEW') input.focus();
+      }
+    }
+
+    // =============================================
+    // INVENTORY — FETCH & RENDER
+    // =============================================
+    async function fetchForAdmin() {
+      const btn = document.getElementById('adminRefreshBtn');
+      if (btn) btn.textContent = 'Syncing...';
+      try {
+        const response = await fetch(`${window.API_BASE}?cb=${Date.now()}`);
+        if (!response.ok) throw new Error('Sync failed');
+        const newData = await response.json();
+
+        window.adminItems = newData.map(newItem => {
+          const stringId = String(newItem.id);
+          const pendingChange = localStorage.getItem(`pending_${stringId}`);
+          if (pendingChange !== null) {
+            return { ...newItem, inStock: (pendingChange === 'true') };
+          }
+          return newItem;
+        });
+
+        const inStockCount = window.adminItems.filter(i => i.inStock).length;
+        const statCountEl = document.getElementById('stat-count');
+        if (statCountEl) statCountEl.textContent = inStockCount;
+
+        const currentSearch = document.getElementById('adminSearchInput');
+        const searchTerm = currentSearch ? currentSearch.value.toLowerCase() : '';
+        const filtered = window.adminItems.filter(i => i.color.toLowerCase().includes(searchTerm));
+        renderAdminResults(filtered);
+
+        const nameInput = document.getElementById('colorName');
+        if (nameInput) renderDataList(nameInput.value);
+
+      } catch (err) {
+        console.error('Sync error:', err);
+        showToast('❌ Sync failed');
+      } finally {
+        if (btn) btn.textContent = '🔄 Sync Colors';
+      }
+    }
+
+    // =============================================
+    // INVENTORY — RENDER COLLAPSIBLE GROUPS
+    // =============================================
+    function renderAdminResults(items) {
+      const container = document.getElementById('adminInventoryResults');
+      if (!items || items.length === 0) {
+        container.innerHTML = "<p style='color:#4b5563; text-align:center; padding:20px;'>No colors found. Tap Sync.</p>";
+        return;
+      }
+
+      // Build groups dynamically from 'finish' field
+      const groups = {};
+      items.forEach(item => {
+        const key = (item.finish && item.finish.trim()) ? item.finish.trim() : 'Unknown';
+        if (!groups[key]) groups[key] = [];
+        groups[key].push(item);
+      });
+
+      const sortedKeys = Object.keys(groups).sort();
+
+      container.innerHTML = sortedKeys.map(finishName => {
+        const groupItems = groups[finishName];
+        const count = groupItems.length;
+        const groupId = `inv-group-${finishName.replace(/\s+/g, '-').toLowerCase()}`;
+
+        const itemsHtml = groupItems.map(item => `
+          <div class="inv-item ${item.inStock ? '' : 'out-of-stock'}">
+            <div class="inv-item-info">
+              <div class="inv-item-name">
+                <strong>${escapeHtml(item.color)}</strong>
+                <button type="button" onclick="openInvEditModal('${item.id}', 'color', '${escapeAttrInv(item.color)}')" class="inv-edit-btn">Edit</button>
+              </div>
+              <div class="inv-item-finish">
+                <small>Finish: ${escapeHtml(item.finish)}</small>
+                <button type="button" onclick="openInvEditModal('${item.id}', 'finish', '${escapeAttrInv(item.finish)}')" class="inv-edit-btn">Edit</button>
+              </div>
+            </div>
+            <div class="inv-item-actions">
+              <input type="checkbox" ${item.inStock ? 'checked' : ''} class="inv-stock-toggle"
+                onchange="toggleStock('${item.id}', this.checked)">
+              <button onclick="deleteInvItem('${item.id}', '${escapeAttrInv(item.color)}')" class="inv-delete-btn">🗑️</button>
+            </div>
+          </div>
+        `).join('');
+
+        return `
+          <div class="inv-finish-group">
+            <div class="inv-finish-group-header" onclick="toggleInvGroup('${groupId}')" id="inv-hdr-${groupId}">
+              <span class="inv-finish-group-title">
+                ${escapeHtml(finishName)}
+                <span class="inv-finish-badge">${count}</span>
+              </span>
+              <span class="inv-finish-chevron">▼</span>
+            </div>
+            <div class="inv-finish-group-body" id="${groupId}">
+              ${itemsHtml}
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // =============================================
+    // INVENTORY — TOGGLE GROUP
+    // =============================================
+    function toggleInvGroup(groupId) {
+      const body = document.getElementById(groupId);
+      const header = document.getElementById(`inv-hdr-${groupId}`);
+      if (!body || !header) return;
+      const isCollapsed = body.classList.contains('collapsed');
+      body.classList.toggle('collapsed', !isCollapsed);
+      header.classList.toggle('collapsed', !isCollapsed);
+    }
+
+    // =============================================
+    // INVENTORY — ESCAPE HELPERS
+    // =============================================
+    function escapeAttrInv(str) {
+      return String(str).replace(/'/g, "\\'").replace(/"/g, '&quot;');
+    }
+
+    // =============================================
+    // INVENTORY — FORM SUBMIT (Add New Filament)
+    // =============================================
+    document.getElementById('addFilamentForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const nameInput = document.getElementById('colorName');
+      const newName = nameInput.value.trim();
+
+      const finishSelect = document.getElementById('finish');
+      const newFinishInput = document.getElementById('newFinishInput');
+      let rawFinish = (finishSelect.value === 'ADD_NEW') ? newFinishInput.value.trim() : finishSelect.value;
+      if (!rawFinish) {
+        showToast('Please provide a finish name.');
+        return;
+      }
+      const cleanFinish = rawFinish.charAt(0).toUpperCase() + rawFinish.slice(1).toLowerCase();
+
+      // Smart duplicate: block only if BOTH color AND finish match
+      const isDuplicate = (window.adminItems || []).some(item =>
+        item.color.toLowerCase() === newName.toLowerCase() &&
+        item.finish.toLowerCase() === cleanFinish.toLowerCase()
+      );
+      if (isDuplicate) {
+        showToast(`❌ "${newName}" (${cleanFinish}) already exists`);
+        return;
+      }
+
+      const submitBtn = document.getElementById('submitBtn');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Publishing...';
+
+      const payload = {
+        color: newName,
+        finish: cleanFinish,
+        description: document.getElementById('description').value,
+        colorHex1: document.getElementById('text1').value || document.getElementById('picker1').value,
+        colorHex2: document.getElementById('text2').value || '',
+        colorHex3: document.getElementById('text3').value || '',
+        inStock: true
+      };
+
+      try {
+        const response = await fetch(window.API_BASE, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-api-key': window.ADMIN_KEY },
+          body: JSON.stringify(payload)
+        });
+        if (response.ok) {
+          showToast('✅ Color added!');
+          e.target.reset();
+          newFinishInput.style.display = 'none';
+          setTimeout(async () => {
+            await fetchForAdmin();
+            await populateFinishDropdown();
+          }, 500);
+        } else {
+          const errorData = await response.json();
+          showToast('Upload failed: ' + JSON.stringify(errorData));
+        }
+      } catch (err) {
+        showToast('❌ Network error.');
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = '➕ Publish Filament';
+      }
+    });
+
+    // =============================================
+    // INVENTORY — STOCK TOGGLE
+    // =============================================
+    async function toggleStock(id, currentState) {
+      const stringId = String(id);
+      if (window.adminItems) {
+        const item = window.adminItems.find(i => String(i.id) === stringId);
+        if (item) item.inStock = currentState;
+      }
+      localStorage.setItem(`pending_${stringId}`, String(currentState));
+
+      const currentSearch = document.getElementById('adminSearchInput');
+      const searchTerm = currentSearch ? currentSearch.value.toLowerCase() : '';
+      const filtered = (window.adminItems || []).filter(i => i.color.toLowerCase().includes(searchTerm));
+      renderAdminResults(filtered);
+
+      const inStockCount = (window.adminItems || []).filter(i => i.inStock).length;
+      const statCountEl = document.getElementById('stat-count');
+      if (statCountEl) statCountEl.textContent = inStockCount;
+
+      try {
+        const response = await fetch(`${window.API_BASE}/${id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', 'x-api-key': window.ADMIN_KEY },
+          body: JSON.stringify({ inStock: currentState })
+        });
+        if (response.ok) {
+          showToast(currentState ? '✅ In Stock' : '➖ Out of Stock');
+          setTimeout(() => localStorage.removeItem(`pending_${stringId}`), 6000);
+        } else {
+          throw new Error('Server rejected update');
+        }
+      } catch (err) {
+        console.error('Stock update failed:', err);
+        showToast('❌ Sync Error');
+        localStorage.removeItem(`pending_${stringId}`);
+        await fetchForAdmin();
+      }
+    }
+
+    // =============================================
+    // INVENTORY — DELETE ITEM
+    // =============================================
+    async function deleteInvItem(id, name) {
+      if (!confirm(`Delete "${name}" permanently?`)) return;
+      try {
+        const response = await fetch(`${window.API_BASE}/${id}`, {
+          method: 'DELETE',
+          headers: { 'x-api-key': window.ADMIN_KEY }
+        });
+        if (response.ok) {
+          showToast(`🗑️ "${name}" deleted`);
+          fetchForAdmin();
+        }
+      } catch (err) {
+        showToast('❌ Delete failed.');
+      }
+    }
+
+    // =============================================
+    // INVENTORY — EDIT MODAL
+    // =============================================
+    function closeInvModal() {
+      document.getElementById('invEditModal').style.display = 'none';
+    }
+
+    function openInvEditModal(id, fieldName, currentVal) {
+      const modal = document.getElementById('invEditModal');
+      const modalBody = document.getElementById('invModalBody');
+      const title = document.getElementById('invModalTitle');
+      const saveBtn = document.getElementById('invSaveEditBtn');
+
+      title.textContent = `Edit ${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)}`;
+      modalBody.innerHTML = '';
+
+      if (fieldName === 'finish') {
+        const select = document.createElement('select');
+        select.id = 'invModalInput';
+        select.className = 'inv-input';
+        select.style.marginTop = '8px';
+        const finishes = window.availableFinishes || ['Matte', 'Silk', 'Satin', 'Solid'];
+        finishes.forEach(opt => {
+          const el = document.createElement('option');
+          el.value = opt; el.text = opt;
+          if (opt === currentVal) el.selected = true;
+          select.appendChild(el);
+        });
+        modalBody.appendChild(select);
+      } else {
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.id = 'invModalInput';
+        input.value = currentVal;
+        input.className = 'inv-input';
+        input.style.marginTop = '8px';
+        modalBody.appendChild(input);
+      }
+
+      modal.style.display = 'flex';
+
+      saveBtn.onclick = async () => {
+        const newVal = document.getElementById('invModalInput').value;
+        if (!newVal || newVal.trim() === '') return;
+        saveBtn.disabled = true;
+        try {
+          const response = await fetch(`${window.API_BASE}/${id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json', 'x-api-key': window.ADMIN_KEY },
+            body: JSON.stringify({ [fieldName]: newVal.trim() })
+          });
+          if (response.ok) {
+            closeInvModal();
+            showToast('✅ Saved');
+            await fetchForAdmin();
+          }
+        } catch (err) {
+          showToast('❌ Save failed.');
+        } finally {
+          saveBtn.disabled = false;
+        }
+      };
+    }
+
+    // =============================================
+    // INVENTORY — DATALIST (smart duplicate warning)
+    // =============================================
+    function renderDataList(query) {
+      const datalist = document.getElementById('existing-colors');
+      const nameInput = document.getElementById('colorName');
+      if (!datalist || !nameInput) return;
+      const cleanQuery = query.trim().toLowerCase();
+      if (cleanQuery.length < 2) {
+        datalist.innerHTML = '';
+        nameInput.style.border = '1px solid #4b5563';
+        return;
+      }
+      const matches = (window.adminItems || []).filter(item => item.color.toLowerCase().includes(cleanQuery));
+      datalist.innerHTML = matches.map(item => `<option value="${escapeHtml(item.color)}">`).join('');
+
+      const finishSelect = document.getElementById('finish');
+      const newFinishInput = document.getElementById('newFinishInput');
+      const currentFinish = (finishSelect.value === 'ADD_NEW')
+        ? newFinishInput.value.trim().toLowerCase()
+        : finishSelect.value.toLowerCase();
+
+      const exactComboExists = (window.adminItems || []).some(item =>
+        item.color.toLowerCase() === cleanQuery &&
+        item.finish.toLowerCase() === currentFinish
+      );
+      nameInput.style.border = exactComboExists ? '2px solid #ef4444' : '1px solid #4b5563';
+    }
+
+    // =============================================
+    // INVENTORY — EVENT LISTENERS
+    // =============================================
+    document.getElementById('colorName').addEventListener('input', (e) => renderDataList(e.target.value));
+    document.getElementById('finish').addEventListener('change', () => {
+      const nameInput = document.getElementById('colorName');
+      if (nameInput) renderDataList(nameInput.value);
+    });
+    document.getElementById('adminSearchInput').addEventListener('input', (e) => {
+      const term = e.target.value.toLowerCase();
+      const filtered = (window.adminItems || []).filter(i => i.color.toLowerCase().includes(term));
+      renderAdminResults(filtered);
+    });
+    document.getElementById('adminRefreshBtn').addEventListener('click', fetchForAdmin);
+
+    // =============================================
+    // CORE DASHBOARD INITIALIZATION
+    // Called after auth passes (web) or immediately (Electron).
+    // Fires fetchQueue() and wires the Supabase Realtime subscription.
+    // =============================================
+    function initDashboard() {
+      fetchQueue();
+
+      // Guard: only initialize if Supabase SDK loaded and credentials available
+      if (typeof supabase !== 'undefined' && window.SUPABASE_URL && window.SUPABASE_ANON_KEY) {
+        try {
+          const supabaseClient = supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+
+          supabaseClient
+            .channel('print_jobs_realtime')
+            .on(
+              'postgres_changes',
+              { event: 'INSERT', schema: 'public', table: 'print_jobs' },
+              (payload) => {
+                // Instantly re-render the queue — bypasses the 60s auto-refresh timer
+                fetchQueue();
+                showToast('🔔 New print request received!');
+
+                // -----------------------------------------------
+                // NATIVE OS NOTIFICATION — Electron desktop only
+                // Fires only when running under file:// protocol
+                // -----------------------------------------------
+                if (window.location.protocol === 'file:') {
+                  const notifTitle = '🔔 New Print Request Received!';
+                  const notifBody  = `${payload.new.requestor_name || 'Someone'} — ${payload.new.project_name || 'New Job'}`;
+                  const notifIcon  = '../../../icon.png';
+
+                  if (Notification.permission === 'granted') {
+                    new Notification(notifTitle, { body: notifBody, icon: notifIcon });
+                  } else if (Notification.permission !== 'denied') {
+                    Notification.requestPermission().then(perm => {
+                      if (perm === 'granted') {
+                        new Notification(notifTitle, { body: notifBody, icon: notifIcon });
+                      }
+                    });
+                  }
+                }
+              }
+            )
+            .subscribe((status) => {
+              if (status === 'SUBSCRIBED') {
+                console.log('[C3DW Realtime] ✅ Subscribed to print_jobs INSERT events');
+              }
+            });
+        } catch (realtimeErr) {
+          console.warn('[C3DW Realtime] Subscription init failed (non-critical):', realtimeErr);
+        }
+      } else {
+        console.warn('[C3DW Realtime] Supabase SDK not available — realtime disabled');
+      }
+    }
+
+    // =============================================
+    // PROTOCOL GUARD & AUTH SYSTEM
+    // ─────────────────────────────────────────────
+    // Electron (file:) → removes overlay from DOM,
+    //   calls initDashboard() immediately.
+    // Web (https:) → checks sessionStorage for a
+    //   valid session flag. If found, skips overlay.
+    //   Otherwise, shows the lockscreen and freezes
+    //   all data fetching until the correct key is
+    //   entered.
     // =============================================
     document.addEventListener('DOMContentLoaded', () => {
-      fetchQueue();
+      const isDesktop = window.location.protocol === 'file:';
+
+      if (isDesktop) {
+        // ── ELECTRON DESKTOP PATH ──────────────────
+        // Remove the auth overlay from the DOM entirely.
+        // No visual artifact, no memory overhead.
+        const overlay = document.getElementById('auth-overlay');
+        if (overlay) overlay.remove();
+        console.log('[C3DW Auth] Desktop detected — auth overlay purged. Initializing dashboard.');
+        initDashboard();
+
+      } else {
+        // ── WEB / MOBILE PATH ──────────────────────
+        // Check for an existing valid session in sessionStorage.
+        // sessionStorage persists for the tab lifetime only —
+        // closing the tab or browser requires re-authentication.
+        if (sessionStorage.getItem('c3dw_hub_auth') === 'granted') {
+          console.log('[C3DW Auth] Session token found — bypassing lockscreen.');
+          initDashboard();
+        } else {
+          // Show the lockscreen — all data fetching is frozen until auth passes.
+          const overlay = document.getElementById('auth-overlay');
+          if (overlay) overlay.style.display = 'flex';
+          // Focus the password input for immediate keyboard entry
+          const keyInput = document.getElementById('auth-key-input');
+          if (keyInput) setTimeout(() => keyInput.focus(), 100);
+          console.log('[C3DW Auth] Web target detected — lockscreen active. Awaiting authentication.');
+        }
+      }
     });
+
+    // =============================================
+    // AUTH HANDLER
+    // Validates the entered key against window.ADMIN_KEY
+    // (set by api.js before this script runs).
+    // On success: stores session flag, fades overlay,
+    //   calls initDashboard().
+    // On failure: shows error message + shake animation.
+    // =============================================
+    function handleAuth() {
+      const keyInput = document.getElementById('auth-key-input');
+      const errEl    = document.getElementById('auth-error');
+      const panel    = document.querySelector('.auth-panel');
+      const overlay  = document.getElementById('auth-overlay');
+
+      if (!keyInput || !overlay) return;
+
+      const entered = keyInput.value;
+
+      if (entered === window.ADMIN_KEY) {
+        // ── SUCCESS ────────────────────────────────
+        sessionStorage.setItem('c3dw_hub_auth', 'granted');
+        console.log('[C3DW Auth] ✅ Authentication successful — session token stored.');
+
+        // Fade out the overlay, then hide it and boot the dashboard
+        overlay.style.opacity = '0';
+        setTimeout(() => {
+          overlay.style.display = 'none';
+          initDashboard();
+        }, 420);
+
+      } else {
+        // ── FAILURE ────────────────────────────────
+        if (errEl) errEl.style.display = 'block';
+        if (panel) {
+          panel.classList.remove('auth-shake'); // reset to allow re-trigger
+          void panel.offsetWidth;              // force reflow to restart animation
+          panel.classList.add('auth-shake');
+        }
+        keyInput.value = '';
+        keyInput.focus();
+        console.warn('[C3DW Auth] ❌ Invalid key entered.');
+      }
+    }
+
+    // Wire submit button click
+    const authSubmitBtn = document.getElementById('auth-submit-btn');
+    if (authSubmitBtn) {
+      authSubmitBtn.addEventListener('click', handleAuth);
+    }
+
+    // Wire Enter key on the password input
+    const authKeyInput = document.getElementById('auth-key-input');
+    if (authKeyInput) {
+      authKeyInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') handleAuth();
+      });
+    }
   </script>
 
 </body>

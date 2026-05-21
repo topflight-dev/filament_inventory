@@ -25,7 +25,7 @@
       "purpose": "maskable"
     }
   ],
-  "start_url": "/src/pages/public/request.html",
+  "start_url": "/request",
   "background_color": "#ffffff",
   "theme_color": "#000000",
   "display": "standalone",
