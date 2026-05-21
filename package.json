@@ -30,6 +30,9 @@
     "type": "git",
     "url": "git+https://github.com/blast1221/filament_inventory.git"
   },
+  "engines": {
+    "node": ">=20.x"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
