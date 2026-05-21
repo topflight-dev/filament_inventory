@@ -2,6 +2,63 @@
 
 ---
 
+### 2026-05-21 — Hotfix: Vercel Runtime Version Error — Pinned @vercel/node to Explicit Version (Cline)
+
+**Task Completed:** Diagnosed and resolved a recurring Vercel build failure (`Error: Function Runtimes must have a valid version`). The root cause was that `@vercel/node` without a version string is rejected by Vercel CLI 54.x. Pinned the runtime to the explicit current version `@vercel/node@5.8.3` and added a Node.js engine constraint to `package.json`. Deployed successfully to production.
+
+---
+
+**Root Cause:** Vercel CLI 54.1.0 requires the `runtime` field in `vercel.json` `functions` blocks to include an explicit semver version string (e.g., `@vercel/node@5.8.3`). The bare `@vercel/node` string (without version) is rejected with `"Function Runtimes must have a valid version, for example now-php@1.0.0"`.
+
+**Files Modified:**
+
+| File | Change |
+|------|--------|
+| `vercel.json` | Added `functions` block with `"runtime": "@vercel/node@5.8.3"` for `api/env.js`; preserved existing `cleanUrls`, `framework`, `outputDirectory` settings |
+| `package.json` | Added `"engines": { "node": ">=20.x" }` constraint block |
+
+**Final `vercel.json`:**
+```json
+{
+  "cleanUrls": true,
+  "framework": null,
+  "outputDirectory": ".",
+  "functions": {
+    "api/env.js": {
+      "runtime": "@vercel/node@5.8.3"
+    }
+  }
+}
+```
+
+**Git Commits:**
+
+| Commit | Message |
+|--------|---------|
+| `a8252c3` | `fix(vercel): correct function runtime syntax inside vercel.json` — added `functions` block + `engines` to `package.json` |
+| `2ac843c` | `fix(vercel): pin @vercel/node runtime to explicit version 5.8.3` |
+
+**Vercel Production Deployment**
+
+| Property | Value |
+|----------|-------|
+| **Command** | `vercel --prod --force` |
+| **Upload** | 167 B (delta — only changed files) |
+| **Build time** | 49 seconds ✅ |
+| **Status** | `✓ Ready` |
+| **Unique permalink** | `https://c3dw-sandbox-o0bevlavd-3dprintguy.vercel.app` |
+| **Stable alias** | `https://c3dw-sandbox.vercel.app` |
+| **Vercel inspect** | `https://vercel.com/3dprintguy/c3dw-sandbox/E1wNc8EWfihdUFcSUdimx3C83FC4` |
+
+**No changes to:** `main.cjs`, `server.js`, Supabase schema, `www.crafted3dworkshop.com`, `main` branch
+
+**Status:** Vercel runtime error resolved ✅ — `api/env.js` serverless function deploys cleanly with `@vercel/node@5.8.3`
+
+**Next Step:** Verify `https://c3dw-sandbox.vercel.app/api/env` returns the expected JSON config payload (`DISCORD_WEBHOOK_URL`, `ADMIN_KEY`) and confirm `https://c3dw-sandbox.vercel.app/inventory` loads the color catalog correctly.
+
+
+---
+
 ### 2026-05-21 — Deployment: Direct Supabase Pipeline & Legacy Cleanup — Force Production Deploy to Vercel (Cline)
 
 **Task Completed:** Staged and committed all pending workspace changes from the direct Supabase pipeline sprint and legacy file cleanup, resolved a `vercel.json` build error, pushed both commits to `origin/feature/universal-web-target`, and executed a forced Vercel production deployment.

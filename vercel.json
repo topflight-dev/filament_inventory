@@ -1,10 +1,9 @@
 {
   "cleanUrls": true,
   "framework": null,
-  "outputDirectory": ".",
   "functions": {
     "api/env.js": {
-      "runtime": "@vercel/node@5.8.3"
+      "runtime": "nodejs20.x"
     }
   }
 }
