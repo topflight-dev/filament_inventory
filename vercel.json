@@ -1,9 +1,4 @@
 {
   "cleanUrls": true,
-  "framework": null,
-  "functions": {
-    "api/env.js": {
-      "runtime": "nodejs20.x"
-    }
-  }
+  "framework": null
 }
