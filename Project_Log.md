@@ -2,6 +2,46 @@
 
 ---
 
+### 2026-05-21 — Deployment: Direct Supabase Pipeline & Legacy Cleanup — Force Production Deploy to Vercel (Cline)
+
+**Task Completed:** Staged and committed all pending workspace changes from the direct Supabase pipeline sprint and legacy file cleanup, resolved a `vercel.json` build error, pushed both commits to `origin/feature/universal-web-target`, and executed a forced Vercel production deployment.
+
+---
+
+**Git Commits Pushed:**
+
+| Commit | Message | Files |
+|--------|---------|-------|
+| `a59a9ab` | `feat(catalog): complete direct Supabase pipeline & legacy file cleanup` | `Project_Log.md` (updated), `src/pages/admin/admin.html` (deleted) |
+| `4aef403` | `fix(vercel): remove invalid functions runtime block causing build failure` | `vercel.json` — removed `functions.api/env.js.runtime: nodejs20.x` block rejected by Vercel CLI 54.x |
+
+**Root Cause of Build Error:** The `vercel.json` `functions` block with `"runtime": "nodejs20.x"` was rejected by Vercel CLI 54.1.0 with `"Function Runtimes must have a valid version"`. The block was removed entirely — `api/env.js` is auto-detected as a Node.js serverless function without explicit runtime declaration.
+
+---
+
+**Vercel Production Deployment**
+
+| Property | Value |
+|----------|-------|
+| **Command** | `vercel --prod --force` |
+| **Upload** | 197.8 KB — 63 deployment files |
+| **Build time** | 49 seconds ✅ |
+| **Status** | `✓ Ready` |
+| **Unique permalink** | `https://c3dw-sandbox-p496kczhr-3dprintguy.vercel.app` |
+| **Stable alias** | `https://c3dw-sandbox.vercel.app` |
+| **Vercel inspect** | `https://vercel.com/3dprintguy/c3dw-sandbox/ERidpGYCUqsuwoJgD9DbgaKx2i1c` |
+
+**No changes to:** `main.cjs`, `server.js`, Supabase schema, `www.crafted3dworkshop.com`, `main` branch
+
+**Status:** Direct Supabase pipeline sprint deployed live ✅ — `https://c3dw-sandbox.vercel.app/inventory` now reads directly from Supabase `colors` table with zero Render.com dependency.
+
+**Next Step:** Verify `https://c3dw-sandbox.vercel.app/inventory` loads the color catalog with correct swatches and finish filters on a mobile browser.
+
+---
+
+
+---
+
 ### 2026-05-21 — Feature: Public Catalog Database Sync — Direct Supabase Connection for inventory.html (Cline)
 
 **Task Completed:** Migrated the public-facing filament color catalog (`inventory.html` + `js/inventory.js`) from a legacy Render.com backend proxy to a direct Supabase database connection. The public visitor catalog now queries the `colors` table directly using the Supabase JS SDK — eliminating the Render.com cold-start latency hop entirely.
