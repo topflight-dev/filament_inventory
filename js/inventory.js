@@ -1,7 +1,13 @@
 async function loadInventory() {
     try {
-        const response = await fetch(window.API_BASE || "https://filament-inventory.onrender.com/inventory");
-        const data = await response.json();
+        // Initialize Supabase client using credentials from api.js (window globals)
+        const supabaseClient = supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+
+        const { data, error } = await supabaseClient
+            .from('colors')
+            .select('*');
+
+        if (error) throw error;
 
         const allItems = data.map(record => ({
             id: record.id,
