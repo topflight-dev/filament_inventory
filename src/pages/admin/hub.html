@@ -2102,6 +2102,15 @@
     // INVENTORY — STOCK TOGGLE
     // =============================================
     async function toggleStock(id, currentState) {
+      // Guard: API credentials may not be loaded yet (race condition on page load).
+      // If ADMIN_KEY is null, the PATCH will be rejected 403 by the server.
+      if (!window.ADMIN_KEY) {
+        showToast('⏳ Credentials still loading — please try again in a moment.');
+        // Revert the checkbox to its previous state visually
+        await fetchForAdmin();
+        return;
+      }
+
       const stringId = String(id);
       if (window.adminItems) {
         const item = window.adminItems.find(i => String(i.id) === stringId);
@@ -2131,7 +2140,20 @@
           throw new Error('Server rejected update');
         }
       } catch (err) {
-        console.error('Stock update failed:', err);
+        // Capture HTTP status if available for detailed diagnostics
+        let httpStatus = 'N/A';
+        if (err && err.response) {
+          httpStatus = err.response.status;
+        } else if (err && err.message && err.message.includes('Server rejected')) {
+          httpStatus = 'Non-2xx (server rejected — likely 403 Unauthorized or 404 Not Found)';
+        }
+        console.error('SUPABASE UPDATE REJECTION DETAILS:', {
+          message: err.message,
+          httpStatus,
+          itemId: id,
+          attemptedState: currentState,
+          adminKeyPresent: !!window.ADMIN_KEY
+        });
         showToast('❌ Sync Error');
         localStorage.removeItem(`pending_${stringId}`);
         await fetchForAdmin();
