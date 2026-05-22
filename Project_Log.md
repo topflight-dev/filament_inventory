@@ -2,6 +2,33 @@
 
 ---
 
+### 2026-05-21 — Bugfix: Stock Toggle Race Condition — ADMIN_KEY Null Guard (Cline)
+
+**Task Completed:** Diagnosed and resolved the 'Sync Error' toast + checkbox revert bug triggered when toggling the in-stock status of any color (reproducibly observed on 'Red') in the admin hub's Filament Inventory tab.
+
+**Root Cause:** A client-side race condition in `toggleStock()`. The function in `hub.html` fires a `PATCH /inventory/:id` request using `window.ADMIN_KEY` as the `x-api-key` header. However, `api.js` initializes `window.ADMIN_KEY = null` and then asynchronously fetches the real key from `/api/env`. If the user clicks a stock toggle checkbox before that async fetch resolves, the PATCH is sent with `x-api-key: null`, which the server's `adminAuth` middleware rejects with **HTTP 403 Unauthorized**. The `response.ok` check fails, throwing `'Server rejected update'`, which lands in the catch block and shows the `❌ Sync Error` toast while reverting the UI.
+
+**Investigation Findings:**
+- The 'Red' record (id: 21) is structurally clean — no blank required fields, no malformed ID.
+- Direct `PATCH /inventory/21` with the correct key returns HTTP 200 `"Update successful"` every time.
+- The bug is not data-specific; any color would fail if toggled before `/api/env` resolves.
+
+**Fix Applied (`src/pages/admin/hub.html`):**
+1. **ADMIN_KEY guard** — Added a `!window.ADMIN_KEY` check at the very top of `toggleStock()`. If the key is not yet loaded, a friendly `⏳ Credentials still loading — please try again in a moment.` toast is shown, the checkbox is visually reverted via `fetchForAdmin()`, and the function returns early — preventing the doomed PATCH.
+2. **Enhanced catch block** — Upgraded `console.error` to log a structured `SUPABASE UPDATE REJECTION DETAILS` object including `message`, `httpStatus`, `itemId`, `attemptedState`, and `adminKeyPresent` for future diagnostics.
+
+**Files Modified:**
+
+| File | Change |
+|------|--------|
+| `src/pages/admin/hub.html` | Added `!window.ADMIN_KEY` early-return guard + enhanced structured `console.error` in `toggleStock()` |
+
+**Git Commit:** `e9c4893` — `fix(hub): guard stock toggle against API credential race condition`
+
+**Next Step:** Monitor the hub in production to confirm the race condition is fully resolved. If the `/api/env` fetch is consistently slow (>2s), consider adding a `window.adminKeyReady` Promise in `api.js` that `toggleStock()` can `await` for a more seamless UX.
+
+---
+
 ### 2026-05-21 — Hotfix: Vercel 404 on /inventory — Static Root Serving & Build Bypass (Cline)
 
 **Task Completed:** Diagnosed and resolved a blanket 404 on all Vercel routes (including `/inventory` and `/inventory.html`). Root cause was the Electron `build` block in `package.json` hijacking Vercel's build step — Vercel was running `npm run build` (electron-builder) instead of serving static files, producing no web output. Fixed by explicitly setting `outputDirectory: "."` and `buildCommand: ""` in `vercel.json`, and adding a root-to-inventory permanent redirect. Also removed an invalid `functions` runtime block (`nodejs20.x` without package prefix) that caused a secondary build error on the first deploy attempt.

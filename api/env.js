@@ -15,7 +15,7 @@
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
-module.exports = (req, res) => {
+export default function handler(req, res) {
     // Only allow GET requests
     if (req.method !== 'GET') {
         return res.status(405).json({ error: 'Method Not Allowed' });
@@ -34,4 +34,4 @@ module.exports = (req, res) => {
         DISCORD_WEBHOOK_URL: discordWebhookUrl,
         ADMIN_KEY:           adminKey
     });
-};
+}
