@@ -4,12 +4,12 @@
  * Import this file in any page that needs to talk to the API.
  *
  * Environment Detection:
- *   - Electron desktop app loads via file: protocol → routes to PRODUCTION Render backend
+ *   - Electron desktop app loads via file: protocol → routes to Vercel production backend
  *     (Electron has no local server running; the .exe is a standalone viewer)
  *     Secrets (ADMIN_KEY, DISCORD_WEBHOOK_URL) are injected by main.cjs via
  *     executeJavaScript() before this script runs — no fetch needed.
  *   - Local dev server (localhost / 127.0.0.1) → routes to localhost:3000
- *   - Any live domain (Render, Vercel, etc.) → routes to production Render backend
+ *   - Any live domain (Vercel, etc.) → routes to Vercel production backend
  *     Secrets are fetched from /api/env (Vercel serverless function) on page load.
  *
  * Usage (in a <script> tag or module):
@@ -25,18 +25,23 @@
  *   Add secrets to: Vercel Dashboard → Project → Settings → Environment Variables
  */
 
-// Detect if running inside a local dev server (localhost / 127.0.0.1 only)
-// NOTE: file:// protocol (Electron .exe) intentionally routes to PRODUCTION —
-// the compiled desktop app has no local server; it connects directly to Render.
+// Detect the current execution environment
+// NOTE: file:// protocol = Electron desktop .exe (no local server — routes to Vercel production)
+const isElectron = window.location.protocol === 'file:';
 const isLocalDev = (
   window.location.hostname === 'localhost' ||
   window.location.hostname === '127.0.0.1'
 );
 
-// Switch base URL based on environment
-const _BASE = isLocalDev
-  ? 'http://localhost:3000'
-  : 'https://filament-inventory.onrender.com';
+// Switch base URL based on environment:
+//   Electron desktop (.exe) → Vercel production (file:// has no local server)
+//   Local dev server        → localhost:3000
+//   Live web/PWA (Vercel)   → Vercel production
+const _BASE = isElectron
+  ? 'https://c3dw-sandbox.vercel.app'
+  : isLocalDev
+    ? 'http://localhost:3000'
+    : 'https://c3dw-sandbox.vercel.app';
 
 // Expose on window so inline scripts in HTML files can access them
 window.API_BASE         = _BASE + '/inventory';
