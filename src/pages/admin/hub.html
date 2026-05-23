@@ -21,9 +21,9 @@
   <title>Crafted 3D | Admin Hub</title>
   <link rel="stylesheet" href="../../../styles/style.css">
   <link rel="icon" href="../../../Crafted 3D.ico" type="image/x-icon">
-  <script src="../../../js/api/api.js"></script>
-  <!-- Supabase JS SDK — required for Realtime subscription -->
+  <!-- Supabase JS SDK — must load BEFORE api.js so the shared client can initialize -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="../../../js/api/api.js"></script>
   <style>
     /* =============================================
        DARK MODE BASE
@@ -1417,7 +1417,7 @@
     let isAutoRefreshOn = false;
 
     // =============================================
-    // FETCH QUEUE
+    // FETCH QUEUE — Direct Supabase SDK
     // =============================================
     async function fetchQueue() {
       const btn = document.getElementById('refreshBtn');
@@ -1427,10 +1427,16 @@
       }
 
       try {
-        const response = await fetch(`${window.PRINT_QUEUE_BASE}?cb=${Date.now()}`);
-        if (!response.ok) throw new Error(`Server returned ${response.status}`);
-        const jobs = await response.json();
-        renderQueue(Array.isArray(jobs) ? jobs : []);
+        const client = window.supabaseClient;
+        if (!client) throw new Error('Supabase client not initialized');
+
+        const { data, error } = await client
+          .from('print_jobs')
+          .select('*')
+          .order('created_at', { ascending: true });
+
+        if (error) throw error;
+        renderQueue(Array.isArray(data) ? data : []);
       } catch (err) {
         console.error('Queue fetch failed:', err);
         showToast('❌ Could not load queue');
@@ -1608,7 +1614,7 @@
     }
 
     // =============================================
-    // DELETE SELECTED (BATCH)
+    // DELETE SELECTED (BATCH) — Direct Supabase SDK
     // =============================================
     async function deleteSelected() {
       const checkedBoxes = document.querySelectorAll('.job-checkbox:checked');
@@ -1624,22 +1630,17 @@
       deleteBtn.textContent = '⏳ Deleting...';
 
       try {
-        const response = await fetch(`${window.PRINT_QUEUE_BASE}`, {
-          method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-admin-key': window.ADMIN_KEY
-          },
-          body: JSON.stringify({ ids })
-        });
+        const client = window.supabaseClient;
+        if (!client) throw new Error('Supabase client not initialized');
 
-        if (!response.ok) {
-          const errData = await response.json().catch(() => ({}));
-          throw new Error(errData.error || `Server returned ${response.status}`);
-        }
+        const { error } = await client
+          .from('print_jobs')
+          .delete()
+          .in('id', ids);
 
-        const result = await response.json();
-        showToast(`🗑️ Deleted ${result.count} job${result.count !== 1 ? 's' : ''}`);
+        if (error) throw error;
+
+        showToast(`🗑️ Deleted ${ids.length} job${ids.length !== 1 ? 's' : ''}`);
         await fetchQueue();
 
       } catch (err) {
@@ -1701,19 +1702,15 @@
       saveBtn.textContent = '⏳ Saving...';
 
       try {
-        const response = await fetch(`${window.PRINT_QUEUE_BASE}/${id}`, {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-admin-key': window.ADMIN_KEY
-          },
-          body: JSON.stringify(payload)
-        });
+        const client = window.supabaseClient;
+        if (!client) throw new Error('Supabase client not initialized');
 
-        if (!response.ok) {
-          const errData = await response.json().catch(() => ({}));
-          throw new Error(errData.error || `Server returned ${response.status}`);
-        }
+        const { error } = await client
+          .from('print_jobs')
+          .update(payload)
+          .eq('id', id);
+
+        if (error) throw error;
 
         showToast('✅ Job updated successfully');
         await fetchQueue();
@@ -1727,7 +1724,7 @@
     }
 
     // =============================================
-    // CYCLE STATUS
+    // CYCLE STATUS — Direct Supabase SDK
     // =============================================
     async function cycleStatus(id, currentStatus, btn) {
       const nextStatus = getNextStatus(currentStatus);
@@ -1736,16 +1733,18 @@
       btn.textContent = '⏳ Updating...';
 
       try {
-        const response = await fetch(`${window.PRINT_QUEUE_BASE}/${id}`, {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-admin-key': window.ADMIN_KEY
-          },
-          body: JSON.stringify({ status: nextStatus })
-        });
+        const client = window.supabaseClient;
+        if (!client) throw new Error('Supabase client not initialized');
 
-        if (!response.ok) throw new Error(`Server returned ${response.status}`);
+        // Normalize to title-case to match DB check constraint
+        const normalizedStatus = capitalize(nextStatus);
+
+        const { error } = await client
+          .from('print_jobs')
+          .update({ status: normalizedStatus })
+          .eq('id', id);
+
+        if (error) throw error;
 
         // Update the row in-place without a full re-fetch
         const badgeClass = getBadgeClass(nextStatus);
@@ -1877,13 +1876,19 @@
     setupSync('picker3', 'text3');
 
     // =============================================
-    // INVENTORY — FINISH DROPDOWN
+    // INVENTORY — FINISH DROPDOWN — Direct Supabase SDK
     // =============================================
     async function populateFinishDropdown() {
       try {
-        const response = await fetch(`${window.API_BASE}?cb=${Date.now()}`);
-        if (!response.ok) throw new Error('Fetch failed');
-        const data = await response.json();
+        const client = window.supabaseClient;
+        if (!client) throw new Error('Supabase client not initialized');
+
+        const { data, error } = await client
+          .from('colors')
+          .select('finish');
+
+        if (error) throw error;
+
         const standardFinishes = ['Basic', 'Galaxy', 'Matte', 'Satin', 'Silk', 'Solid', 'Translucent'];
         const existingFinishes = Array.isArray(data)
           ? data.map(item => item.finish).filter(f => f && f.trim() !== '')
@@ -1911,15 +1916,20 @@
     }
 
     // =============================================
-    // INVENTORY — FETCH & RENDER
+    // INVENTORY — FETCH & RENDER — Direct Supabase SDK
     // =============================================
     async function fetchForAdmin() {
       const btn = document.getElementById('adminRefreshBtn');
       if (btn) btn.textContent = 'Syncing...';
       try {
-        const response = await fetch(`${window.API_BASE}?cb=${Date.now()}`);
-        if (!response.ok) throw new Error('Sync failed');
-        const newData = await response.json();
+        const client = window.supabaseClient;
+        if (!client) throw new Error('Supabase client not initialized');
+
+        const { data: newData, error } = await client
+          .from('colors')
+          .select('*');
+
+        if (error) throw error;
 
         window.adminItems = newData.map(newItem => {
           const stringId = String(newItem.id);
@@ -2032,7 +2042,7 @@
     }
 
     // =============================================
-    // INVENTORY — FORM SUBMIT (Add New Filament)
+    // INVENTORY — FORM SUBMIT (Add New Filament) — Direct Supabase SDK
     // =============================================
     document.getElementById('addFilamentForm').addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -2073,25 +2083,25 @@
       };
 
       try {
-        const response = await fetch(window.API_BASE, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'x-api-key': window.ADMIN_KEY },
-          body: JSON.stringify(payload)
-        });
-        if (response.ok) {
-          showToast('✅ Color added!');
-          e.target.reset();
-          newFinishInput.style.display = 'none';
-          setTimeout(async () => {
-            await fetchForAdmin();
-            await populateFinishDropdown();
-          }, 500);
-        } else {
-          const errorData = await response.json();
-          showToast('Upload failed: ' + JSON.stringify(errorData));
-        }
+        const client = window.supabaseClient;
+        if (!client) throw new Error('Supabase client not initialized');
+
+        const { error } = await client
+          .from('colors')
+          .insert([payload]);
+
+        if (error) throw error;
+
+        showToast('✅ Color added!');
+        e.target.reset();
+        newFinishInput.style.display = 'none';
+        setTimeout(async () => {
+          await fetchForAdmin();
+          await populateFinishDropdown();
+        }, 500);
       } catch (err) {
-        showToast('❌ Network error.');
+        console.error('Add filament error:', err);
+        showToast('❌ Upload failed: ' + err.message);
       } finally {
         submitBtn.disabled = false;
         submitBtn.textContent = '➕ Publish Filament';
@@ -2099,19 +2109,12 @@
     });
 
     // =============================================
-    // INVENTORY — STOCK TOGGLE
+    // INVENTORY — STOCK TOGGLE — Direct Supabase SDK
     // =============================================
     async function toggleStock(id, currentState) {
-      // Guard: API credentials may not be loaded yet (race condition on page load).
-      // If ADMIN_KEY is null, the PATCH will be rejected 403 by the server.
-      if (!window.ADMIN_KEY) {
-        showToast('⏳ Credentials still loading — please try again in a moment.');
-        // Revert the checkbox to its previous state visually
-        await fetchForAdmin();
-        return;
-      }
-
       const stringId = String(id);
+
+      // Optimistic UI update
       if (window.adminItems) {
         const item = window.adminItems.find(i => String(i.id) === stringId);
         if (item) item.inStock = currentState;
@@ -2128,32 +2131,20 @@
       if (statCountEl) statCountEl.textContent = inStockCount;
 
       try {
-        const response = await fetch(`${window.API_BASE}/${id}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json', 'x-api-key': window.ADMIN_KEY },
-          body: JSON.stringify({ inStock: currentState })
-        });
-        if (response.ok) {
-          showToast(currentState ? '✅ In Stock' : '➖ Out of Stock');
-          setTimeout(() => localStorage.removeItem(`pending_${stringId}`), 6000);
-        } else {
-          throw new Error('Server rejected update');
-        }
+        const client = window.supabaseClient;
+        if (!client) throw new Error('Supabase client not initialized');
+
+        const { error } = await client
+          .from('colors')
+          .update({ inStock: currentState })
+          .eq('id', id);
+
+        if (error) throw error;
+
+        showToast(currentState ? '✅ In Stock' : '➖ Out of Stock');
+        setTimeout(() => localStorage.removeItem(`pending_${stringId}`), 6000);
       } catch (err) {
-        // Capture HTTP status if available for detailed diagnostics
-        let httpStatus = 'N/A';
-        if (err && err.response) {
-          httpStatus = err.response.status;
-        } else if (err && err.message && err.message.includes('Server rejected')) {
-          httpStatus = 'Non-2xx (server rejected — likely 403 Unauthorized or 404 Not Found)';
-        }
-        console.error('SUPABASE UPDATE REJECTION DETAILS:', {
-          message: err.message,
-          httpStatus,
-          itemId: id,
-          attemptedState: currentState,
-          adminKeyPresent: !!window.ADMIN_KEY
-        });
+        console.error('Stock toggle error:', { message: err.message, itemId: id, attemptedState: currentState });
         showToast('❌ Sync Error');
         localStorage.removeItem(`pending_${stringId}`);
         await fetchForAdmin();
@@ -2161,26 +2152,31 @@
     }
 
     // =============================================
-    // INVENTORY — DELETE ITEM
+    // INVENTORY — DELETE ITEM — Direct Supabase SDK
     // =============================================
     async function deleteInvItem(id, name) {
       if (!confirm(`Delete "${name}" permanently?`)) return;
       try {
-        const response = await fetch(`${window.API_BASE}/${id}`, {
-          method: 'DELETE',
-          headers: { 'x-api-key': window.ADMIN_KEY }
-        });
-        if (response.ok) {
-          showToast(`🗑️ "${name}" deleted`);
-          fetchForAdmin();
-        }
+        const client = window.supabaseClient;
+        if (!client) throw new Error('Supabase client not initialized');
+
+        const { error } = await client
+          .from('colors')
+          .delete()
+          .eq('id', id);
+
+        if (error) throw error;
+
+        showToast(`🗑️ "${name}" deleted`);
+        fetchForAdmin();
       } catch (err) {
-        showToast('❌ Delete failed.');
+        console.error('Delete error:', err);
+        showToast('❌ Delete failed: ' + err.message);
       }
     }
 
     // =============================================
-    // INVENTORY — EDIT MODAL
+    // INVENTORY — EDIT MODAL — Direct Supabase SDK
     // =============================================
     function closeInvModal() {
       document.getElementById('invEditModal').style.display = 'none';
@@ -2225,18 +2221,22 @@
         if (!newVal || newVal.trim() === '') return;
         saveBtn.disabled = true;
         try {
-          const response = await fetch(`${window.API_BASE}/${id}`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json', 'x-api-key': window.ADMIN_KEY },
-            body: JSON.stringify({ [fieldName]: newVal.trim() })
-          });
-          if (response.ok) {
-            closeInvModal();
-            showToast('✅ Saved');
-            await fetchForAdmin();
-          }
+          const client = window.supabaseClient;
+          if (!client) throw new Error('Supabase client not initialized');
+
+          const { error } = await client
+            .from('colors')
+            .update({ [fieldName]: newVal.trim() })
+            .eq('id', id);
+
+          if (error) throw error;
+
+          closeInvModal();
+          showToast('✅ Saved');
+          await fetchForAdmin();
         } catch (err) {
-          showToast('❌ Save failed.');
+          console.error('Modal save error:', err);
+          showToast('❌ Save failed: ' + err.message);
         } finally {
           saveBtn.disabled = false;
         }

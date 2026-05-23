@@ -2,6 +2,222 @@
 
 ---
 
+### 2026-05-23 — Sprint: Cloud-Native API Gateway Unification & Print Queue Schema Audit (Cline)
+
+**Task Completed:** Executed a full cloud-native migration sprint. Stripped all legacy Express/Render proxy dependencies from the API gateway and all UI pages. Every data operation (filament inventory reads/writes, print queue reads/writes, site traffic tracking) now communicates directly with Supabase via the shared JS SDK client — zero server-side proxy hops.
+
+---
+
+**Change 1 — `js/api/api.js` — Unified Cloud Gateway**
+
+Removed all legacy routing logic (`_BASE`, `isElectron`, `isLocalDev` ternary, `window.API_BASE`, `window.PRINT_QUEUE_BASE`). The file now:
+- Exposes `window.SUPABASE_URL` and `window.SUPABASE_ANON_KEY` (unchanged)
+- Initializes and exposes a **shared `window.supabaseClient`** instance (new) — single Supabase client for all pages
+- Retains the `/api/env` fetch for `ADMIN_KEY` + `DISCORD_WEBHOOK_URL` (unchanged)
+- Requires the Supabase JS SDK to load **before** `api.js` (script order updated in all pages)
+
+**Change 2 — `js/utils/tracker.js` — Dead Render URL Removed**
+
+Replaced the hardcoded `https://filament-inventory.onrender.com/api/track-visit` fetch with a direct `window.supabaseClient.from('site_traffic').insert([...])` call. Includes a 300ms deferred init guard for pages where the SDK and `api.js` load concurrently.
+
+**Change 3 — `src/pages/admin/hub.html` — Print Queue: All Fetch Calls → Supabase SDK**
+
+| Function | Before | After |
+|---|---|---|
+| `fetchQueue()` | `fetch(PRINT_QUEUE_BASE)` | `supabaseClient.from('print_jobs').select('*').order('created_at')` |
+| `cycleStatus()` | `fetch(PRINT_QUEUE_BASE/:id, PATCH)` | `supabaseClient.from('print_jobs').update({status}).eq('id', id)` |
+| `saveRow()` | `fetch(PRINT_QUEUE_BASE/:id, PATCH)` | `supabaseClient.from('print_jobs').update(payload).eq('id', id)` |
+| `deleteSelected()` | `fetch(PRINT_QUEUE_BASE, DELETE)` | `supabaseClient.from('print_jobs').delete().in('id', ids)` |
+
+**Change 4 — `src/pages/admin/hub.html` — Inventory: All Fetch Calls → Supabase SDK**
+
+| Function | Before | After |
+|---|---|---|
+| `populateFinishDropdown()` | `fetch(API_BASE)` | `supabaseClient.from('colors').select('finish')` |
+| `fetchForAdmin()` | `fetch(API_BASE)` | `supabaseClient.from('colors').select('*')` |
+| Add Filament form submit | `fetch(API_BASE, POST)` | `supabaseClient.from('colors').insert([payload])` |
+| `toggleStock()` | `fetch(API_BASE/:id, PATCH)` | `supabaseClient.from('colors').update({inStock}).eq('id', id)` |
+| `deleteInvItem()` | `fetch(API_BASE/:id, DELETE)` | `supabaseClient.from('colors').delete().eq('id', id)` |
+| `openInvEditModal()` save | `fetch(API_BASE/:id, PATCH)` | `supabaseClient.from('colors').update({field}).eq('id', id)` |
+
+Also removed the `ADMIN_KEY` null guard from `toggleStock()` — no longer needed since the Supabase anon key is always available and RLS governs access.
+
+**Change 5 — `src/pages/public/request.html` — Filament Checklist & Form Submit → Supabase SDK**
+
+- Filament checklist load: `fetch(API_BASE)` → `supabaseClient.from('colors').select('id,color,finish,inStock').eq('inStock', true).order('color')`
+- Form submission: `fetch(PRINT_QUEUE_BASE, POST)` → `supabaseClient.from('print_jobs').insert([payload])`
+- Added explicit `status: 'pending'` to the insert payload
+- Added Supabase JS SDK `<script>` tag before `api.js` in `<head>`
+
+**Change 6 — `vercel.json` — Serverless Function Runtime Declared**
+
+Added explicit `functions` block to ensure `api/env.js` is recognized as a Node.js 20.x serverless function:
+
+```json
+"functions": {
+  "api/env.js": {
+    "runtime": "nodejs20.x"
+  }
+}
+```
+
+---
+
+**Print Queue — Supabase Table Schema (Documented for Native Hosting)**
+
+| Column | Type | Constraints | Notes |
+|---|---|---|---|
+| `id` | `uuid` | `PRIMARY KEY DEFAULT gen_random_uuid()` | Auto-generated UUID |
+| `requestor_name` | `text` | `NOT NULL` | Requester's name |
+| `project_name` | `text` | `NOT NULL` | Includes ` \| 📝 ` separator for comments |
+| `stl_url` | `text` | nullable | Optional model link URL |
+| `filament_id` | `integer` | FK → `colors.id` | First selected filament |
+| `color_preference` | `text` | nullable | Comma-separated color labels |
+| `status` | `text` | `DEFAULT 'pending'` | Values: `pending`, `printing`, `completed` |
+| `created_at` | `timestamptz` | `DEFAULT now()` | Auto-generated timestamp |
+
+**Files Modified:**
+
+| File | Change |
+|------|--------|
+| `js/api/api.js` | Removed proxy URLs; added `window.supabaseClient` shared instance |
+| `js/utils/tracker.js` | Replaced Render.com fetch with direct Supabase insert |
+| `src/pages/admin/hub.html` | All queue + inventory fetch calls → Supabase SDK; SDK script order fixed |
+| `src/pages/public/request.html` | Filament load + form submit → Supabase SDK; SDK script order fixed |
+| `vercel.json` | Added `functions` block for `api/env.js` Node.js 20.x runtime |
+
+**No changes to:** `server.js`, `main.cjs`, `hub.html` (root mirror — pending sync), Supabase schema, `www.crafted3dworkshop.com`, `main` branch
+
+**Status:** Cloud-native API gateway unification complete ✅ — All web/PWA data operations route directly through Supabase SDK
+
+**Next Step:** Commit all changes, push to `origin/feature/universal-web-target`, and run `vercel --prod --force` to deploy the cloud-native pipeline live. Then verify `https://c3dw-sandbox.vercel.app/hub` loads the print queue and filament inventory directly from Supabase with no proxy hops.
+
+---
+
+
+---
+
+### 2026-05-21 — Bugfix: Desktop App Sync Error — Electron API Routing Redirected to Vercel (Cline)
+
+**Task Completed:** Diagnosed and resolved the root cause of the stock toggle sync error that was exclusively affecting the compiled Electron desktop application (`.exe`). The web browser target was confirmed working perfectly — the bug was 100% isolated to the desktop binary.
+
+**Root Cause:** `js/api/api.js` — the central API gateway — used a two-branch environment detection that only checked for `localhost` / `127.0.0.1` to identify local dev. Any other hostname (including the empty string produced by `file://` protocol in Electron) fell through to the production backend URL, which was hardcoded to the **old Render.com endpoint** (`https://filament-inventory.onrender.com`). The Render.com free-tier backend is either spun down or no longer configured with the correct `ADMIN_SECRET_KEY`, causing all `PATCH /inventory/:id` requests from the desktop app to return **403 Unauthorized** — which the `toggleStock()` catch block surfaced as `❌ Sync Error`.
+
+**Key Insight:** `window.location.protocol === 'file:'` is the reliable, zero-dependency signal that the app is running inside Electron. This was not being checked — the `file://` case was silently falling through to the dead Render.com URL.
+
+**Fix Applied (`js/api/api.js`):**
+
+Added an explicit `isElectron` branch that routes the desktop app directly to the Vercel production backend:
+
+**Before (broken — Electron fell through to dead Render.com URL):**
+```javascript
+const isLocalDev = (
+  window.location.hostname === 'localhost' ||
+  window.location.hostname === '127.0.0.1'
+);
+const _BASE = isLocalDev
+  ? 'http://localhost:3000'
+  : 'https://filament-inventory.onrender.com';  // ← Electron landed here
+```
+
+**After (fixed — Electron explicitly routes to Vercel):**
+```javascript
+const isElectron = window.location.protocol === 'file:';
+const isLocalDev = (
+  window.location.hostname === 'localhost' ||
+  window.location.hostname === '127.0.0.1'
+);
+const _BASE = isElectron
+  ? 'https://c3dw-sandbox.vercel.app'   // Desktop .exe → Vercel production
+  : isLocalDev
+    ? 'http://localhost:3000'            // Local dev server
+    : 'https://c3dw-sandbox.vercel.app'; // Live web/PWA → Vercel production
+```
+
+**Secret Injection — Confirmed Correct (No Changes Needed):**
+- `main.cjs` correctly reads `.env` and injects `ADMIN_KEY` and `DISCORD_WEBHOOK_URL` into the window via `executeJavaScript()` after page load — this was working correctly the entire time.
+- `.env` `ADMIN_KEY=CRAft3DW0RKSHOP-SuP3R-K3Y-2026` matches the Vercel Dashboard environment variable and the `server.js` fallback — key was never the problem.
+
+**Files Modified:**
+
+| File | Change |
+|------|--------|
+| `js/api/api.js` | Added `isElectron` protocol check; routed `file://` and web targets to `https://c3dw-sandbox.vercel.app`; removed dead `filament-inventory.onrender.com` reference |
+
+**Git Commit:** `d948f9d` — `fix(api): route desktop electron app to vercel production backend`
+
+**Desktop Binary Recompiled:**
+
+| Property | Value |
+|----------|-------|
+| **File Path** | `dist\C3DW Hub 1.0.0.exe` |
+| **File Size** | 166,694,966 bytes (~159 MB) ✅ |
+| **Compiled At** | 5/21/2026 10:06:07 PM |
+| **Build Tool** | electron-builder v26.8.1 |
+
+**No changes to:** `main.cjs`, `server.js`, `hub.html`, `src/pages/admin/hub.html`, Supabase schema, `www.crafted3dworkshop.com`, `main` branch
+
+**Status:** Desktop sync error resolved ✅ — `dist\C3DW Hub 1.0.0.exe` now routes all API calls to `https://c3dw-sandbox.vercel.app` with the correct `ADMIN_KEY` injected by `main.cjs`
+
+**Next Step:** Launch `dist\C3DW Hub 1.0.0.exe`, open the Filament Inventory tab, and toggle any color's in-stock checkbox — verify the `✅ In Stock` / `➖ Out of Stock` toast appears and the change reflects on the live site at `https://c3dw-sandbox.vercel.app/inventory`.
+
+---
+
+### 2026-05-21 — Hotfix: api/env.js HTTP 500 — ESM Module Syntax Mismatch (Cline)
+
+**Task Completed:** Diagnosed and resolved an HTTP 500 Internal Server Error on the `/api/env` serverless endpoint that was causing the lockscreen to fail on page load (the auth overlay could not retrieve `ADMIN_KEY` from the environment gateway).
+
+**Root Cause:** `package.json` declares `"type": "module"`, which instructs Node.js to treat all `.js` files as ES Modules (ESM). However, `api/env.js` was written using CommonJS syntax (`module.exports = (req, res) => { ... }`). When Vercel's Node 20.x runtime attempted to execute the function, it encountered an illegal `module.exports` assignment inside an ESM context — causing an immediate crash and returning HTTP 500 to every caller.
+
+**Fix Applied (`api/env.js`):**
+
+Converted the handler from CommonJS `module.exports` to ESM `export default function handler`:
+
+**Before (broken — CommonJS in ESM context):**
+```javascript
+module.exports = (req, res) => {
+    // ...
+};
+```
+
+**After (fixed — ESM export default):**
+```javascript
+export default function handler(req, res) {
+    // ...
+}
+```
+
+All internal logic (`req.method` guard, `process.env` reads, `res.status(200).json(...)` response) is completely unchanged — only the export syntax was updated.
+
+**Files Modified:**
+
+| File | Change |
+|------|--------|
+| `api/env.js` | Converted `module.exports = (req, res) =>` → `export default function handler(req, res)` |
+
+**Git Commit:** `3ba3e07` — `fix(api): convert serverless function to ESM syntax to resolve 500 crash`
+
+**Vercel Production Deployment**
+
+| Property | Value |
+|----------|-------|
+| **Command** | `vercel --prod --force` |
+| **Upload** | 228.8 KB — 63 deployment files |
+| **Build time** | 45 seconds ✅ |
+| **Status** | `✓ Ready` |
+| **Unique permalink** | `https://c3dw-sandbox-m6ftne91l-3dprintguy.vercel.app` |
+| **Stable alias** | `https://c3dw-sandbox.vercel.app` |
+| **Vercel inspect** | `https://vercel.com/3dprintguy/c3dw-sandbox/664kkxwnHZ3xo4W7THPixzPEZqKM` |
+
+**No changes to:** `main.cjs`, `server.js`, Supabase schema, `www.crafted3dworkshop.com`, `main` branch
+
+**Status:** `/api/env` serverless function ESM crash resolved ✅ — endpoint now returns valid JSON config payload
+
+**Next Step:** On a mobile browser, open a fresh private/incognito session and navigate to `https://c3dw-sandbox.vercel.app/hub` — verify the glassmorphism lockscreen appears, the correct access key grants entry, and the dashboard loads fully.
+
+
+---
+
 ### 2026-05-21 — Bugfix: Stock Toggle Race Condition — ADMIN_KEY Null Guard (Cline)
 
 **Task Completed:** Diagnosed and resolved the 'Sync Error' toast + checkbox revert bug triggered when toggling the in-stock status of any color (reproducibly observed on 'Red') in the admin hub's Filament Inventory tab.

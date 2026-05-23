@@ -1,62 +1,59 @@
 /**
- * api.js — API Gateway
- * Central configuration for all Supabase/backend communication.
- * Import this file in any page that needs to talk to the API.
+ * api.js — Unified Cloud API Gateway
+ * ─────────────────────────────────────────────────────────────────────────────
+ * Cloud-native web/PWA target. All data operations go directly through the
+ * Supabase client SDK — no Express proxy, no Render backend, no localhost
+ * fallback required.
  *
- * Environment Detection:
- *   - Electron desktop app loads via file: protocol → routes to Vercel production backend
- *     (Electron has no local server running; the .exe is a standalone viewer)
- *     Secrets (ADMIN_KEY, DISCORD_WEBHOOK_URL) are injected by main.cjs via
- *     executeJavaScript() before this script runs — no fetch needed.
- *   - Local dev server (localhost / 127.0.0.1) → routes to localhost:3000
- *   - Any live domain (Vercel, etc.) → routes to Vercel production backend
- *     Secrets are fetched from /api/env (Vercel serverless function) on page load.
+ * Exposes on window:
+ *   window.SUPABASE_URL        — Supabase project URL (safe to expose, anon key)
+ *   window.SUPABASE_ANON_KEY   — Supabase anon key (RLS-protected)
+ *   window.supabaseClient      — Initialized Supabase JS client (shared instance)
+ *   window.ADMIN_KEY           — Runtime-injected admin key (from /api/env or Electron)
+ *   window.DISCORD_WEBHOOK_URL — Runtime-injected webhook URL (from /api/env or Electron)
  *
- * Usage (in a <script> tag or module):
- *   <script src="./js/api/api.js"></script>
- *   Then use: window.API_BASE, window.PRINT_QUEUE_BASE, window.ADMIN_KEY,
- *             window.DISCORD_WEBHOOK_URL
+ * Secret Injection Paths:
+ *   • Electron (file://): main.cjs injects ADMIN_KEY + DISCORD_WEBHOOK_URL via
+ *     win.webContents.executeJavaScript() before this script runs.
+ *   • Web / Vercel (https://): fetched from /api/env serverless function on load.
  *
  * SECURITY NOTE:
- *   ADMIN_KEY and DISCORD_WEBHOOK_URL are NO LONGER hardcoded here.
- *   They are loaded at runtime from environment-specific sources:
- *     • Electron:  injected by main.cjs via win.webContents.executeJavaScript()
- *     • Vercel:    fetched from /api/env (reads Vercel Dashboard env vars)
- *   Add secrets to: Vercel Dashboard → Project → Settings → Environment Variables
+ *   The Supabase anon key is safe to expose in frontend code. Row Level Security
+ *   (RLS) on Supabase is the true data security layer. ADMIN_KEY is a UI-level
+ *   gate only — it is never used as a Supabase service role key.
+ * ─────────────────────────────────────────────────────────────────────────────
  */
 
-// Detect the current execution environment
-// NOTE: file:// protocol = Electron desktop .exe (no local server — routes to Vercel production)
-const isElectron = window.location.protocol === 'file:';
-const isLocalDev = (
-  window.location.hostname === 'localhost' ||
-  window.location.hostname === '127.0.0.1'
-);
-
-// Switch base URL based on environment:
-//   Electron desktop (.exe) → Vercel production (file:// has no local server)
-//   Local dev server        → localhost:3000
-//   Live web/PWA (Vercel)   → Vercel production
-const _BASE = isElectron
-  ? 'https://c3dw-sandbox.vercel.app'
-  : isLocalDev
-    ? 'http://localhost:3000'
-    : 'https://c3dw-sandbox.vercel.app';
-
-// Expose on window so inline scripts in HTML files can access them
-window.API_BASE         = _BASE + '/inventory';
-window.PRINT_QUEUE_BASE = _BASE + '/print-queue';
-
-// Supabase public credentials — safe to expose in frontend (anon key, RLS-protected)
+// ─────────────────────────────────────────────────────────────────────────────
+// SUPABASE PUBLIC CREDENTIALS
+// Safe to expose in frontend (anon key, RLS-protected)
+// ─────────────────────────────────────────────────────────────────────────────
 window.SUPABASE_URL      = 'https://oyusccplccayyltmfdup.supabase.co';
 window.SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im95dXNjY3BsY2NheXlsdG1mZHVwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjcwODUxMDksImV4cCI6MjA4MjY2MTEwOX0.Wj7j8_bFwZOlJBcfReTdMJr7GdjqrmZIXhv9TIJA3ZA';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// SECURE SECRET INITIALIZATION
+// SHARED SUPABASE CLIENT INSTANCE
+// Initialized once here; all pages reference window.supabaseClient directly.
+// Requires the Supabase JS SDK to be loaded before this script runs:
+//   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+//   <script src="js/api/api.js"></script>
 // ─────────────────────────────────────────────────────────────────────────────
-// Initialize to null — will be populated by one of two paths below:
+if (typeof supabase !== 'undefined') {
+  window.supabaseClient = supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+  console.log('[C3DW API] ✅ Supabase client initialized');
+} else {
+  // Deferred init — SDK may load after this script on some pages.
+  // Pages that need the client should check window.supabaseClient before use.
+  console.warn('[C3DW API] ⚠️ Supabase SDK not yet loaded — client init deferred');
+  window.supabaseClient = null;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// SECURE SECRET INITIALIZATION
+// Initialize to null — populated by one of two paths below:
 //   1. Electron: main.cjs injects values via executeJavaScript() after load
 //   2. Web/Vercel: fetched from /api/env serverless endpoint below
+// ─────────────────────────────────────────────────────────────────────────────
 window.ADMIN_KEY           = window.ADMIN_KEY           || null;
 window.DISCORD_WEBHOOK_URL = window.DISCORD_WEBHOOK_URL || null;
 

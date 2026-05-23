@@ -3,6 +3,11 @@
   "framework": null,
   "outputDirectory": ".",
   "buildCommand": "",
+  "functions": {
+    "api/env.js": {
+      "runtime": "nodejs20.x"
+    }
+  },
   "redirects": [
     { "source": "/", "destination": "/inventory", "permanent": true }
   ]
