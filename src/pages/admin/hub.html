@@ -1383,11 +1383,11 @@
     <div class="auth-panel">
       <span class="auth-lock-icon">🔒</span>
       <h2 class="auth-title">Admin Hub Login</h2>
-      <p class="auth-subtitle">Enter your shop slug and passcode to continue</p>
+      <p class="auth-subtitle">Enter your shop name and passcode to continue</p>
       <input
       type="text"
         id="auth-shop-input"
-        placeholder="Shop slug (e.g. crafted3d)"
+        placeholder="Shop Name"
         autocomplete="off"
         spellcheck="false"
       >
@@ -2111,6 +2111,7 @@
       submitBtn.disabled = true;
       submitBtn.textContent = 'Publishing...';
 
+      const activeSlug = sessionStorage.getItem('c3dw_shop_slug');
       const payload = {
         color: newName,
         finish: cleanFinish,
@@ -2118,7 +2119,8 @@
         colorHex1: document.getElementById('text1').value || document.getElementById('picker1').value,
         colorHex2: document.getElementById('text2').value || '',
         colorHex3: document.getElementById('text3').value || '',
-        inStock: true
+        inStock: true,
+        shop_slug: activeSlug
       };
 
       try {
