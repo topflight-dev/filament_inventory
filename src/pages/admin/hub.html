@@ -82,6 +82,29 @@
       pointer-events: none;
     }
 
+    /* Sign Out button — shown only after successful auth */
+    #signout-btn {
+      display: none; /* hidden until initDashboard() reveals it */
+      margin-left: auto;
+      padding: 6px 16px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      background: #1f1f1f;
+      color: #9ca3af;
+      border: 1px solid #374151;
+      border-radius: 20px;
+      cursor: pointer;
+      letter-spacing: 0.04em;
+      transition: background 0.2s, color 0.2s, border-color 0.2s;
+      white-space: nowrap;
+    }
+
+    #signout-btn:hover {
+      background: #3b1a1a;
+      color: #f87171;
+      border-color: #ef4444;
+    }
+
     /* =============================================
        TAB NAVIGATION BAR
        ============================================= */
@@ -988,6 +1011,7 @@
       letter-spacing: 0.02em;
     }
 
+    #auth-shop-input,
     #auth-key-input {
       display: block;
       width: 100%;
@@ -1006,11 +1030,13 @@
       text-align: center;
     }
 
+    #auth-shop-input:focus,
     #auth-key-input:focus {
       border-color: #3B82F6;
       box-shadow: 0 0 0 3px rgba(59,130,246,0.2);
     }
 
+    #auth-shop-input::placeholder,
     #auth-key-input::placeholder {
       color: #4b5563;
       letter-spacing: 0.02em;
@@ -1186,6 +1212,7 @@
 
   <div class="hub-brand-bar">
     <span class="hub-brand-title">⚙️ C3DW Unified Administration Suite</span>
+    <button id="signout-btn" onclick="handleSignOut()">🚪 Sign Out</button>
   </div>
 
   <!-- TAB NAVIGATION -->
@@ -1358,12 +1385,11 @@
       <h2 class="auth-title">Admin Hub Login</h2>
       <p class="auth-subtitle">Enter your shop slug and passcode to continue</p>
       <input
-        type="text"
+      type="text"
         id="auth-shop-input"
         placeholder="Shop slug (e.g. crafted3d)"
         autocomplete="off"
         spellcheck="false"
-        style="margin-bottom:10px;"
       >
       <input
         type="password"
@@ -2301,11 +2327,45 @@
     document.getElementById('adminRefreshBtn').addEventListener('click', fetchForAdmin);
 
     // =============================================
+    // SIGN OUT HANDLER
+    // Clears session keys and reloads to show lockscreen
+    // =============================================
+    function handleSignOut() {
+      sessionStorage.removeItem('c3dw_hub_auth');
+      sessionStorage.removeItem('c3dw_shop_slug');
+      sessionStorage.removeItem('c3dw_shop_name');
+      window.location.reload();
+    }
+
+    // =============================================
+    // APPLY SHOP BRANDING
+    // Reads c3dw_shop_name from sessionStorage and
+    // updates the header h1 and document title.
+    // Called from initDashboard() on every boot.
+    // =============================================
+    function applyShopBranding() {
+      const shopName = sessionStorage.getItem('c3dw_shop_name');
+      if (!shopName) return;
+      // Update browser tab title
+      document.title = `${shopName} | Admin Hub`;
+      // Update header h1
+      const h1 = document.querySelector('header h1');
+      if (h1) h1.textContent = shopName;
+    }
+
+    // =============================================
     // CORE DASHBOARD INITIALIZATION
     // Called after auth passes (web) or immediately (Electron).
     // Fires fetchQueue() and wires the Supabase Realtime subscription.
     // =============================================
     function initDashboard() {
+      // Apply dynamic shop branding (no-op on Electron / if no name stored)
+      applyShopBranding();
+
+      // Reveal the Sign Out button (web only — Electron overlay is removed from DOM)
+      const signoutBtn = document.getElementById('signout-btn');
+      if (signoutBtn) signoutBtn.style.display = 'inline-block';
+
       fetchQueue();
 
       // Guard: only initialize if Supabase SDK loaded and credentials available
@@ -2438,7 +2498,7 @@
 
         const { data, error } = await client
           .from('shops')
-          .select('shop_slug')
+          .select('shop_slug, shop_name')
           .eq('shop_slug', slug)
           .eq('passcode', passcode)
           .maybeSingle();
@@ -2449,7 +2509,8 @@
           // ── SUCCESS ──────────────────────────────
           sessionStorage.setItem('c3dw_hub_auth', 'granted');
           sessionStorage.setItem('c3dw_shop_slug', data.shop_slug);
-          console.log(`[C3DW Auth] ✅ Authentication successful — shop: ${data.shop_slug}`);
+          if (data.shop_name) sessionStorage.setItem('c3dw_shop_name', data.shop_name);
+          console.log(`[C3DW Auth] ✅ Authentication successful — shop: ${data.shop_slug} (${data.shop_name || 'no name'})`);
 
           // Fade out the overlay, then hide it and boot the dashboard
           overlay.style.opacity = '0';
