@@ -236,6 +236,46 @@
             color: #991b1b;
             border: 1px solid #fca5a5;
         }
+        /* =============================================
+           SHOP NOT FOUND ERROR CARD
+           ============================================= */
+        .shop-error-card {
+            background: rgba(255, 248, 230, 0.97);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border-radius: 14px;
+            padding: 40px 32px;
+            border: 1.5px solid rgba(217, 119, 6, 0.35);
+            box-shadow: 0 6px 32px rgba(217, 119, 6, 0.13);
+            width: 92%;
+            max-width: 480px;
+            margin: 60px auto;
+            text-align: center;
+            box-sizing: border-box;
+        }
+
+        .shop-error-card .error-icon {
+            font-size: 3rem;
+            margin-bottom: 12px;
+            display: block;
+        }
+
+        .shop-error-card h2 {
+            font-size: 1.3rem;
+            color: #92400e;
+            font-family: 'Inter', sans-serif;
+            font-weight: 700;
+            margin: 0 0 12px 0;
+        }
+
+        .shop-error-card p {
+            font-size: 0.97rem;
+            color: #78350f;
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+            margin: 0;
+        }
+
         /* Mobile-Specific App Optimization */
         @media (max-width: 480px) {
             body {
@@ -357,6 +397,60 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', async () => {
+            // -----------------------------------------------
+            // MULTI-TENANT SHOP SLUG ROUTING — STRICT VALIDATION
+            // -----------------------------------------------
+            const urlParams = new URLSearchParams(window.location.search);
+            const shopSlug  = (urlParams.get('shop') || '').trim();
+
+            // -----------------------------------------------
+            // SHOP NOT FOUND — helper to replace <main> with error card
+            // -----------------------------------------------
+            function showShopNotFound() {
+                const mainEl = document.querySelector('main');
+                if (mainEl) mainEl.style.display = 'none';
+                const card = document.createElement('div');
+                card.className = 'shop-error-card';
+                card.innerHTML = `
+                    <span class="error-icon">⚠️</span>
+                    <h2>Shop Not Found</h2>
+                    <p>Please double-check the web address provided by your 3D print operator.</p>
+                `;
+                document.body.appendChild(card);
+            }
+
+            // Step 1 — Fail fast if slug is completely missing/blank
+            if (!shopSlug) {
+                showShopNotFound();
+                return;
+            }
+
+            // Step 2 — Validate slug against the shops table
+            try {
+                const gateClient = window.getSupabaseClient ? window.getSupabaseClient() : window.supabaseClient;
+                if (!gateClient) throw new Error('Supabase client not available');
+
+                const { data: shopRecord, error: shopError } = await gateClient
+                    .from('shops')
+                    .select('shop_slug')
+                    .eq('shop_slug', shopSlug)
+                    .maybeSingle();
+
+                if (shopError) throw shopError;
+
+                // Step 3 — Gate: no matching shop row → block the page
+                if (!shopRecord) {
+                    showShopNotFound();
+                    return;
+                }
+            } catch (gateErr) {
+                console.error('[C3DW] Shop validation failed:', gateErr);
+                showShopNotFound();
+                return;
+            }
+
+            // ── GATE PASSED — proceed with normal page initialization ──
+
             const filamentChecklist = document.getElementById('filamentChecklist');
             const colorPills        = document.getElementById('colorPills');
             const pillsPlaceholder  = document.getElementById('pillsPlaceholder');
@@ -403,6 +497,40 @@
             }
 
             // -----------------------------------------------
+            // SHOP BRANDING INJECTION
+            // -----------------------------------------------
+            try {
+                const brandClient = window.getSupabaseClient ? window.getSupabaseClient() : window.supabaseClient;
+                if (brandClient) {
+                    const { data: shopData } = await brandClient
+                        .from('shops')
+                        .select('shop_name, logo_url')
+                        .eq('shop_slug', shopSlug)
+                        .single();
+
+                    if (shopData) {
+                        const headerH1 = document.querySelector('header h1');
+                        const headerP  = document.querySelector('header p');
+
+                        if (shopData.logo_url) {
+                            // Replace h1 text with logo image
+                            if (headerH1) {
+                                headerH1.innerHTML = `<img src="${shopData.logo_url}" alt="${shopData.shop_name}" style="max-height:60px; max-width:220px; object-fit:contain; vertical-align:middle;">`;
+                            }
+                        } else {
+                            // Fall back to shop name as text
+                            if (headerH1) headerH1.textContent = shopData.shop_name;
+                        }
+
+                        if (headerP) headerP.textContent = 'Submit a job to the 3D print queue!';
+                        document.title = `${shopData.shop_name} | Submit a Print Request`;
+                    }
+                }
+            } catch (brandErr) {
+                console.warn('[C3DW] Shop branding load failed (non-critical):', brandErr);
+            }
+
+            // -----------------------------------------------
             // POPULATE FILAMENT CHECKLIST — Direct Supabase SDK
             // -----------------------------------------------
             try {
@@ -413,6 +541,7 @@
                     .from('colors')
                     .select('id, color, finish, inStock')
                     .eq('inStock', true)
+                    .eq('shop_slug', shopSlug)
                     .order('color', { ascending: true });
 
                 if (error) throw error;
@@ -515,7 +644,8 @@
                     stl_url:          stlUrl || null,
                     filament_id:      filamentId,
                     color_preference: colorPreference,
-                    status:           'Pending'
+                    status:           'Pending',
+                    shop_slug:        shopSlug
                 };
 
                 try {

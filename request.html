@@ -236,6 +236,46 @@
             color: #991b1b;
             border: 1px solid #fca5a5;
         }
+        /* =============================================
+           SHOP NOT FOUND ERROR CARD
+           ============================================= */
+        .shop-error-card {
+            background: rgba(255, 248, 230, 0.97);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border-radius: 14px;
+            padding: 40px 32px;
+            border: 1.5px solid rgba(217, 119, 6, 0.35);
+            box-shadow: 0 6px 32px rgba(217, 119, 6, 0.13);
+            width: 92%;
+            max-width: 480px;
+            margin: 60px auto;
+            text-align: center;
+            box-sizing: border-box;
+        }
+
+        .shop-error-card .error-icon {
+            font-size: 3rem;
+            margin-bottom: 12px;
+            display: block;
+        }
+
+        .shop-error-card h2 {
+            font-size: 1.3rem;
+            color: #92400e;
+            font-family: 'Inter', sans-serif;
+            font-weight: 700;
+            margin: 0 0 12px 0;
+        }
+
+        .shop-error-card p {
+            font-size: 0.97rem;
+            color: #78350f;
+            font-family: 'Inter', sans-serif;
+            line-height: 1.6;
+            margin: 0;
+        }
+
         /* Mobile-Specific App Optimization */
         @media (max-width: 480px) {
             body {
@@ -358,10 +398,58 @@
     <script>
         document.addEventListener('DOMContentLoaded', async () => {
             // -----------------------------------------------
-            // MULTI-TENANT SHOP SLUG ROUTING
+            // MULTI-TENANT SHOP SLUG ROUTING — STRICT VALIDATION
             // -----------------------------------------------
             const urlParams = new URLSearchParams(window.location.search);
-            const shopSlug  = urlParams.get('shop') || 'default';
+            const shopSlug  = (urlParams.get('shop') || '').trim();
+
+            // -----------------------------------------------
+            // SHOP NOT FOUND — helper to replace <main> with error card
+            // -----------------------------------------------
+            function showShopNotFound() {
+                const mainEl = document.querySelector('main');
+                if (mainEl) mainEl.style.display = 'none';
+                const card = document.createElement('div');
+                card.className = 'shop-error-card';
+                card.innerHTML = `
+                    <span class="error-icon">⚠️</span>
+                    <h2>Shop Not Found</h2>
+                    <p>Please double-check the web address provided by your 3D print operator.</p>
+                `;
+                document.body.appendChild(card);
+            }
+
+            // Step 1 — Fail fast if slug is completely missing/blank
+            if (!shopSlug) {
+                showShopNotFound();
+                return;
+            }
+
+            // Step 2 — Validate slug against the shops table
+            try {
+                const gateClient = window.getSupabaseClient ? window.getSupabaseClient() : window.supabaseClient;
+                if (!gateClient) throw new Error('Supabase client not available');
+
+                const { data: shopRecord, error: shopError } = await gateClient
+                    .from('shops')
+                    .select('shop_slug')
+                    .eq('shop_slug', shopSlug)
+                    .maybeSingle();
+
+                if (shopError) throw shopError;
+
+                // Step 3 — Gate: no matching shop row → block the page
+                if (!shopRecord) {
+                    showShopNotFound();
+                    return;
+                }
+            } catch (gateErr) {
+                console.error('[C3DW] Shop validation failed:', gateErr);
+                showShopNotFound();
+                return;
+            }
+
+            // ── GATE PASSED — proceed with normal page initialization ──
 
             const filamentChecklist = document.getElementById('filamentChecklist');
             const colorPills        = document.getElementById('colorPills');
