@@ -406,8 +406,8 @@
             // POPULATE FILAMENT CHECKLIST — Direct Supabase SDK
             // -----------------------------------------------
             try {
-                const client = window.supabaseClient;
-                if (!client) throw new Error('Supabase client not initialized');
+                const client = window.getSupabaseClient ? window.getSupabaseClient() : window.supabaseClient;
+                if (!client) throw new Error('Supabase client not initialized — ensure the Supabase CDN script loaded correctly');
 
                 const { data: filaments, error } = await client
                     .from('colors')
@@ -495,7 +495,8 @@
                 // Join multiple colors into a single comma-separated string
                 const colorPreference = selectedFilaments.map(f => f.label).join(', ');
                 // Use the first selected filament's ID for the filament_id column
-                const filamentId = selectedFilaments[0].id;
+                // Cast to integer — HTML checkbox values are always strings; Supabase schema requires integer
+                const filamentId = parseInt(selectedFilaments[0].id, 10);
 
                 // Loading state
                 submitBtn.disabled = true;
@@ -518,8 +519,8 @@
                 };
 
                 try {
-                    const client = window.supabaseClient;
-                    if (!client) throw new Error('Supabase client not initialized');
+                    const client = window.getSupabaseClient ? window.getSupabaseClient() : window.supabaseClient;
+                    if (!client) throw new Error('Supabase client not initialized — ensure the Supabase CDN script loaded correctly');
 
                     const { error } = await client
                         .from('print_jobs')

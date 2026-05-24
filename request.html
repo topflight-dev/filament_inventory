@@ -11,6 +11,8 @@
     <link rel="manifest" href="/manifest.json">
     <link rel="icon" type="image/png" href="/icon.png">
     <link rel="apple-touch-icon" href="/icon.png">
+    <!-- Supabase JS SDK — must load BEFORE api.js so the shared client can initialize -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <script src="/js/api/api.js"></script>
     <style>
         /* =============================================
@@ -368,7 +370,6 @@
             // RENDER PILLS
             // -----------------------------------------------
             function renderPills() {
-                // Remove all existing pills (keep placeholder)
                 Array.from(colorPills.children).forEach(el => {
                     if (el !== pillsPlaceholder) el.remove();
                 });
@@ -402,14 +403,21 @@
             }
 
             // -----------------------------------------------
-            // POPULATE FILAMENT CHECKLIST
+            // POPULATE FILAMENT CHECKLIST — Direct Supabase SDK
             // -----------------------------------------------
             try {
-                const response = await fetch(`${window.API_BASE}?cb=${Date.now()}`);
-                if (!response.ok) throw new Error('Failed to fetch filaments');
-                const filaments = await response.json();
+                const client = window.getSupabaseClient ? window.getSupabaseClient() : window.supabaseClient;
+                if (!client) throw new Error('Supabase client not initialized — ensure the Supabase CDN script loaded correctly');
 
-                allFilaments = Array.isArray(filaments) ? filaments.filter(f => f.inStock) : [];
+                const { data: filaments, error } = await client
+                    .from('colors')
+                    .select('id, color, finish, inStock')
+                    .eq('inStock', true)
+                    .order('color', { ascending: true });
+
+                if (error) throw error;
+
+                allFilaments = Array.isArray(filaments) ? filaments : [];
 
                 if (allFilaments.length === 0) {
                     filamentChecklist.innerHTML = '<div class="filament-placeholder">No filaments available</div>';
@@ -439,7 +447,6 @@
                         } else {
                             selectedFilaments = selectedFilaments.filter(f => String(f.id) !== String(id));
                         }
-                        // Sync row highlight
                         cb.closest('.filament-option').classList.toggle('selected', cb.checked);
                         renderPills();
                     });
@@ -462,7 +469,7 @@
             });
 
             // -----------------------------------------------
-            // FORM SUBMISSION
+            // FORM SUBMISSION — Direct Supabase SDK
             // -----------------------------------------------
             const form          = document.getElementById('requestForm');
             const submitBtn     = document.getElementById('submitBtn');
@@ -488,7 +495,8 @@
                 // Join multiple colors into a single comma-separated string
                 const colorPreference = selectedFilaments.map(f => f.label).join(', ');
                 // Use the first selected filament's ID for the filament_id column
-                const filamentId = selectedFilaments[0].id;
+                // Cast to integer — HTML checkbox values are always strings; Supabase schema requires integer
+                const filamentId = parseInt(selectedFilaments[0].id, 10);
 
                 // Loading state
                 submitBtn.disabled = true;
@@ -502,24 +510,23 @@
                     : projectName;
 
                 const payload = {
-                    requestor_name:    requestorName,
-                    project_name:      finalProjectName,
-                    stl_url:           stlUrl,
-                    filament_id:       filamentId,
-                    color_preference:  colorPreference
+                    requestor_name:   requestorName,
+                    project_name:     finalProjectName,
+                    stl_url:          stlUrl || null,
+                    filament_id:      filamentId,
+                    color_preference: colorPreference,
+                    status:           'pending'
                 };
 
                 try {
-                    const response = await fetch(window.PRINT_QUEUE_BASE, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
+                    const client = window.getSupabaseClient ? window.getSupabaseClient() : window.supabaseClient;
+                    if (!client) throw new Error('Supabase client not initialized — ensure the Supabase CDN script loaded correctly');
 
-                    if (!response.ok) {
-                        const errData = await response.json().catch(() => ({}));
-                        throw new Error(errData.message || `Server error: ${response.status}`);
-                    }
+                    const { error } = await client
+                        .from('print_jobs')
+                        .insert([payload]);
+
+                    if (error) throw error;
 
                     showStatus('✅ Request added to the queue!', 'success');
                     form.reset();
@@ -529,9 +536,6 @@
 
                     // -----------------------------------------------
                     // DISCORD WEBHOOK NOTIFICATION (fire-and-forget)
-                    // URL is injected at runtime via window.DISCORD_WEBHOOK_URL:
-                    //   • Electron: main.cjs injects from local .env
-                    //   • Vercel:   api/env.js reads from Vercel Dashboard env vars
                     // -----------------------------------------------
                     const DISCORD_WEBHOOK_URL = window.DISCORD_WEBHOOK_URL;
                     if (!DISCORD_WEBHOOK_URL) {
@@ -558,7 +562,6 @@
                             })
                         });
                     } catch (discordErr) {
-                        // Discord notification failure is non-blocking — never surfaces to the user
                         console.warn('Discord notification failed (non-critical):', discordErr);
                     }
 
