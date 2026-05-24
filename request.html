@@ -357,6 +357,12 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', async () => {
+            // -----------------------------------------------
+            // MULTI-TENANT SHOP SLUG ROUTING
+            // -----------------------------------------------
+            const urlParams = new URLSearchParams(window.location.search);
+            const shopSlug  = urlParams.get('shop') || 'default';
+
             const filamentChecklist = document.getElementById('filamentChecklist');
             const colorPills        = document.getElementById('colorPills');
             const pillsPlaceholder  = document.getElementById('pillsPlaceholder');
@@ -403,6 +409,40 @@
             }
 
             // -----------------------------------------------
+            // SHOP BRANDING INJECTION
+            // -----------------------------------------------
+            try {
+                const brandClient = window.getSupabaseClient ? window.getSupabaseClient() : window.supabaseClient;
+                if (brandClient) {
+                    const { data: shopData } = await brandClient
+                        .from('shops')
+                        .select('shop_name, logo_url')
+                        .eq('shop_slug', shopSlug)
+                        .single();
+
+                    if (shopData) {
+                        const headerH1 = document.querySelector('header h1');
+                        const headerP  = document.querySelector('header p');
+
+                        if (shopData.logo_url) {
+                            // Replace h1 text with logo image
+                            if (headerH1) {
+                                headerH1.innerHTML = `<img src="${shopData.logo_url}" alt="${shopData.shop_name}" style="max-height:60px; max-width:220px; object-fit:contain; vertical-align:middle;">`;
+                            }
+                        } else {
+                            // Fall back to shop name as text
+                            if (headerH1) headerH1.textContent = shopData.shop_name;
+                        }
+
+                        if (headerP) headerP.textContent = 'Submit a job to the 3D print queue!';
+                        document.title = `${shopData.shop_name} | Submit a Print Request`;
+                    }
+                }
+            } catch (brandErr) {
+                console.warn('[C3DW] Shop branding load failed (non-critical):', brandErr);
+            }
+
+            // -----------------------------------------------
             // POPULATE FILAMENT CHECKLIST — Direct Supabase SDK
             // -----------------------------------------------
             try {
@@ -413,6 +453,7 @@
                     .from('colors')
                     .select('id, color, finish, inStock')
                     .eq('inStock', true)
+                    .eq('shop_slug', shopSlug)
                     .order('color', { ascending: true });
 
                 if (error) throw error;
@@ -515,7 +556,8 @@
                     stl_url:          stlUrl || null,
                     filament_id:      filamentId,
                     color_preference: colorPreference,
-                    status:           'Pending'
+                    status:           'Pending',
+                    shop_slug:        shopSlug
                 };
 
                 try {

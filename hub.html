@@ -1355,17 +1355,25 @@
   <div id="auth-overlay">
     <div class="auth-panel">
       <span class="auth-lock-icon">🔒</span>
-      <h2 class="auth-title">C3DW Admin Hub</h2>
-      <p class="auth-subtitle">Secure access required to continue</p>
+      <h2 class="auth-title">Admin Hub Login</h2>
+      <p class="auth-subtitle">Enter your shop slug and passcode to continue</p>
+      <input
+        type="text"
+        id="auth-shop-input"
+        placeholder="Shop slug (e.g. crafted3d)"
+        autocomplete="off"
+        spellcheck="false"
+        style="margin-bottom:10px;"
+      >
       <input
         type="password"
         id="auth-key-input"
-        placeholder="Enter access key..."
+        placeholder="Passcode..."
         autocomplete="current-password"
         spellcheck="false"
       >
       <button id="auth-submit-btn">🔓 Authenticate Session</button>
-      <p id="auth-error">❌ Invalid access key. Please try again.</p>
+      <p id="auth-error">❌ Invalid shop slug or passcode. Please try again.</p>
     </div>
   </div>
 
@@ -1430,10 +1438,13 @@
         const client = window.supabaseClient;
         if (!client) throw new Error('Supabase client not initialized');
 
-        const { data, error } = await client
+        const shopSlug = sessionStorage.getItem('c3dw_shop_slug');
+        let query = client
           .from('print_jobs')
           .select('*')
           .order('created_at', { ascending: true });
+        if (shopSlug) query = query.eq('shop_slug', shopSlug);
+        const { data, error } = await query;
 
         if (error) throw error;
         renderQueue(Array.isArray(data) ? data : []);
@@ -1883,9 +1894,10 @@
         const client = window.supabaseClient;
         if (!client) throw new Error('Supabase client not initialized');
 
-        const { data, error } = await client
-          .from('colors')
-          .select('finish');
+        const shopSlug = sessionStorage.getItem('c3dw_shop_slug');
+        let finishQuery = client.from('colors').select('finish');
+        if (shopSlug) finishQuery = finishQuery.eq('shop_slug', shopSlug);
+        const { data, error } = await finishQuery;
 
         if (error) throw error;
 
@@ -1925,9 +1937,10 @@
         const client = window.supabaseClient;
         if (!client) throw new Error('Supabase client not initialized');
 
-        const { data: newData, error } = await client
-          .from('colors')
-          .select('*');
+        const shopSlug = sessionStorage.getItem('c3dw_shop_slug');
+        let colorQuery = client.from('colors').select('*');
+        if (shopSlug) colorQuery = colorQuery.eq('shop_slug', shopSlug);
+        const { data: newData, error } = await colorQuery;
 
         if (error) throw error;
 
@@ -2350,10 +2363,11 @@
     // Electron (file:) → removes overlay from DOM,
     //   calls initDashboard() immediately.
     // Web (https:) → checks sessionStorage for a
-    //   valid session flag. If found, skips overlay.
-    //   Otherwise, shows the lockscreen and freezes
-    //   all data fetching until the correct key is
-    //   entered.
+    //   valid session flag + shop slug. If found,
+    //   skips overlay. Otherwise, shows the lockscreen
+    //   and freezes all data fetching until the correct
+    //   shop slug + passcode are validated against the
+    //   Supabase 'shops' table.
     // =============================================
     document.addEventListener('DOMContentLoaded', () => {
       const isDesktop = window.location.protocol === 'file:';
@@ -2372,16 +2386,17 @@
         // Check for an existing valid session in sessionStorage.
         // sessionStorage persists for the tab lifetime only —
         // closing the tab or browser requires re-authentication.
-        if (sessionStorage.getItem('c3dw_hub_auth') === 'granted') {
+        if (sessionStorage.getItem('c3dw_hub_auth') === 'granted' &&
+            sessionStorage.getItem('c3dw_shop_slug')) {
           console.log('[C3DW Auth] Session token found — bypassing lockscreen.');
           initDashboard();
         } else {
           // Show the lockscreen — all data fetching is frozen until auth passes.
           const overlay = document.getElementById('auth-overlay');
           if (overlay) overlay.style.display = 'flex';
-          // Focus the password input for immediate keyboard entry
-          const keyInput = document.getElementById('auth-key-input');
-          if (keyInput) setTimeout(() => keyInput.focus(), 100);
+          // Focus the shop slug input for immediate keyboard entry
+          const shopInput = document.getElementById('auth-shop-input');
+          if (shopInput) setTimeout(() => shopInput.focus(), 100);
           console.log('[C3DW Auth] Web target detected — lockscreen active. Awaiting authentication.');
         }
       }
@@ -2389,45 +2404,77 @@
 
     // =============================================
     // AUTH HANDLER
-    // Validates the entered key against window.ADMIN_KEY
-    // (set by api.js before this script runs).
-    // On success: stores session flag, fades overlay,
-    //   calls initDashboard().
+    // Validates shop slug + passcode against the
+    // Supabase 'shops' table. On success: stores
+    // session flag + shop slug in sessionStorage,
+    // fades overlay, calls initDashboard().
     // On failure: shows error message + shake animation.
     // =============================================
-    function handleAuth() {
-      const keyInput = document.getElementById('auth-key-input');
-      const errEl    = document.getElementById('auth-error');
-      const panel    = document.querySelector('.auth-panel');
-      const overlay  = document.getElementById('auth-overlay');
+    async function handleAuth() {
+      const shopInput = document.getElementById('auth-shop-input');
+      const keyInput  = document.getElementById('auth-key-input');
+      const errEl     = document.getElementById('auth-error');
+      const panel     = document.querySelector('.auth-panel');
+      const overlay   = document.getElementById('auth-overlay');
+      const submitBtn = document.getElementById('auth-submit-btn');
 
-      if (!keyInput || !overlay) return;
+      if (!shopInput || !keyInput || !overlay) return;
 
-      const entered = keyInput.value;
+      const slug     = shopInput.value.trim().toLowerCase();
+      const passcode = keyInput.value.trim();
 
-      if (entered === window.ADMIN_KEY) {
-        // ── SUCCESS ────────────────────────────────
-        sessionStorage.setItem('c3dw_hub_auth', 'granted');
-        console.log('[C3DW Auth] ✅ Authentication successful — session token stored.');
+      if (!slug || !passcode) {
+        if (errEl) errEl.style.display = 'block';
+        return;
+      }
 
-        // Fade out the overlay, then hide it and boot the dashboard
-        overlay.style.opacity = '0';
-        setTimeout(() => {
-          overlay.style.display = 'none';
-          initDashboard();
-        }, 420);
+      // Disable button during async lookup
+      if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = '⏳ Verifying...'; }
 
-      } else {
-        // ── FAILURE ────────────────────────────────
+      try {
+        const client = window.supabaseClient ||
+          (window.getSupabaseClient ? window.getSupabaseClient() : null);
+        if (!client) throw new Error('Supabase client not initialized');
+
+        const { data, error } = await client
+          .from('shops')
+          .select('shop_slug')
+          .eq('shop_slug', slug)
+          .eq('passcode', passcode)
+          .maybeSingle();
+
+        if (error) throw error;
+
+        if (data && data.shop_slug) {
+          // ── SUCCESS ──────────────────────────────
+          sessionStorage.setItem('c3dw_hub_auth', 'granted');
+          sessionStorage.setItem('c3dw_shop_slug', data.shop_slug);
+          console.log(`[C3DW Auth] ✅ Authentication successful — shop: ${data.shop_slug}`);
+
+          // Fade out the overlay, then hide it and boot the dashboard
+          overlay.style.opacity = '0';
+          setTimeout(() => {
+            overlay.style.display = 'none';
+            initDashboard();
+          }, 420);
+
+        } else {
+          // ── FAILURE ──────────────────────────────
+          throw new Error('Invalid credentials');
+        }
+
+      } catch (err) {
+        console.warn('[C3DW Auth] ❌ Authentication failed:', err.message);
         if (errEl) errEl.style.display = 'block';
         if (panel) {
-          panel.classList.remove('auth-shake'); // reset to allow re-trigger
-          void panel.offsetWidth;              // force reflow to restart animation
+          panel.classList.remove('auth-shake');
+          void panel.offsetWidth;
           panel.classList.add('auth-shake');
         }
         keyInput.value = '';
-        keyInput.focus();
-        console.warn('[C3DW Auth] ❌ Invalid key entered.');
+        shopInput.focus();
+      } finally {
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = '🔓 Authenticate Session'; }
       }
     }
 
@@ -2437,11 +2484,20 @@
       authSubmitBtn.addEventListener('click', handleAuth);
     }
 
-    // Wire Enter key on the password input
+    // Wire Enter key on both inputs
     const authKeyInput = document.getElementById('auth-key-input');
     if (authKeyInput) {
       authKeyInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') handleAuth();
+      });
+    }
+    const authShopInput = document.getElementById('auth-shop-input');
+    if (authShopInput) {
+      authShopInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          const keyInput = document.getElementById('auth-key-input');
+          if (keyInput) keyInput.focus();
+        }
       });
     }
   </script>
