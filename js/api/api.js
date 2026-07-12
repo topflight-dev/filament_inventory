@@ -43,10 +43,25 @@ if (typeof supabase !== 'undefined') {
   console.log('[C3DW API] ✅ Supabase client initialized');
 } else {
   // Deferred init — SDK may load after this script on some pages.
-  // Pages that need the client should check window.supabaseClient before use.
-  console.warn('[C3DW API] ⚠️ Supabase SDK not yet loaded — client init deferred');
+  // Use window.getSupabaseClient() for guaranteed lazy initialization.
+  console.warn('[C3DW API] ⚠️ Supabase SDK not yet loaded — will attempt lazy init on first use');
   window.supabaseClient = null;
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// LAZY-INIT GETTER
+// Guarantees a valid client even if the Supabase CDN script hadn't fully
+// executed by the time api.js ran (e.g., slow CDN, parse-order race).
+// All pages should call window.getSupabaseClient() instead of reading
+// window.supabaseClient directly.
+// ─────────────────────────────────────────────────────────────────────────────
+window.getSupabaseClient = function () {
+  if (!window.supabaseClient && typeof supabase !== 'undefined') {
+    window.supabaseClient = supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY);
+    console.log('[C3DW API] ✅ Supabase client lazy-initialized');
+  }
+  return window.supabaseClient;
+};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SECURE SECRET INITIALIZATION

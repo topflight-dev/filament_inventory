@@ -1680,6 +1680,21 @@
         showToast(`🗑️ Deleted ${ids.length} job${ids.length !== 1 ? 's' : ''}`);
         await fetchQueue();
 
+        // ── SUCCESS STATE RESET ──────────────────────────────────────────
+        // Restore button to its default interactive state after the mutation
+        // resolves. Without this, the button stays permanently disabled and
+        // stuck on "⏳ Deleting..." for the remainder of the session.
+        deleteBtn.disabled = false;
+        deleteBtn.textContent = '🗑️ Delete Selected';
+
+        // Explicitly clear all row checkboxes and reset the master checkbox
+        // so the selection queue is fully drained after a successful delete.
+        document.querySelectorAll('.job-checkbox').forEach(cb => { cb.checked = false; });
+        const masterCb = document.getElementById('select-all-downloads');
+        if (masterCb) { masterCb.checked = false; masterCb.indeterminate = false; }
+        updateDeleteBtnState();
+        // ────────────────────────────────────────────────────────────────
+
       } catch (err) {
         console.error('Batch delete failed:', err);
         showToast('❌ Delete failed: ' + err.message);

@@ -1,9 +1,9 @@
 # C3DW WORKSHOP ECOSYSTEM CORE DEFINITIONS
 
 BRANCH_ARCHITECTURE:
-- 💻 DESKTOP APP: Controlled by 'main.cjs' in the root. Renders the local admin panel at './src/pages/admin/hub.html'. Built using Electron.
-- 📱 MOBILE WEB (PWA): Public facing pages ('request.html', 'inventory.html', 'gallery.html'). Uses PWA parameters via 'manifest.json' and root-level icon masks.
-- ⚙️ BACKEND NODE SERVER: Managed via 'server.js' to process server-side logic and Supabase API data synchronization.
+- 💻 DESKTOP APP: Controlled by 'main.cjs' in the root. Renders the local admin panel at './src/pages/admin/hub.html'. Built using Electron. (Legacy baseline - maintained for backward compatibility).
+- 📱 MOBILE & WEB PWA: Cloud-native administrative dashboard ('hub.html') and public facing pages ('request.html', 'inventory.html'). Uses PWA parameters via 'manifest.json'.
+- ☁️ CLOUD BACKEND: Serverless environment hosted entirely on Vercel Edge, communicating directly with Supabase via the client SDK client-side.
 
 PATH & BOUNDARY RULES:
 - PROJECT_ROOT: The absolute folder containing this file.
@@ -20,8 +20,9 @@ PERSISTENT MEMORY & REPORTING:
 - Do not update the log for the act of updating the log itself.
 - NO SHIFTING BURDEN: Never ask the user to find a technical or layout error. Use Select-String or Get-Content to investigate yourself first.
 
-# ⚠️ CRITICAL DUAL-TARGET CONSTRAINTS & BOUNDARIES
-- PRODUCTION ISOLATION: The live marketing/business website (www.crafted3dworkshop.com) is completely OUT OF SCOPE. No modifications, configuration changes, or deployment paths in this repository should ever impact or target that live domain.
-- DATABASE INTEGRITY: The current Supabase database tables ('colors', 'site_traffic', 'requests') are actively connected to production systems. The schemas, table names, and existing columns are SACRED AND IMMUTABLE. Any adjustments must be strictly additive and backward-compatible.
+# ⚠️ CRITICAL VERCEL & CLOUD-NATIVE DEPLOYMENT CONSTRAINTS
+- NO EXPLICIT RUNTIMES: Never add a "functions" or "runtime" configuration block inside `vercel.json` specifying bare node versions (e.g., "runtime": "nodejs20.x"). Vercel CLI 54.x+ automatically manages runtime configurations for everything inside the `/api` directory.
+- MINIMALIST CONFIG: Keep `vercel.json` strictly clean, limiting its architecture properties to cleanUrls, framework, outputDirectory, buildCommand, and redirects/rewrites.
+- DATABASE INTEGRITY: The current Supabase database tables ('colors', 'site_traffic', 'print_jobs') are connected to live systems. The schemas, table names, and existing columns are SACRED AND IMMUTABLE. Any adjustments must be strictly additive and backward-compatible.
 - CURRENT ENVIRONMENT: Work exclusively inside the active Git sandbox branch 'feature/universal-web-target'. The 'main' branch must remain pristine for the working desktop build.
-- DUAL-TARGET STYLE SCOPING: When modifying styles or scripts for 'hub.html' to support tablet responsive design, ensure all rules are additive (using media queries). Do not break, delete, or disrupt the existing layout rules used by the Electron application framework.
+- GIT-DRIVEN DEPLOYMENTS ONLY: Never run manual production CLI deployments (e.g., `vercel --prod` or `vercel deploy --prod`). All production deployments must be triggered exclusively by pushing commits to the connected remote Git repository, allowing Vercel's native Git integration to manage builds and promotion automatically.
