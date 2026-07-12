@@ -1,6 +1,53 @@
 # C3DW Workshop — Project Log
 
-## Latest Entry — 2026-07-12 (Domain Synchronization)
+## Latest Entry — 2026-07-12 (Request Queue Hover Dropdown)
+
+### Task: Hover-Activated Navbar Dropdown for Request Queue
+
+**Branch:** `main`
+**Files Modified:**
+- `hub.html` (root — Electron desktop admin panel)
+- `src/pages/admin/hub.html` (mirrored copy — Vercel PWA cloud target)
+
+---
+
+### Summary
+
+Refactored the "Request Queue" tab button in the admin hub nav bar into a hover-activated dropdown component, without altering any existing tab-switching behavior.
+
+**UI Changes:**
+- Wrapped the existing `🖨️ Request Queue` tab button in a new `.hub-tab-dropdown-wrapper` div; label updated to `🖨️ Request Queue ▾`.
+- Added a hidden `.hub-tab-dropdown-menu` containing two new items: `📥 Active Queue` and `📦 Completed Archive`.
+- New CSS is purely additive (no existing rules modified): `:hover` pseudo-class on the wrapper reveals the menu via `display:flex` + a subtle fade/slide keyframe animation. Menu is `position:absolute` with `z-index:500`, floating safely above the `.queue-table` rows without shifting any existing layout elements.
+
+**Filtering Logic (Server-Side):**
+- Added `queueStatusFilter` state variable (`'active'` | `'completed'`, defaults to `'active'`).
+- Added `setQueueFilter(filter)` handler — updates state, toggles the `.active` class on dropdown items, and calls `fetchQueue()`.
+- Modified `fetchQueue()` to apply the filter **server-side** via the Supabase query builder before executing:
+  - `'active'` → `.neq('status', 'Completed')`
+  - `'completed'` → `.eq('status', 'Completed')`
+- No client-side filtering of already-fetched data — every filter switch triggers a fresh, scoped Supabase query (still respecting the existing `shop_slug` multi-tenant `.eq()` filter).
+
+**Verification:**
+- Confirmed `hub.html` and `src/pages/admin/hub.html` remain byte-identical post-edit via `fc` (File Compare) — "FC: no differences encountered".
+- No database schema changes — `print_jobs.status` column and values used as-is (SACRED AND IMMUTABLE per project rules).
+
+---
+
+### Next Step
+
+Run a standard Git push to `main` to trigger Vercel's Git-integration automated production deployment:
+```powershell
+git add hub.html src/pages/admin/hub.html Project_Log.md
+git commit -m "feat: hover dropdown for Request Queue with server-side Active/Completed filtering"
+git push origin main
+```
+No manual `vercel --prod` deploys — Vercel's native Git integration handles build + promotion automatically once the commit lands on `main`.
+
+---
+
+## Previous Entry — 2026-07-12 (Domain Synchronization)
+
 
 ### Task: Global Domain URL Update & Alignment Audit
 

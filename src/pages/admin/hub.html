@@ -144,6 +144,72 @@
     }
 
     /* =============================================
+       REQUEST QUEUE — HOVER DROPDOWN
+       Additive only — wraps the existing Request
+       Queue tab button without altering its behavior.
+       ============================================= */
+    .hub-tab-dropdown-wrapper {
+      position: relative;
+      display: flex;
+    }
+
+    .hub-tab-dropdown-menu {
+      display: none;
+      flex-direction: column;
+      position: absolute;
+      top: 100%;
+      left: 0;
+      min-width: 200px;
+      background: #1f1f1f;
+      border: 1px solid #333;
+      border-radius: 8px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+      overflow: hidden;
+      z-index: 500; /* floats safely above table rows without affecting layout flow */
+      padding: 6px;
+      gap: 2px;
+    }
+
+    /* Reveal on hover of the wrapper — smooth, minimal, no layout shift */
+    .hub-tab-dropdown-wrapper:hover .hub-tab-dropdown-menu {
+      display: flex;
+      animation: dropdownFadeIn 0.15s ease;
+    }
+
+    @keyframes dropdownFadeIn {
+      from { opacity: 0; transform: translateY(-4px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .hub-tab-dropdown-item {
+      display: block;
+      width: 100%;
+      text-align: left;
+      padding: 10px 14px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #9ca3af;
+      background: transparent;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      letter-spacing: 0.02em;
+      transition: background 0.15s, color 0.15s;
+      white-space: nowrap;
+    }
+
+    .hub-tab-dropdown-item:hover {
+      background: rgba(255,255,255,0.06);
+      color: #ffffff;
+    }
+
+    .hub-tab-dropdown-item.active {
+      color: #60a5fa;
+      background: rgba(59,130,246,0.12);
+    }
+
+
+    /* =============================================
        HUB LAYOUT
        ============================================= */
     .hub-wrapper {
@@ -1217,13 +1283,24 @@
 
   <!-- TAB NAVIGATION -->
   <nav class="hub-tab-nav" aria-label="Admin Hub Tabs">
-    <button class="hub-tab-btn active" data-tab="queue" onclick="switchTab('queue')">
-      🖨️ Request Queue
-    </button>
+    <div class="hub-tab-dropdown-wrapper">
+      <button class="hub-tab-btn active" data-tab="queue" onclick="switchTab('queue')">
+        🖨️ Request Queue ▾
+      </button>
+      <div class="hub-tab-dropdown-menu">
+        <button type="button" class="hub-tab-dropdown-item active" data-filter="active" onclick="setQueueFilter('active')">
+          📥 Active Queue
+        </button>
+        <button type="button" class="hub-tab-dropdown-item" data-filter="completed" onclick="setQueueFilter('completed')">
+          📦 Completed Archive
+        </button>
+      </div>
+    </div>
     <button class="hub-tab-btn" data-tab="inventory" onclick="switchTab('inventory')">
       🎨 Filament Inventory
     </button>
   </nav>
+
 
   <div class="hub-wrapper">
 
@@ -1450,6 +1527,25 @@
     let autoRefreshInterval = null;
     let isAutoRefreshOn = false;
 
+    // Request Queue dropdown filter state: 'active' (default) | 'completed'
+    // 'active'    → server-side .neq('status', 'Completed')
+    // 'completed' → server-side .eq('status', 'Completed')
+    let queueStatusFilter = 'active';
+
+    // =============================================
+    // SET QUEUE FILTER — Hover Dropdown Handler
+    // Updates the active filter state, syncs the
+    // dropdown item highlight, and re-queries Supabase
+    // server-side via fetchQueue().
+    // =============================================
+    function setQueueFilter(filter) {
+      queueStatusFilter = filter;
+      document.querySelectorAll('.hub-tab-dropdown-item').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.filter === filter);
+      });
+      fetchQueue();
+    }
+
     // =============================================
     // FETCH QUEUE — Direct Supabase SDK
     // =============================================
@@ -1470,10 +1566,19 @@
           .select('*')
           .order('created_at', { ascending: true });
         if (shopSlug) query = query.eq('shop_slug', shopSlug);
+
+        // Server-side status filtering based on the Request Queue dropdown selection
+        if (queueStatusFilter === 'completed') {
+          query = query.eq('status', 'Completed');
+        } else {
+          query = query.neq('status', 'Completed');
+        }
+
         const { data, error } = await query;
 
         if (error) throw error;
         renderQueue(Array.isArray(data) ? data : []);
+
       } catch (err) {
         console.error('Queue fetch failed:', err);
         showToast('❌ Could not load queue');
