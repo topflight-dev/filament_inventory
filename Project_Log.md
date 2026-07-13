@@ -1,6 +1,44 @@
 # C3DW Workshop — Project Log
 
-## Latest Entry — 2026-07-13 (Phase 4 — Editor Environment & Navigation Pass)
+## Latest Entry — 2026-07-13 (Phase 4 — Homepage Content Restoration)
+
+### Task: Fix "root domain shows Inventory Grid" report — port real legacy Home page content into `web/src/app/(marketing)/page.tsx`
+
+**Branch:** `main`
+**Files Modified:**
+- `web/src/app/(marketing)/page.tsx` — replaced the Phase 2 placeholder stub with a full Tailwind port of the legacy `index.html` homepage
+- `web/public/images/placeholder.jpg` — copied from the legacy root-level `public/images/` folder (new file, additive copy only; `luis1.jpg`/`ellen.jpg`/`jordiluis1.jpg` were already present in `web/public/images/` from the Phase 3 Team page port)
+
+---
+
+### Summary
+
+Investigated the reported bug ("visiting `/` displays the Inventory Grid, and 'Home' just reloads the inventory"). Inspected `web/src/app/page.tsx` per the task instructions — **this file does not exist**. Next.js App Router route groups mean `web/src/app/(marketing)/page.tsx` is what actually renders at `/`, and `web/src/app/(marketing)/inventory/page.tsx` renders at `/inventory` — these were already correctly separated architecturally (confirmed: the inventory grid component/`getInStockColors()` fetch only exists in the `/inventory` file). Also confirmed the current `web/vercel.json` has no `/` → `/inventory` redirect (that legacy redirect was already removed during the Phase 2 rebuild, per the Phase 1 diagnosis entry below).
+
+**Real root cause identified:** the `(marketing)/page.tsx` Home page was still just a Phase 2 placeholder stub (a generic one-paragraph "Welcome to Crafted 3D Workshop" message) — it never contained the actual rich legacy homepage content (hero section, "Our Story"/"Our Purpose" sections, CTA), which made the site feel broken/incomplete even though the routing itself was correct.
+
+**Fix applied:** Recovered the original legacy `index.html` homepage content from git history (commit `e6b49c4`, the last pre-meta-refresh version, confirmed via `git show`) and ported it 1:1 (all copy preserved verbatim) into `(marketing)/page.tsx` as Tailwind v4 markup:
+- **Hero slideshow section:** the three-image crossfading background slideshow (`luis1.jpg` / `ellen.jpg` / `jordiluis1.jpg`) with the "Our Story" text-box overlay, reimplemented with Tailwind utility classes for layout/positioning plus a small scoped inline `<style>` block for the `@keyframes fadeSlider` crossfade animation (arbitrary keyframe animations aren't expressible as pure Tailwind utilities).
+- **"Our Purpose" two-column section:** image (`placeholder.jpg`) + feature list (Explore Our Live Inventory / Premium Finishes / Collaborative Building), laid out via a responsive Tailwind flex row (reversed on `lg:`), replacing the legacy `.two-column.reverse` CSS.
+- **CTA section:** "Ready to see what's in stock?" → `<Link href="/inventory">View Color Inventory →</Link>`, styled as a green rounded button matching the legacy `.cta-button` hover-lift behavior.
+- Copied the one missing image asset (`placeholder.jpg`) into `web/public/images/`; the three portrait photos were already present from the earlier Team page port.
+
+**Root-level files touched:** none — `index.html` was only read (via `git show`, historical revision) for content recovery, never modified. `hub.html`/`src/pages/admin/hub.html`/`main.cjs` untouched.
+
+---
+
+### Verification
+- `npm run build` inside `/web` — **passes clean**. Route table unchanged (`○ /`, `○ /contact`, `○ /gallery`, `○ /hub`, `ƒ /inventory`, `○ /request`, `○ /team`, `ƒ /api/keepalive`, `ƒ /api/notify-discord`) — confirms `/` is a static prerendered route showing the new Home content, and `/inventory` remains its own separate dynamic route, unaffected by this change.
+
+---
+
+### Next Step
+
+Continue the Hub admin dashboard decomposition (`AuthGate.tsx` → `HubShell.tsx` → `QueueTable.tsx` → `InventoryManager.tsx`/`InvEditModal.tsx`) per the roadmap locked in during the previous entry. Root `main.cjs`/Electron build and both legacy `hub.html` files remain completely untouched throughout.
+
+---
+
+## Previous Entry — 2026-07-13 (Phase 4 — Editor Environment & Navigation Pass)
 
 ### Task: Workspace config setup + Header nav-link verification, ahead of the dedicated Hub decomposition session
 
