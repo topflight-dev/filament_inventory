@@ -1,6 +1,78 @@
 # C3DW Workshop — Project Log
 
-## Latest Entry — 2026-07-13 (Phase 4 — Homepage Content Restoration)
+## Latest Entry — 2026-07-13 (Admin Hub Dashboard Migration — Full 1:1 Decomposition)
+
+### Task: Port `hub.html` (2,689 lines, legacy Electron admin dashboard) into decomposed React/Tailwind components under `web/src/`
+
+**Branch:** `feature/universal-web-target`
+**Files Added:**
+- `web/src/lib/supabase/hub-queries.ts` — typed data-access layer (queue CRUD, color/finish CRUD, shop passcode validation) using the SACRED/IMMUTABLE `print_jobs`, `colors`, `shops` tables/columns exactly as-is
+- `web/src/hooks/useHubToast.tsx` — shared toast hook + `<HubToast/>` presentational component
+- `web/src/components/hub/AuthGate.tsx` — 1:1 port of the legacy sessionStorage + passcode lockscreen (Option A, per user decision — real Supabase Auth/RLS deferred)
+- `web/src/components/hub/HubShell.tsx` — brand bar, sign-out, tab nav with the hover-activated "Request Queue" Active/Completed dropdown
+- `web/src/components/hub/QueueTable.tsx` — queue fetch/render, inline edit, batch-delete checkboxes, auto-refresh toggle, Supabase Realtime `postgres_changes` INSERT subscription + toast
+- `web/src/components/hub/InventoryManager.tsx` — add-filament form, finish dropdown w/ "Add New Finish" prompt, collapsible finish-grouped list, optimistic in-stock toggle, delete, search
+- `web/src/components/hub/InvEditModal.tsx` — color/finish edit modal invoked from InventoryManager
+
+**Files Modified:**
+- `web/src/app/(dashboard)/hub/page.tsx` — replaced the Phase 2 placeholder stub; now wires `AuthGate` → `HubShell` → `QueueTable`/`InventoryManager` together
+
+### Summary
+
+Completed the full decomposition of the legacy Admin Hub into modular Next.js client components, converting the ~950-line inline dark-theme `<style>` block to Tailwind utility classes (matching the established dark palette from the public site's marketing pages), with two small scoped `<style>` blocks retained only for the auth-shake and hover-dropdown keyframe/scrollbar effects that aren't expressible as pure Tailwind utilities.
+
+**Auth approach (per explicit user decision):** Kept the legacy 1:1 behavior — `sessionStorage` flags (`c3dw_hub_auth`/`c3dw_shop_slug`/`c3dw_shop_name`) gate access; the passcode form validates `shop_slug` + `passcode` directly against the `shops` table via the anon key. This preserves the known Phase 1-flagged security gap (anyone with the anon key can query `shops.passcode`) — real Supabase Auth + RLS is intentionally deferred to a dedicated future session, matching the roadmap's "AuthGate.tsx ported 1:1 first" plan.
+
+**Realtime:** `QueueTable` subscribes to `postgres_changes` INSERT events on `print_jobs` and toasts + refetches on new submissions. The Electron-only native `Notification` API branch (gated on `file:` protocol in the legacy code) was dropped since this is a pure web target — desktop notifications remain exclusively in the untouched `hub.html`/`main.cjs` path.
+
+**Database Sacrosanctity:** No schema changes. All queries in `hub-queries.ts` reuse the exact existing column names (`print_jobs.requestor_name/project_name/stl_url/filament_id/color_preference/status/created_at/shop_slug`, `colors.color/finish/description/inStock/colorHex1-3/shop_slug`, `shops.shop_slug/shop_name/passcode`).
+
+**Root-level files touched:** none. `hub.html`, `src/pages/admin/hub.html`, `main.cjs` remain byte-for-byte untouched per SCOPE ISOLATION — the Electron desktop build continues to use its own legacy files unmodified.
+
+**Build verification:** `npm run build` inside `/web` completed successfully (Next.js 16.2.10, Turbopack) — `/hub` compiles as a static-shell client route alongside all existing marketing routes with zero TypeScript errors.
+
+---
+
+### Next Step
+
+Manually test the live `/hub` route end-to-end against a real shop's `shop_slug`/`passcode` (queue CRUD, inventory CRUD, Realtime toast on new submission) once deployed via the next Git-driven push. Follow-up session: replace the passcode gate with real Supabase Auth (magic link or password) + RLS policies keyed to a `shop_slug` JWT claim, per the Phase 1 roadmap's long-term auth plan.
+
+---
+
+## Previous Entry — 2026-07-13 (Env Audit — Supabase SSR Key Disconnect)
+
+
+### Task: Audit `web/.env.local` to diagnose live "@supabase/ssr" missing key error
+
+**Branch:** `main`
+**Files Modified:** none (read-only audit)
+
+### Summary
+
+Inspected `web/.env.local` (5 lines) against `web/.env.local.example` and the actual consumers `web/src/lib/supabase/client.ts` / `server.ts`.
+
+**Findings:**
+- `NEXT_PUBLIC_SUPABASE_URL` — present, correct Supabase project URL format.
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY` — present, valid JWT structure, confirmed `"role":"anon"` (correct public/browser-safe key, not a service role key).
+- `ADMIN_KEY` — present but **empty**.
+- `DISCORD_WEBHOOK_URL` — present but **empty**.
+
+Confirmed via code inspection that `@supabase/ssr`'s `createBrowserClient`/`createServerClient` calls in `client.ts`/`server.ts` reference **only** `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` — `ADMIN_KEY`/`DISCORD_WEBHOOK_URL` are unrelated (used only by the separate `notify-discord` Route Handler) and are not the cause of the SSR error.
+
+**Root cause diagnosed:** `.env.local` is git-ignored and never deployed to Vercel. The live "@supabase/ssr" missing key error is almost certainly caused by `NEXT_PUBLIC_SUPABASE_URL` / `NEXT_PUBLIC_SUPABASE_ANON_KEY` not being registered as Environment Variables in the Vercel Project Settings, leaving them `undefined` at cloud build time. Attempted to confirm directly via `vercel env ls`, but the project isn't linked in this sandbox (`.vercel` not linked).
+
+**Resolution:** User will add `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` manually via the Vercel dashboard (Production/Preview). Per `.clinerules`, no manual `vercel --prod` deploy was run — fix will take effect on next Git-driven deployment.
+
+---
+
+### Next Step
+
+Await confirmation that the live site's `@supabase/ssr` error is resolved after the user adds the two `NEXT_PUBLIC_*` keys in the Vercel dashboard and the next git push triggers a fresh deployment. If still broken, check Vercel build logs for other missing envs (e.g. mismatched Preview vs Production scoping).
+
+---
+
+## Previous Entry — 2026-07-13 (Phase 4 — Homepage Content Restoration)
+
 
 ### Task: Fix "root domain shows Inventory Grid" report — port real legacy Home page content into `web/src/app/(marketing)/page.tsx`
 

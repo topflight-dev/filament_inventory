@@ -1,20 +1,43 @@
+'use client';
+
 /**
- * Hub ("/hub") — Admin dashboard placeholder stub.
- * Full decomposition (QueueTable, InventoryManager, AuthGate components,
- * Supabase Auth + RLS-based multi-tenant login) deferred to a dedicated
- * session per Phase 2 scope decision — this is the most complex legacy
- * file (2,689 lines) and warrants focused treatment.
- * Legacy source: hub.html / src/pages/admin/hub.html.
+ * Hub ("/hub") — Admin Dashboard
+ * ─────────────────────────────────────────────────────────────────────────────
+ * Full 1:1 decomposition of legacy hub.html (2,689 lines) into
+ * AuthGate + HubShell + QueueTable + InventoryManager components.
+ * Auth uses the legacy sessionStorage + shops-table passcode gate
+ * (Option A — real Supabase Auth/RLS deferred to a future session).
+ * Legacy source: hub.html / src/pages/admin/hub.html (untouched).
+ * ─────────────────────────────────────────────────────────────────────────────
  */
+import { useEffect, useState } from 'react';
+import AuthGate from '@/components/hub/AuthGate';
+import HubShell from '@/components/hub/HubShell';
+import QueueTable from '@/components/hub/QueueTable';
+import InventoryManager from '@/components/hub/InventoryManager';
+import { useHubToast, HubToast } from '@/hooks/useHubToast';
+
 export default function HubPage() {
+  const { message, visible, showToast } = useHubToast();
+  const [shopName, setShopName] = useState<string | null>(null);
+
+  useEffect(() => {
+    setShopName(sessionStorage.getItem('c3dw_shop_name'));
+  }, []);
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-900 text-white">
-      <div className="text-center">
-        <h1 className="text-2xl font-bold">🖨️ C3DW Admin Hub</h1>
-        <p className="mt-2 text-zinc-400">
-          Dashboard migration coming in a dedicated session.
-        </p>
-      </div>
-    </div>
+    <AuthGate>
+      <HubShell shopName={shopName}>
+        {(activeTab, queueStatusFilter) => (
+          <>
+            {activeTab === 'queue' && (
+              <QueueTable queueStatusFilter={queueStatusFilter} showToast={showToast} />
+            )}
+            {activeTab === 'inventory' && <InventoryManager showToast={showToast} />}
+          </>
+        )}
+      </HubShell>
+      <HubToast message={message} visible={visible} />
+    </AuthGate>
   );
 }
