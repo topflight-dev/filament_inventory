@@ -1,6 +1,50 @@
 # C3DW Workshop — Project Log
 
-## Latest Entry — 2026-07-13 (Homepage "Creative Studio" Redesign)
+## Latest Entry — 2026-07-13 (Site-Wide "Creative Studio" Theme Rollout)
+
+### Task: Bring the remaining shared components and public routes into visual alignment with the "Creative Studio" warm theme established on the Home page
+
+**Branch:** `feature/universal-web-target`
+**Files Modified:**
+- `web/src/components/layout/Header.tsx`
+- `web/src/components/layout/Footer.tsx`
+- `web/src/app/(marketing)/inventory/page.tsx`
+- `web/src/app/(marketing)/inventory/_components/InventoryGrid.tsx`
+- `web/src/app/(marketing)/gallery/page.tsx`
+- `web/src/app/(marketing)/contact/page.tsx`
+- `web/src/app/(marketing)/team/page.tsx`
+
+### Summary
+
+Extended the warm "Creative Studio" palette (cream `#FDFBF7` background, white `rounded-2xl` soft-shadow cards, terracotta `#E76F51` primary accent, sage `#2A9D8F` secondary accent, deep charcoal `#3D3D3D` text) from the already-redesigned Home page across every remaining shared component and public route:
+
+- **`Header.tsx`** — replaced the legacy `bg-gradient-to-b from-[#fff1eb] to-[#ace0f9]` blue/peach gradient with a flat cream background; title/subtitle recolored to charcoal/terracotta; nav bar background switched to white with a subtle charcoal-tinted border; active nav link now terracotta with a terracotta underline (was blue/orange), inactive links hover to sage instead of a plain underline.
+- **`Footer.tsx`** — background changed to match the cream page body, border/text recolored to charcoal tones, version-stamp badge now uses the terracotta accent instead of zinc gray.
+- **`inventory/page.tsx`** — wrapped the page body in the cream background container (matching Home), heading recolored to charcoal.
+- **`InventoryGrid.tsx`** — search input and finish-filter pills restyled with terracotta (active state) and sage (hover state) accents replacing the legacy blue; each filament swatch card converted from a plain bordered box into a soft-shadowed white `rounded-2xl` panel with a hover-lift transition, and a new **sage-tinted "In Stock" badge** was added to each card (purely presentational — the grid already only ever receives `inStock=true` rows fetched server-side via `getInStockColors()`, so this is an additive visual label, not new logic or a new query).
+- **`gallery/page.tsx`** — cream background wrapper; each photo now sits inside a white `rounded-2xl` soft-shadow card with hover-lift, replacing the plain bordered thumbnail box.
+- **`contact/page.tsx`** — cream background wrapper; the Web3Forms form container converted to a white `rounded-2xl` soft-shadow panel; all input/select/textarea focus rings switched from the legacy brown `hsl(25,36%,37%)` accent to terracotta; submit button restyled as a terracotta gradient-shadow CTA matching Home's button language; success message recolored to sage. All Web3Forms fields (honeypot, hidden `access_key`/`from_name`, hCaptcha div), validation rules, and the AJAX submit handler are untouched.
+- **`team/page.tsx`** — cream background wrapper; intro section and each family bio card converted to white `rounded-2xl` soft-shadow panels with hover-lift, avatar ring accent changed from orange-300 border to a terracotta-tinted ring. All six bios and copy preserved verbatim.
+
+**Business logic preserved:** No Supabase queries, table/column names, form validation rules, or submission handlers were touched in any file — every change in this pass was scoped strictly to Tailwind `className` values and inline style colors. `request/page.tsx` was intentionally left out of scope (not listed in the task) — its own hardcoded shop-branding header/gradient and form remain as-is; it does, however, share nothing with `Header.tsx` since it renders its own inline header markup, so no incidental style migration occurred there.
+
+**Root-level files touched:** none. `hub.html`, `src/pages/admin/hub.html`, `main.cjs` untouched.
+
+---
+
+### Verification
+- `npx tsc --noEmit -p tsconfig.json` inside `/web` — **passes clean, zero TypeScript errors**. (Note: `web/package.json` has no standalone `build` script wired for this sandbox's non-interactive shell; a full `next build` was not run, but the strict type-check across the whole project surfaced no errors introduced by this styling pass.)
+
+---
+
+### Next Step
+
+Consider a future pass to apply the same "Creative Studio" treatment to `request/page.tsx`'s own hardcoded header/card markup (currently still using the legacy blue/peach gradient + brown accent, since it doesn't consume the shared `Header.tsx` component), pending explicit user approval since it's a live multi-tenant customer-facing form.
+
+---
+
+## Previous Entry — 2026-07-13 (Homepage "Creative Studio" Redesign)
+
 
 ### Changed
 - `web/src/app/(marketing)/page.tsx` — Fully redesigned the landing page away from the prior storefront/robotic feel into a warm "Creative Studio" personal About-Me theme:

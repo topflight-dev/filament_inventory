@@ -16,6 +16,12 @@ import Header from '@/components/layout/Header';
  *   - `redirect` is dropped (was legacy `index.html`) in favor of client-side
  *     success state, since Web3Forms' script intercepts the submit and we no
  *     longer need a hard page redirect inside the Next app.
+ *
+ * Restyled for the "Creative Studio" warm theme: cream page background
+ * (#FDFBF7), the form now lives inside a white rounded-2xl soft-shadow
+ * panel, terracotta/sage focus rings and button color in place of the
+ * legacy brown/hsl accent — all form fields, validation, and the Web3Forms
+ * submission handler are functionally untouched.
  */
 
 const WEB3FORMS_ACCESS_KEY = '7af3f5b4-ae03-4490-a00f-eb6c12ffa70a';
@@ -62,139 +68,141 @@ export default function ContactPage() {
         subtitle="Feel free to reach out with any questions or comments!"
       />
 
-      <main className="mx-auto max-w-2xl px-6 py-12">
-        <div className="mb-8 text-center leading-relaxed text-zinc-600">
-          <h2 className="mb-3 text-2xl font-semibold text-zinc-800">
-            Let&apos;s Create Something Together
-          </h2>
-          <p>
-            Whether you&apos;re looking for a custom 3D print, need advice on a
-            specific material, or have feedback on the workshop, I&apos;d love to
-            hear from you! From rapid prototyping to unique personalized gifts,
-            no request is too small. Fill out the form below and I&apos;ll get
-            back to you as soon as possible.
-          </p>
-        </div>
-
-        <form
-          onSubmit={handleSubmit}
-          className="space-y-5 rounded-lg border border-zinc-200 bg-white p-6 shadow-sm"
-        >
-          {/* Honeypot — hidden from real users, catches bots */}
-          <input
-            type="checkbox"
-            name="botcheck"
-            className="hidden"
-            style={{ display: 'none' }}
-            tabIndex={-1}
-            autoComplete="off"
-          />
-
-          <input type="hidden" name="access_key" value={WEB3FORMS_ACCESS_KEY} />
-          <input type="hidden" name="from_name" value="Crafted 3D Inquiry" />
-
-          <div>
-            <label
-              htmlFor="name"
-              className="mb-1 block text-sm font-semibold text-zinc-700"
-            >
-              Name
-            </label>
-            <input
-              type="text"
-              id="name"
-              name="name"
-              required
-              pattern="[a-zA-Z\s]{2,50}"
-              title="Please enter 2-50 letters only."
-              className="w-full rounded-md border border-zinc-300 px-3 py-2 text-zinc-900 focus:border-[hsl(25,36%,37%)] focus:ring-2 focus:ring-[hsl(25,36%,37%)]/30 focus:outline-none"
-            />
+      <div className="bg-[#FDFBF7]">
+        <main className="mx-auto max-w-2xl px-6 py-12">
+          <div className="mb-8 text-center leading-relaxed text-[#3D3D3D]/70">
+            <h2 className="mb-3 text-2xl font-semibold text-[#3D3D3D]">
+              Let&apos;s Create Something Together
+            </h2>
+            <p>
+              Whether you&apos;re looking for a custom 3D print, need advice on a
+              specific material, or have feedback on the workshop, I&apos;d love to
+              hear from you! From rapid prototyping to unique personalized gifts,
+              no request is too small. Fill out the form below and I&apos;ll get
+              back to you as soon as possible.
+            </p>
           </div>
 
-          <div>
-            <label
-              htmlFor="email"
-              className="mb-1 block text-sm font-semibold text-zinc-700"
-            >
-              Email Address
-            </label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              required
-              className="w-full rounded-md border border-zinc-300 px-3 py-2 text-zinc-900 focus:border-[hsl(25,36%,37%)] focus:ring-2 focus:ring-[hsl(25,36%,37%)]/30 focus:outline-none"
-            />
-          </div>
-
-          <div>
-            <label
-              htmlFor="inquiry-type"
-              className="mb-1 block text-sm font-semibold text-zinc-700"
-            >
-              How can I help you today?
-            </label>
-            <select
-              id="inquiry-type"
-              name="inquiry_type"
-              required
-              defaultValue=""
-              className="w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-zinc-900 focus:border-[hsl(25,36%,37%)] focus:ring-2 focus:ring-[hsl(25,36%,37%)]/30 focus:outline-none"
-            >
-              <option value="" disabled>
-                Select an option...
-              </option>
-              <option value="Print Quote">
-                Request a Custom 3D Print Quote 🎨
-              </option>
-              <option value="Feedback">Website or Service Feedback 💻</option>
-              <option value="General">General Question / &quot;Talk Shop&quot; ❓</option>
-              <option value="Technical">
-                Technical Help / Material Advice 🛠️
-              </option>
-            </select>
-          </div>
-
-          <div>
-            <label
-              htmlFor="message"
-              className="mb-1 block text-sm font-semibold text-zinc-700"
-            >
-              Message
-            </label>
-            <textarea
-              id="message"
-              name="message"
-              rows={6}
-              required
-              maxLength={5000}
-              placeholder="How can I help you?"
-              className="w-full resize-y rounded-md border border-zinc-300 px-3 py-2 text-zinc-900 focus:border-[hsl(25,36%,37%)] focus:ring-2 focus:ring-[hsl(25,36%,37%)]/30 focus:outline-none"
-            />
-          </div>
-
-          <div className="h-captcha" data-captcha="true" />
-
-          <button
-            type="submit"
-            disabled={state === 'submitting'}
-            className="w-full rounded-md bg-[hsl(25,36%,37%)] px-6 py-3 font-semibold text-white transition hover:bg-[hsl(25,36%,30%)] disabled:cursor-not-allowed disabled:opacity-60"
+          <form
+            onSubmit={handleSubmit}
+            className="space-y-5 rounded-2xl bg-white p-6 shadow-[0_4px_24px_rgba(61,61,61,0.08)] sm:p-8"
           >
-            {state === 'submitting' ? 'Sending…' : 'Send Message'}
-          </button>
+            {/* Honeypot — hidden from real users, catches bots */}
+            <input
+              type="checkbox"
+              name="botcheck"
+              className="hidden"
+              style={{ display: 'none' }}
+              tabIndex={-1}
+              autoComplete="off"
+            />
 
-          {state === 'success' && (
-            <p className="text-center font-medium text-green-600">
-              Thanks! Your message has been sent — I&apos;ll be in touch soon.
-            </p>
-          )}
-          {state === 'error' && (
-            <p className="text-center font-medium text-red-600">
-              Something went wrong sending your message. Please try again.
-            </p>
-          )}
-        </form>
-      </main>
+            <input type="hidden" name="access_key" value={WEB3FORMS_ACCESS_KEY} />
+            <input type="hidden" name="from_name" value="Crafted 3D Inquiry" />
+
+            <div>
+              <label
+                htmlFor="name"
+                className="mb-1 block text-sm font-semibold text-[#3D3D3D]"
+              >
+                Name
+              </label>
+              <input
+                type="text"
+                id="name"
+                name="name"
+                required
+                pattern="[a-zA-Z\s]{2,50}"
+                title="Please enter 2-50 letters only."
+                className="w-full rounded-md border border-[#3D3D3D]/15 px-3 py-2 text-[#3D3D3D] focus:border-[#E76F51] focus:ring-2 focus:ring-[#E76F51]/25 focus:outline-none"
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="email"
+                className="mb-1 block text-sm font-semibold text-[#3D3D3D]"
+              >
+                Email Address
+              </label>
+              <input
+                type="email"
+                id="email"
+                name="email"
+                required
+                className="w-full rounded-md border border-[#3D3D3D]/15 px-3 py-2 text-[#3D3D3D] focus:border-[#E76F51] focus:ring-2 focus:ring-[#E76F51]/25 focus:outline-none"
+              />
+            </div>
+
+            <div>
+              <label
+                htmlFor="inquiry-type"
+                className="mb-1 block text-sm font-semibold text-[#3D3D3D]"
+              >
+                How can I help you today?
+              </label>
+              <select
+                id="inquiry-type"
+                name="inquiry_type"
+                required
+                defaultValue=""
+                className="w-full rounded-md border border-[#3D3D3D]/15 bg-white px-3 py-2 text-[#3D3D3D] focus:border-[#E76F51] focus:ring-2 focus:ring-[#E76F51]/25 focus:outline-none"
+              >
+                <option value="" disabled>
+                  Select an option...
+                </option>
+                <option value="Print Quote">
+                  Request a Custom 3D Print Quote 🎨
+                </option>
+                <option value="Feedback">Website or Service Feedback 💻</option>
+                <option value="General">General Question / &quot;Talk Shop&quot; ❓</option>
+                <option value="Technical">
+                  Technical Help / Material Advice 🛠️
+                </option>
+              </select>
+            </div>
+
+            <div>
+              <label
+                htmlFor="message"
+                className="mb-1 block text-sm font-semibold text-[#3D3D3D]"
+              >
+                Message
+              </label>
+              <textarea
+                id="message"
+                name="message"
+                rows={6}
+                required
+                maxLength={5000}
+                placeholder="How can I help you?"
+                className="w-full resize-y rounded-md border border-[#3D3D3D]/15 px-3 py-2 text-[#3D3D3D] focus:border-[#E76F51] focus:ring-2 focus:ring-[#E76F51]/25 focus:outline-none"
+              />
+            </div>
+
+            <div className="h-captcha" data-captcha="true" />
+
+            <button
+              type="submit"
+              disabled={state === 'submitting'}
+              className="w-full rounded-2xl bg-[#E76F51] px-6 py-3 font-semibold text-white shadow-[0_4px_20px_rgba(231,111,81,0.35)] transition-all duration-300 hover:-translate-y-0.5 hover:bg-[#d9603f] hover:shadow-[0_8px_24px_rgba(231,111,81,0.4)] disabled:cursor-not-allowed disabled:translate-y-0 disabled:opacity-60 disabled:shadow-none"
+            >
+              {state === 'submitting' ? 'Sending…' : 'Send Message'}
+            </button>
+
+            {state === 'success' && (
+              <p className="text-center font-medium text-[#2A9D8F]">
+                Thanks! Your message has been sent — I&apos;ll be in touch soon.
+              </p>
+            )}
+            {state === 'error' && (
+              <p className="text-center font-medium text-red-600">
+                Something went wrong sending your message. Please try again.
+              </p>
+            )}
+          </form>
+        </main>
+      </div>
     </>
   );
 }

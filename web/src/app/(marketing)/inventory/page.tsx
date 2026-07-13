@@ -15,6 +15,10 @@ import { getInStockColors } from '@/lib/supabase/queries';
  * Revalidate every 60s (ISR) so the page also organically helps keep the
  * Supabase free-tier project "awake" on real traffic, per Project_Log.md
  * Phase 1 Part 3 Rule 4 (Keep-Alive Architecture).
+ *
+ * Restyled for the "Creative Studio" warm theme: cream page background
+ * (#FDFBF7) matching the rest of the site, charcoal heading text — the
+ * data table/card styling itself lives in <InventoryGrid />.
  */
 export const revalidate = 60;
 
@@ -27,12 +31,14 @@ export default async function InventoryPage() {
         activePath="/inventory"
         subtitle="Please choose from the available colors below!"
       />
-      <main className="pb-10">
-        <h2 className="mt-8 text-center text-2xl font-semibold text-zinc-800">
-          Filament Inventory
-        </h2>
-        <InventoryGrid items={items} />
-      </main>
+      <div className="bg-[#FDFBF7]">
+        <main className="pb-10">
+          <h2 className="mt-8 text-center text-2xl font-semibold text-[#3D3D3D]">
+            Filament Inventory
+          </h2>
+          <InventoryGrid items={items} />
+        </main>
+      </div>
     </>
   );
 }

@@ -5,6 +5,12 @@ import Header from '@/components/layout/Header';
  * Meet the Team ("/team") — family bio grid.
  * Ported from legacy meettheteam.html: an intro paragraph followed by
  * a responsive grid of team-member cards (avatar + role + bio).
+ *
+ * Restyled for the "Creative Studio" warm theme: cream page background
+ * (#FDFBF7), each bio presented inside a white rounded-2xl soft-shadow
+ * panel (replacing the plain bordered card), terracotta avatar ring
+ * accent, charcoal typography throughout — matching the Home page's
+ * card language. Copy and data are entirely unchanged.
  */
 type TeamMember = {
   src: string;
@@ -59,52 +65,54 @@ export default function TeamPage() {
         activePath="/team"
         subtitle="A family legacy, one layer at a time."
       />
-      <main className="pb-16">
-        <section className="mx-auto max-w-3xl px-6 pt-10 pb-4 text-center">
-          <h2 className="text-2xl font-semibold text-zinc-800">
-            Behind the Prints: A Family Affair
-          </h2>
-          <p className="mt-4 leading-relaxed text-zinc-600">
-            While the machines do the heavy lifting, the heart of our
-            business is found in the everyday chaos and joy of our family
-            life. Our workshop isn&apos;t just a place for manufacturing;
-            it&apos;s a space where we gather to solve problems, spark
-            creativity, and learn the value of a job well done. From the
-            dining room table to the printer bench, we&apos;ve turned our
-            2024 hobby into a hands-on lesson in entrepreneurship for our
-            children. Every project we take on is a team effort, fueled by
-            curiosity, a little bit of &quot;middle-school&quot; logic, and
-            the goal of building something meaningful together. We
-            aren&apos;t just shipping out plastic and resin—we&apos;re
-            sharing a piece of our family&apos;s journey with you.
-          </p>
-        </section>
+      <div className="bg-[#FDFBF7]">
+        <main className="pb-16">
+          <section className="mx-auto max-w-3xl rounded-2xl bg-white px-6 pt-10 pb-8 text-center shadow-[0_4px_24px_rgba(61,61,61,0.06)] mt-10 sm:px-12">
+            <h2 className="text-2xl font-semibold text-[#3D3D3D]">
+              Behind the Prints: A Family Affair
+            </h2>
+            <p className="mt-4 leading-relaxed text-[#3D3D3D]/70">
+              While the machines do the heavy lifting, the heart of our
+              business is found in the everyday chaos and joy of our family
+              life. Our workshop isn&apos;t just a place for manufacturing;
+              it&apos;s a space where we gather to solve problems, spark
+              creativity, and learn the value of a job well done. From the
+              dining room table to the printer bench, we&apos;ve turned our
+              2024 hobby into a hands-on lesson in entrepreneurship for our
+              children. Every project we take on is a team effort, fueled by
+              curiosity, a little bit of &quot;middle-school&quot; logic, and
+              the goal of building something meaningful together. We
+              aren&apos;t just shipping out plastic and resin—we&apos;re
+              sharing a piece of our family&apos;s journey with you.
+            </p>
+          </section>
 
-        <section className="mx-auto grid max-w-5xl grid-cols-1 gap-8 px-6 py-8 sm:grid-cols-2 lg:grid-cols-3">
-          {TEAM_MEMBERS.map((member) => (
-            <div
-              key={member.src}
-              className="flex flex-col items-center rounded-lg border border-zinc-200 bg-white p-6 text-center shadow-sm transition-transform hover:-translate-y-1 hover:shadow-md"
-            >
-              <div className="h-28 w-28 overflow-hidden rounded-full border-2 border-orange-300">
-                <Image
-                  src={member.src}
-                  alt={member.alt}
-                  width={112}
-                  height={112}
-                  className="h-full w-full object-cover"
-                />
+          <section className="mx-auto grid max-w-5xl grid-cols-1 gap-8 px-6 py-10 sm:grid-cols-2 lg:grid-cols-3">
+            {TEAM_MEMBERS.map((member) => (
+              <div
+                key={member.src}
+                className="flex flex-col items-center rounded-2xl bg-white p-6 text-center shadow-[0_4px_20px_rgba(61,61,61,0.08)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_28px_rgba(61,61,61,0.12)]"
+              >
+                <div className="h-28 w-28 overflow-hidden rounded-full border-4 border-[#E76F51]/30">
+                  <Image
+                    src={member.src}
+                    alt={member.alt}
+                    width={112}
+                    height={112}
+                    className="h-full w-full object-cover"
+                  />
+                </div>
+                <h3 className="mt-4 text-lg font-semibold text-[#3D3D3D]">
+                  {member.role}
+                </h3>
+                <p className="mt-2 text-sm leading-relaxed text-[#3D3D3D]/70">
+                  {member.bio}
+                </p>
               </div>
-              <h3 className="mt-4 text-lg font-semibold text-zinc-800">
-                {member.role}
-              </h3>
-              <p className="mt-2 text-sm leading-relaxed text-zinc-600">
-                {member.bio}
-              </p>
-            </div>
-          ))}
-        </section>
-      </main>
+            ))}
+          </section>
+        </main>
+      </div>
     </>
   );
 }

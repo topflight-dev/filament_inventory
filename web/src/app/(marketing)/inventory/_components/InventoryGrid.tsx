@@ -42,6 +42,14 @@ function getSwatchStyle(item: ColorRecord): React.CSSProperties {
  * this component only handles interactive filtering, matching the legacy
  * js/inventory.js behavior (search input + finish filter buttons) without
  * needing a client-side Supabase round-trip.
+ *
+ * Restyled for the "Creative Studio" warm theme: filament cards are now
+ * soft-shadowed white rounded-2xl panels (instead of plain bordered boxes),
+ * each with a sage-tinted "In Stock" badge (purely presentational — this
+ * grid only ever receives already-filtered inStock=true rows from the
+ * server, so the badge reflects existing data, no new logic/queries added).
+ * Search input + finish-filter pills use terracotta/sage accents in place
+ * of the legacy blue.
  */
 export default function InventoryGrid({ items }: { items: ColorRecord[] }) {
   const [search, setSearch] = useState('');
@@ -79,7 +87,7 @@ export default function InventoryGrid({ items }: { items: ColorRecord[] }) {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search colors, finishes..."
-          className="w-64 rounded border border-zinc-300 px-3 py-2 text-sm"
+          className="w-64 rounded-full border border-[#3D3D3D]/15 bg-white px-4 py-2 text-sm text-[#3D3D3D] shadow-sm transition-colors focus:border-[#E76F51] focus:ring-2 focus:ring-[#E76F51]/25 focus:outline-none"
         />
       </div>
 
@@ -90,8 +98,8 @@ export default function InventoryGrid({ items }: { items: ColorRecord[] }) {
             onClick={() => setFinish(f)}
             className={`rounded-full border px-4 py-1.5 text-sm font-medium transition-colors ${
               finish === f
-                ? 'border-blue-500 bg-blue-500 text-white'
-                : 'border-zinc-300 bg-white text-zinc-700 hover:bg-zinc-100'
+                ? 'border-[#E76F51] bg-[#E76F51] text-white'
+                : 'border-[#3D3D3D]/15 bg-white text-[#3D3D3D] hover:bg-[#2A9D8F]/10 hover:text-[#2A9D8F]'
             }`}
           >
             {f}
@@ -101,26 +109,29 @@ export default function InventoryGrid({ items }: { items: ColorRecord[] }) {
 
       <div className="mx-auto flex max-w-5xl flex-wrap justify-center gap-5 px-6 py-6">
         {filtered.length === 0 && (
-          <p className="text-zinc-500">No matching filament found.</p>
+          <p className="text-[#3D3D3D]/60">No matching filament found.</p>
         )}
         {filtered.map((item) => (
           <div
             key={item.id}
-            className="w-52 rounded-lg border border-zinc-300 bg-white p-3 text-center"
+            className="w-52 rounded-2xl bg-white p-4 text-center shadow-[0_4px_20px_rgba(61,61,61,0.08)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_8px_28px_rgba(61,61,61,0.12)]"
           >
             <div
-              className="mx-auto mb-2 h-24 w-24 rounded-md border border-zinc-300"
+              className="mx-auto mb-3 h-24 w-24 rounded-xl border border-[#3D3D3D]/10"
               style={getSwatchStyle(item)}
             />
-            <h3 className="font-semibold text-zinc-800">
+            <h3 className="font-semibold text-[#3D3D3D]">
               {item.color || 'Unknown Color'}
             </h3>
-            <p className="text-sm text-zinc-500">
+            <p className="mt-0.5 text-sm text-[#3D3D3D]/60">
               Finish: {item.finish || 'Unknown Finish'}
             </p>
             {item.description && (
-              <p className="mt-1 text-xs text-zinc-400">{item.description}</p>
+              <p className="mt-1 text-xs text-[#3D3D3D]/50">{item.description}</p>
             )}
+            <span className="mt-3 inline-block rounded-full bg-[#2A9D8F]/10 px-3 py-1 text-xs font-semibold tracking-wide text-[#2A9D8F]">
+              In Stock
+            </span>
           </div>
         ))}
       </div>
