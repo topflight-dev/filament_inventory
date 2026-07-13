@@ -8,6 +8,11 @@
  * in the "Request Queue Hover Dropdown" log entry. Owns activeTab +
  * queueStatusFilter state and renders the two tab panes (QueueTable /
  * InventoryManager) as children via render props.
+ *
+ * Visual palette: "Studio Obsidian" dark theme — deep matte obsidian canvas
+ * (#0B0F19), dark industrial gray panels (#161B26, border-gray-800/60,
+ * rounded-xl), cobalt blue (#3B82F6) primary actions, crisp white (#F9FAFB)
+ * headings, muted silver (#9CA3AF) body/labels, slate (#6B7280) accents.
  * ─────────────────────────────────────────────────────────────────────────────
  */
 import { useState } from 'react';
@@ -33,41 +38,41 @@ export default function HubShell({
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#1a1a1a] text-white">
+    <div className="flex min-h-screen flex-col bg-[#0B0F19] text-[#F9FAFB]">
       {/* BRAND BAR */}
-      <div className="flex items-center border-b border-zinc-800 bg-[#111111] px-6 py-2.5">
-        <span className="select-none text-sm font-bold uppercase tracking-wider text-zinc-400">
+      <div className="flex items-center border-b border-gray-800/60 bg-[#0B0F19] px-6 py-2.5">
+        <span className="select-none text-sm font-bold uppercase tracking-wider text-[#9CA3AF]">
           ⚙️ C3DW Unified Administration Suite{shopName ? ` — ${shopName}` : ''}
         </span>
         <button
           onClick={handleSignOut}
-          className="ml-auto whitespace-nowrap rounded-full border border-zinc-700 bg-zinc-900 px-4 py-1.5 text-xs font-bold tracking-wide text-zinc-400 transition-colors hover:border-red-500 hover:bg-red-950 hover:text-red-400"
+          className="ml-auto whitespace-nowrap rounded-full border border-gray-800/60 bg-[#161B26] px-4 py-1.5 text-xs font-bold tracking-wide text-[#9CA3AF] transition-colors hover:border-red-500 hover:bg-red-950 hover:text-red-400"
         >
           🚪 Sign Out
         </button>
       </div>
 
       {/* TAB NAVIGATION */}
-      <nav className="flex items-stretch gap-1 border-b-2 border-zinc-800 bg-[#161616] px-6" aria-label="Admin Hub Tabs">
+      <nav className="flex items-stretch gap-1 border-b-2 border-gray-800/60 bg-[#0B0F19] px-6" aria-label="Admin Hub Tabs">
         <div className="group relative flex">
           <button
             onClick={() => setActiveTab('queue')}
             className={`-mb-0.5 whitespace-nowrap border-b-[3px] px-5 py-3 text-sm font-bold tracking-wide transition-colors ${
               activeTab === 'queue'
-                ? 'border-blue-500 text-white'
-                : 'border-transparent text-zinc-500 hover:bg-white/5 hover:text-zinc-300'
+                ? 'border-[#3B82F6] text-[#F9FAFB]'
+                : 'border-transparent text-[#6B7280] hover:bg-white/5 hover:text-[#9CA3AF]'
             }`}
           >
             🖨️ Request Queue ▾
           </button>
-          <div className="invisible absolute top-full left-0 z-[500] min-w-[200px] flex-col gap-0.5 rounded-lg border border-zinc-700 bg-zinc-900 p-1.5 opacity-0 shadow-2xl transition-opacity group-hover:visible group-hover:flex group-hover:opacity-100">
+          <div className="invisible absolute top-full left-0 z-[500] min-w-[200px] flex-col gap-0.5 rounded-xl border border-gray-800/60 bg-[#161B26] p-1.5 opacity-0 shadow-2xl transition-opacity group-hover:visible group-hover:flex group-hover:opacity-100">
             <button
               type="button"
               onClick={() => setQueueStatusFilter('active')}
               className={`block w-full rounded-md px-3.5 py-2.5 text-left text-sm font-semibold tracking-wide transition-colors ${
                 queueStatusFilter === 'active'
-                  ? 'bg-blue-500/10 text-blue-400'
-                  : 'text-zinc-400 hover:bg-white/5 hover:text-white'
+                  ? 'bg-[#3B82F6]/10 text-[#3B82F6]'
+                  : 'text-[#9CA3AF] hover:bg-white/5 hover:text-[#F9FAFB]'
               }`}
             >
               📥 Active Queue
@@ -77,8 +82,8 @@ export default function HubShell({
               onClick={() => setQueueStatusFilter('completed')}
               className={`block w-full rounded-md px-3.5 py-2.5 text-left text-sm font-semibold tracking-wide transition-colors ${
                 queueStatusFilter === 'completed'
-                  ? 'bg-blue-500/10 text-blue-400'
-                  : 'text-zinc-400 hover:bg-white/5 hover:text-white'
+                  ? 'bg-[#3B82F6]/10 text-[#3B82F6]'
+                  : 'text-[#9CA3AF] hover:bg-white/5 hover:text-[#F9FAFB]'
               }`}
             >
               📦 Completed Archive
@@ -89,8 +94,8 @@ export default function HubShell({
           onClick={() => setActiveTab('inventory')}
           className={`-mb-0.5 whitespace-nowrap border-b-[3px] px-5 py-3 text-sm font-bold tracking-wide transition-colors ${
             activeTab === 'inventory'
-              ? 'border-blue-500 text-white'
-              : 'border-transparent text-zinc-500 hover:bg-white/5 hover:text-zinc-300'
+              ? 'border-[#3B82F6] text-[#F9FAFB]'
+              : 'border-transparent text-[#6B7280] hover:bg-white/5 hover:text-[#9CA3AF]'
           }`}
         >
           🎨 Filament Inventory

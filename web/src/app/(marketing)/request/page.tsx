@@ -38,6 +38,16 @@
  *          in the `shops` table, as an absolute last-resort safety net.
  *     This keeps the feature trivially uncoupled/scalable into a commercial
  *     multi-tenant tool later: swapping tier 2/3 is a config change only.
+ *   - RESILIENT LOCAL-DEV SAFETY NET: if none of the 3 tiers above resolve to
+ *     an existing row in the `shops` table (e.g. a fresh local/dev database
+ *     that hasn't been seeded with this shop's row yet), the gate performs a
+ *     final fallback query — grab the first available row in `shops` via
+ *     `.limit(1).maybeSingle()` — and if found, adopts THAT row's real
+ *     `shop_slug` as the active tenant identifier for the rest of the page
+ *     (branding, filament checklist, and the `print_jobs` insert all switch
+ *     to it), so the page never bricks into "Shop Not Found" during local
+ *     development. Only if the `shops` table itself is completely empty does
+ *     the page fall through to the real "Shop Not Found" state.
  */
 'use client';
 
@@ -85,11 +95,15 @@ function RequestPageInner() {
   // 3) Hardcoded generic fallback identifier as an absolute last resort.
   const urlShopSlug = (searchParams.get('shop') || '').trim();
   const envDefaultShopSlug = (process.env.NEXT_PUBLIC_DEFAULT_SHOP_SLUG || '').trim();
-  const shopSlug = urlShopSlug || envDefaultShopSlug || HARDCODED_FALLBACK_SHOP_SLUG;
+  const requestedShopSlug = urlShopSlug || envDefaultShopSlug || HARDCODED_FALLBACK_SHOP_SLUG;
 
   const supabase = useMemo(() => createClient(), []);
 
   const [gate, setGate] = useState<GateState>('checking');
+  // The tenant slug actually in effect for the rest of the page. Starts as the
+  // requested slug (tiers 1-3 above); if the local-dev safety-net fallback
+  // kicks in, this is swapped to the real shop_slug of whatever row was found.
+  const [resolvedShopSlug, setResolvedShopSlug] = useState<string>(requestedShopSlug);
   const [shopBrand, setShopBrand] = useState<ShopBrand>(null);
 
   const [allFilaments, setAllFilaments] = useState<Filament[]>([]);
@@ -106,13 +120,13 @@ function RequestPageInner() {
   const [statusMessage, setStatusMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
   // -----------------------------------------------
-  // STEP 1/2/3 — MULTI-TENANT SHOP SLUG GATE
+  // STEP 1/2/3 — MULTI-TENANT SHOP SLUG GATE (+ local-dev safety net)
   // -----------------------------------------------
   useEffect(() => {
     let cancelled = false;
 
     async function runGate() {
-      if (!shopSlug) {
+      if (!requestedShopSlug) {
         if (!cancelled) setGate('not-found');
         return;
       }
@@ -121,17 +135,35 @@ function RequestPageInner() {
         const { data: shopRecord, error } = await supabase
           .from('shops')
           .select('shop_slug')
-          .eq('shop_slug', shopSlug)
+          .eq('shop_slug', requestedShopSlug)
           .maybeSingle();
 
         if (cancelled) return;
 
-        if (error || !shopRecord) {
-          setGate('not-found');
+        if (!error && shopRecord) {
+          setResolvedShopSlug(requestedShopSlug);
+          setGate('ok');
           return;
         }
 
-        setGate('ok');
+        // RESILIENT DEV FALLBACK — the requested slug doesn't exist locally
+        // (e.g. a fresh/empty local database). Grab whatever the first
+        // available `shops` row is so the page never bricks in local dev.
+        const { data: fallbackShop, error: fallbackError } = await supabase
+          .from('shops')
+          .select('shop_slug')
+          .limit(1)
+          .maybeSingle();
+
+        if (cancelled) return;
+
+        if (!fallbackError && fallbackShop?.shop_slug) {
+          setResolvedShopSlug(fallbackShop.shop_slug);
+          setGate('ok');
+          return;
+        }
+
+        setGate('not-found');
       } catch (err) {
         console.error('[C3DW] Shop validation failed:', err);
         if (!cancelled) setGate('not-found');
@@ -142,7 +174,7 @@ function RequestPageInner() {
     return () => {
       cancelled = true;
     };
-  }, [shopSlug, supabase]);
+  }, [requestedShopSlug, supabase]);
 
   // -----------------------------------------------
   // SHOP BRANDING INJECTION (non-critical)
@@ -156,7 +188,7 @@ function RequestPageInner() {
         const { data } = await supabase
           .from('shops')
           .select('shop_name, logo_url')
-          .eq('shop_slug', shopSlug)
+          .eq('shop_slug', resolvedShopSlug)
           .single();
 
         if (!cancelled && data) {
@@ -172,7 +204,7 @@ function RequestPageInner() {
     return () => {
       cancelled = true;
     };
-  }, [gate, shopSlug, supabase]);
+  }, [gate, resolvedShopSlug, supabase]);
 
   // -----------------------------------------------
   // POPULATE FILAMENT CHECKLIST
@@ -189,7 +221,7 @@ function RequestPageInner() {
           .from('colors')
           .select('id, color, finish, inStock')
           .eq('inStock', true)
-          .eq('shop_slug', shopSlug)
+          .eq('shop_slug', resolvedShopSlug)
           .order('color', { ascending: true });
 
         if (error) throw error;
@@ -206,7 +238,7 @@ function RequestPageInner() {
     return () => {
       cancelled = true;
     };
-  }, [gate, shopSlug, supabase]);
+  }, [gate, resolvedShopSlug, supabase]);
 
   function toggleFilament(f: Filament, checked: boolean) {
     const id = String(f.id);
@@ -260,7 +292,7 @@ function RequestPageInner() {
       filament_id: filamentId,
       color_preference: colorPreference,
       status: 'Pending',
-      shop_slug: shopSlug,
+      shop_slug: resolvedShopSlug,
     };
 
     try {
@@ -294,11 +326,11 @@ function RequestPageInner() {
   }
 
   // -----------------------------------------------
-  // RENDER — GATE STATES
+  // RENDER — GATE STATES ("Studio Obsidian" dark theme)
   // -----------------------------------------------
   if (gate === 'checking') {
     return (
-      <main className="mx-auto max-w-lg px-6 py-24 text-center text-zinc-500">
+      <main className="mx-auto min-h-screen max-w-lg bg-[#0B0F19] px-6 py-24 text-center text-[#9CA3AF]">
         <p>Loading…</p>
       </main>
     );
@@ -306,11 +338,11 @@ function RequestPageInner() {
 
   if (gate === 'not-found') {
     return (
-      <main className="mx-auto max-w-lg px-6 py-16">
-        <div className="mx-auto max-w-md rounded-2xl border border-amber-300/60 bg-amber-50/95 px-8 py-10 text-center shadow-lg backdrop-blur">
+      <main className="mx-auto min-h-screen max-w-lg bg-[#0B0F19] px-6 py-16">
+        <div className="mx-auto max-w-md rounded-xl border border-gray-800/60 bg-[#161B26] px-8 py-10 text-center shadow-lg">
           <span className="mb-3 block text-5xl">⚠️</span>
-          <h2 className="mb-3 text-xl font-bold text-amber-800">Shop Not Found</h2>
-          <p className="leading-relaxed text-amber-900/80">
+          <h2 className="mb-3 text-xl font-bold text-[#F9FAFB]">Shop Not Found</h2>
+          <p className="leading-relaxed text-[#9CA3AF]">
             Please double-check the web address provided by your 3D print operator.
           </p>
         </div>
@@ -319,8 +351,8 @@ function RequestPageInner() {
   }
 
   return (
-    <>
-      <header className="bg-gradient-to-b from-[#fff1eb] to-[#ace0f9] px-6 pt-10 pb-6 text-center">
+    <div className="min-h-screen bg-[#0B0F19]">
+      <header className="border-b border-gray-800/60 bg-[#0B0F19] px-6 pt-10 pb-6 text-center">
         {shopBrand?.logo_url ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -329,24 +361,24 @@ function RequestPageInner() {
             className="mx-auto max-h-[60px] max-w-[220px] object-contain"
           />
         ) : (
-          <h1 className="text-3xl font-bold text-[hsl(25,36%,37%)]">
+          <h1 className="text-3xl font-bold text-[#F9FAFB]">
             {shopBrand?.shop_name ?? 'Print Request'}
           </h1>
         )}
-        <p className="mt-2 text-lg italic text-[hsl(0,27%,62%)]">
+        <p className="mt-2 text-lg italic text-[#9CA3AF]">
           Submit a job to the 3D print queue!
         </p>
       </header>
 
       <main className="px-6 py-6">
-        <div className="mx-auto w-full max-w-[500px] rounded-xl border border-white/30 bg-white/90 p-6 text-left shadow-lg backdrop-blur">
-          <h2 className="mb-5 border-b border-black/10 pb-2.5 text-lg font-semibold text-[hsl(25,36%,37%)]">
+        <div className="mx-auto w-full max-w-[500px] rounded-xl border border-gray-800/60 bg-[#161B26] p-6 text-left shadow-lg">
+          <h2 className="mb-5 border-b border-gray-800/60 pb-2.5 text-lg font-semibold text-[#F9FAFB]">
             🖨️ Submit a Print Request
           </h2>
 
           <form onSubmit={handleSubmit} noValidate>
             <div className="mb-4">
-              <label htmlFor="requestorName" className="mb-1.5 block text-sm font-bold text-zinc-700">
+              <label htmlFor="requestorName" className="mb-1.5 block text-sm font-bold text-[#9CA3AF]">
                 Your Name
               </label>
               <input
@@ -357,12 +389,12 @@ function RequestPageInner() {
                 placeholder="e.g., Jane Smith"
                 required
                 autoComplete="name"
-                className="block w-full rounded-md border border-zinc-300 bg-white px-3 py-2.5 text-[15px] text-zinc-800 transition-colors focus:border-sky-300 focus:shadow-[0_0_8px_rgba(172,224,249,0.6)] focus:outline-none"
+                className="block w-full rounded-md border border-gray-800/60 bg-[#0B0F19] px-3 py-2.5 text-[15px] text-[#F9FAFB] transition-colors placeholder:text-[#6B7280] focus:border-[#3B82F6] focus:shadow-[0_0_0_3px_rgba(59,130,246,0.25)] focus:outline-none"
               />
             </div>
 
             <div className="mb-4">
-              <label htmlFor="projectName" className="mb-1.5 block text-sm font-bold text-zinc-700">
+              <label htmlFor="projectName" className="mb-1.5 block text-sm font-bold text-[#9CA3AF]">
                 Project Name
               </label>
               <input
@@ -372,13 +404,13 @@ function RequestPageInner() {
                 onChange={(e) => setProjectName(e.target.value)}
                 placeholder="e.g., Desk Organizer"
                 required
-                className="block w-full rounded-md border border-zinc-300 bg-white px-3 py-2.5 text-[15px] text-zinc-800 transition-colors focus:border-sky-300 focus:shadow-[0_0_8px_rgba(172,224,249,0.6)] focus:outline-none"
+                className="block w-full rounded-md border border-gray-800/60 bg-[#0B0F19] px-3 py-2.5 text-[15px] text-[#F9FAFB] transition-colors placeholder:text-[#6B7280] focus:border-[#3B82F6] focus:shadow-[0_0_0_3px_rgba(59,130,246,0.25)] focus:outline-none"
               />
             </div>
 
             <div className="mb-4">
-              <label htmlFor="modelLink" className="mb-1.5 block text-sm font-bold text-zinc-700">
-                Link to Model <span className="text-xs font-normal text-zinc-400">(optional)</span>
+              <label htmlFor="modelLink" className="mb-1.5 block text-sm font-bold text-[#9CA3AF]">
+                Link to Model <span className="text-xs font-normal text-[#6B7280]">(optional)</span>
               </label>
               <input
                 type="text"
@@ -386,31 +418,31 @@ function RequestPageInner() {
                 value={modelLink}
                 onChange={(e) => setModelLink(e.target.value)}
                 placeholder="e.g., https://www.thingiverse.com/thing:..."
-                className="block w-full rounded-md border border-zinc-300 bg-white px-3 py-2.5 text-[15px] text-zinc-800 transition-colors focus:border-sky-300 focus:shadow-[0_0_8px_rgba(172,224,249,0.6)] focus:outline-none"
+                className="block w-full rounded-md border border-gray-800/60 bg-[#0B0F19] px-3 py-2.5 text-[15px] text-[#F9FAFB] transition-colors placeholder:text-[#6B7280] focus:border-[#3B82F6] focus:shadow-[0_0_0_3px_rgba(59,130,246,0.25)] focus:outline-none"
               />
             </div>
 
             <div className="mb-4">
-              <label className="mb-1.5 block text-sm font-bold text-zinc-700">
-                Filament Color(s) <span className="text-xs font-normal text-zinc-400">(select one or more)</span>
+              <label className="mb-1.5 block text-sm font-bold text-[#9CA3AF]">
+                Filament Color(s) <span className="text-xs font-normal text-[#6B7280]">(select one or more)</span>
               </label>
 
               {/* Selected color pills */}
               <div className="mt-1 flex min-h-0 flex-wrap gap-1.5">
                 {selectedFilaments.length === 0 ? (
-                  <span className="text-sm italic text-zinc-400">No colors selected yet…</span>
+                  <span className="text-sm italic text-[#6B7280]">No colors selected yet…</span>
                 ) : (
                   selectedFilaments.map((f) => (
                     <span
                       key={f.id}
-                      className="inline-flex items-center gap-1.5 rounded-full border border-blue-300 bg-blue-100 px-2.5 py-1 text-xs font-semibold text-blue-800"
+                      className="inline-flex items-center gap-1.5 rounded-full border border-[#3B82F6]/40 bg-[#3B82F6]/10 px-2.5 py-1 text-xs font-semibold text-[#3B82F6]"
                     >
                       {f.label}
                       <button
                         type="button"
                         aria-label={`Remove ${f.label}`}
                         onClick={() => removeFilament(f.id)}
-                        className="leading-none text-blue-800/70 hover:text-blue-800"
+                        className="leading-none text-[#3B82F6]/70 hover:text-[#3B82F6]"
                       >
                         ✕
                       </button>
@@ -420,28 +452,28 @@ function RequestPageInner() {
               </div>
 
               {/* Scrollable checklist */}
-              <div className="mt-2 max-h-[200px] overflow-y-auto rounded-md border border-zinc-300 bg-white py-1">
+              <div className="mt-2 max-h-[200px] overflow-y-auto rounded-md border border-gray-800/60 bg-[#0B0F19] py-1">
                 {filamentsLoading ? (
-                  <div className="px-3 py-2.5 text-sm italic text-zinc-400">Loading filaments…</div>
+                  <div className="px-3 py-2.5 text-sm italic text-[#6B7280]">Loading filaments…</div>
                 ) : filamentsError ? (
-                  <div className="px-3 py-2.5 text-sm italic text-zinc-400">Could not load filaments</div>
+                  <div className="px-3 py-2.5 text-sm italic text-[#6B7280]">Could not load filaments</div>
                 ) : allFilaments.length === 0 ? (
-                  <div className="px-3 py-2.5 text-sm italic text-zinc-400">No filaments available</div>
+                  <div className="px-3 py-2.5 text-sm italic text-[#6B7280]">No filaments available</div>
                 ) : (
                   allFilaments.map((f) => {
                     const checked = selectedIds.has(String(f.id));
                     return (
                       <label
                         key={f.id}
-                        className={`flex cursor-pointer select-none items-center gap-2.5 px-3 py-2 text-[15px] text-zinc-800 transition-colors hover:bg-sky-50 ${
-                          checked ? 'bg-sky-100' : ''
+                        className={`flex cursor-pointer select-none items-center gap-2.5 px-3 py-2 text-[15px] text-[#F9FAFB] transition-colors hover:bg-[#3B82F6]/10 ${
+                          checked ? 'bg-[#3B82F6]/15' : ''
                         }`}
                       >
                         <input
                           type="checkbox"
                           checked={checked}
                           onChange={(e) => toggleFilament(f, e.target.checked)}
-                          className="h-[17px] w-[17px] flex-shrink-0 accent-blue-500"
+                          className="h-[17px] w-[17px] flex-shrink-0 accent-[#3B82F6]"
                         />
                         <span>
                           {f.color} — {f.finish}
@@ -454,9 +486,9 @@ function RequestPageInner() {
             </div>
 
             <div className="mb-4">
-              <label htmlFor="specialInstructions" className="mb-1.5 block text-sm font-bold text-zinc-700">
+              <label htmlFor="specialInstructions" className="mb-1.5 block text-sm font-bold text-[#9CA3AF]">
                 Special Instructions / Comments{' '}
-                <span className="text-xs font-normal text-zinc-400">(optional)</span>
+                <span className="text-xs font-normal text-[#6B7280]">(optional)</span>
               </label>
               <textarea
                 id="specialInstructions"
@@ -464,24 +496,24 @@ function RequestPageInner() {
                 onChange={(e) => setSpecialInstructions(e.target.value)}
                 placeholder="e.g., Please use a raft, print at 20% infill, or any other notes..."
                 rows={3}
-                className="block min-h-[80px] w-full resize-y rounded-md border border-zinc-300 bg-white px-3 py-2.5 text-[15px] text-zinc-800 transition-colors focus:border-sky-300 focus:shadow-[0_0_8px_rgba(172,224,249,0.6)] focus:outline-none"
+                className="block min-h-[80px] w-full resize-y rounded-md border border-gray-800/60 bg-[#0B0F19] px-3 py-2.5 text-[15px] text-[#F9FAFB] transition-colors placeholder:text-[#6B7280] focus:border-[#3B82F6] focus:shadow-[0_0_0_3px_rgba(59,130,246,0.25)] focus:outline-none"
               />
             </div>
 
             <button
               type="submit"
               disabled={submitting}
-              className="mt-2 w-full rounded-full bg-green-600 py-3.5 text-base font-bold text-white transition-colors hover:not-disabled:bg-green-700 disabled:cursor-not-allowed disabled:bg-zinc-400"
+              className="mt-2 w-full rounded-full bg-[#3B82F6] py-3.5 text-base font-bold text-white transition-colors hover:not-disabled:bg-[#2563EB] disabled:cursor-not-allowed disabled:bg-gray-700"
             >
               {submitting ? 'Submitting...' : '🚀 Submit Request'}
             </button>
 
             {statusMessage && (
               <div
-                className={`mt-4 rounded-lg px-4 py-3 text-center text-sm ${
+                className={`mt-4 rounded-lg border px-4 py-3 text-center text-sm ${
                   statusMessage.type === 'success'
-                    ? 'border border-emerald-300 bg-emerald-100 text-emerald-800'
-                    : 'border border-red-300 bg-red-100 text-red-800'
+                    ? 'border-[#10B981]/40 bg-[#10B981]/10 text-[#10B981]'
+                    : 'border-red-500/40 bg-red-500/10 text-red-400'
                 }`}
               >
                 {statusMessage.text}
@@ -490,7 +522,7 @@ function RequestPageInner() {
           </form>
         </div>
       </main>
-    </>
+    </div>
   );
 }
 
@@ -498,7 +530,7 @@ export default function RequestPage() {
   return (
     <Suspense
       fallback={
-        <main className="mx-auto max-w-lg px-6 py-24 text-center text-zinc-500">
+        <main className="mx-auto min-h-screen max-w-lg bg-[#0B0F19] px-6 py-24 text-center text-[#9CA3AF]">
           <p>Loading…</p>
         </main>
       }

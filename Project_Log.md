@@ -1,6 +1,47 @@
 # C3DW Workshop — Project Log
 
-## Latest Entry — 2026-07-13 (Request Page — Dynamic Multi-Tenant Shop-Slug Fallback Chain)
+## Latest Entry — 2026-07-13 (Local-Dev Shop Safety Net + "Studio Obsidian" Dark Mode Rollout — Admin Hub & Request Portal)
+
+### Task: Add a resilient local-dev fallback to the `/request` shop gate, remove a temporary diagnostic hook, and reskin the Admin Hub + Request Portal into the new "Studio Obsidian" dark theme
+
+**Branch:** `feature/universal-web-target`
+**Files Modified:**
+- `web/src/app/(marketing)/request/page.tsx`
+- `web/src/components/hub/AuthGate.tsx`
+- `web/src/components/hub/HubShell.tsx`
+- `web/src/components/hub/QueueTable.tsx`
+- `web/src/components/hub/InventoryManager.tsx`
+- `web/src/components/hub/InvEditModal.tsx`
+- `web/src/hooks/useHubToast.tsx`
+
+### Added — Resilient Local-Dev Shop Safety Net
+Extended the existing 3-tier shop-slug resolution chain in `request/page.tsx`'s gate `useEffect` with one more fallback layer: if the resolved `requestedShopSlug` doesn't match any row in `shops` (e.g. a fresh/empty local dev database that hasn't been seeded with `crafted3dworkshop` yet), the gate now runs a second query — `.from('shops').select('shop_slug').limit(1).maybeSingle()` — and if a row is found, adopts that row's real `shop_slug` as the active tenant identifier for the rest of the page (branding, filament checklist, and the `print_jobs` insert all switch to it). Only if the `shops` table is completely empty does the page fall through to the genuine "Shop Not Found" state. Also removed the temporary diagnostic `console.error` hook that was added earlier to debug the empty-table symptom — the gate's error handling is back to a single `console.error('[C3DW] Shop validation failed:', err)` catch-all, matching the pre-diagnostic baseline.
+
+### Changed — "Studio Obsidian" Dark Mode
+Reskinned every Admin Hub component (`AuthGate`, `HubShell`, `QueueTable`, `InventoryManager`, `InvEditModal`, `useHubToast`'s `<HubToast/>`) and the public `/request` intake page from their prior ad-hoc dark palettes into a single consistent "Studio Obsidian" token set:
+- **Canvas:** deep matte obsidian `#0B0F19` for page/section backgrounds.
+- **Cards & panels:** dark industrial gray `#161B26` with `border-gray-800/60` hairlines and `rounded-xl` corners (brand bar, tab dropdown, queue table, inventory groups, modals, add-filament form, request form card).
+- **Primary actions:** cobalt blue `#3B82F6` for buttons, active tab underline, focus rings, and input active/hover states (with `#2563EB` as the hover-darken shade).
+- **Status badges:** Neon Mint `#10B981` for "Completed"/"In Stock" active-state badges and the auto-refresh-on toggle; existing amber (pending) and red (destructive) semantic colors were left as-is since they're not covered by the new token set.
+- **Typography:** crisp white `#F9FAFB` for headings/primary values, muted silver `#9CA3AF` for body/labels, slate `#6B7280` for table headers/secondary text/placeholders.
+All existing business logic, Supabase query shapes, sessionStorage auth-gate behavior, Realtime subscription, and the passcode-validation flow (`validateShopCredentials`) were left completely untouched per explicit user confirmation — this pass is Tailwind `className` values only, no logic changes.
+
+**Root-level files touched:** none. `hub.html`, `src/pages/admin/hub.html`, `main.cjs` untouched. No Supabase schema/table/column changes — purely additive query logic (one extra fallback `SELECT`) plus visual styling.
+
+---
+
+### Verification
+- `npx --no-install next build` inside `/web` (Turbopack production build, full TypeScript typecheck) — **Compiled successfully, zero TypeScript errors.** All 10 routes (`/`, `/contact`, `/gallery`, `/hub`, `/inventory`, `/request`, `/team`, `/api/keepalive`, `/api/notify-discord`, `/_not-found`) built cleanly with no regressions.
+
+---
+
+### Next Step
+Manually verify in a browser that a fresh local Supabase instance (empty `shops` table except for one seeded row) correctly falls through to that row on `/request` without a `?shop=` param, and that the "Studio Obsidian" palette renders consistently across both `/hub` and `/request` at various viewport sizes. Consider extending the same token set to the remaining marketing pages in a future dedicated pass if a unified dark mode across the whole site is desired (currently only Home/Inventory/Gallery/Contact/Team remain on the "Creative Studio" light theme by design).
+
+---
+
+## Previous Entry — 2026-07-13 (Request Page — Dynamic Multi-Tenant Shop-Slug Fallback Chain)
+
 
 ### Task: Fix "Shop Not Found" error on `/request` when accessed without a `?shop=` URL param
 
