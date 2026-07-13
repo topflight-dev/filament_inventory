@@ -1,7 +1,9 @@
-Backups/
-Old_Site/
-Downloads/
-Documents/
-dist/
-build-output/
-node_modules/
+**/node_modules/
+.next/
+.vercel/
+.git/
+**/__pycache__/
+*.pyc
+.env
+*.env.local
+.DS_Store

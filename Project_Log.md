@@ -1,6 +1,33 @@
 # C3DW Workshop — Project Log
 
-## Latest Entry — 2026-07-13 (Admin Hub Dashboard Migration — Full 1:1 Decomposition)
+## Latest Entry — 2026-07-13 (Homepage "Creative Studio" Redesign)
+
+### Changed
+- `web/src/app/(marketing)/page.tsx` — Fully redesigned the landing page away from the prior storefront/robotic feel into a warm "Creative Studio" personal About-Me theme:
+  - **Palette:** cream background (`#FDFBF7`), pure white `rounded-2xl` cards with soft shadows, Terracotta (`#E76F51`) and Sage Green (`#2A9D8F`) accents, deep charcoal (`#3D3D3D`) body/heading text instead of pure black/zinc.
+  - **Hero:** replaced the old 3-image auto-crossfade slideshow (and its inline `<style>` keyframe block) with a split hero — personal intro copy + soft-framed, softly-overlapping duo of `luis1.jpg`/`ellen.jpg` photos with rounded-2xl white borders and soft shadows.
+  - **Our Story / Our Purpose:** merged into one clean narrative white card with the original verbatim founder story copy, a sage-accented pull-quote, and a redesigned 3-item feature list (Live Inventory / Premium Finishes / Collaborative Building) replacing the old plain bullet list.
+  - **Inventory preview teaser:** new compact white card inviting users to check the live filament inventory, with a sage CTA button.
+  - **Say Hello CTA:** new centered, welcoming card-based CTA section linking directly to `/contact`, using the terracotta accent button.
+  - All interactive elements use smooth `transition-all duration-300` hover states (lift + shadow/color shift) for a friendly, premium feel. No stubs/placeholders — file is fully production-ready.
+
+**Next Step:** None outstanding from this task. Consider a future pass to restyle the shared `Header.tsx` gradient to match the new cream/terracotta/sage palette site-wide (currently still uses the legacy blue/peach gradient), pending explicit user approval since it's a shared component across all marketing pages.
+
+---
+
+## Prior Entry — 2026-07-13 (Governance Rules Update — Architectural Contract)
+
+
+### Changed
+- `.clinerules` — Appended five new permanent governance sections: **OPERATING SYSTEM & ENVIRONMENT CONSTRAINTS** (Windows/PowerShell-only, no OS-guessing commands), **NO-EXECUTION & COMPILATION STANDARDS** (no placeholders/TODOs, no persistent dev-server execution, clean up terminal panes), **ARCHITECTURAL BOUNDARY RULES** (secrets boundary for `.env.local`, Supabase as record authority for stock/quantity data), **DATABASE WRITE-ACCESS & SCHEMA GUARDRAILS** (no raw DDL without explicit review, all mutations must be scoped with WHERE predicates), and **MASTER ECOSYSTEM BLUEPRINT & LOGGING** (Next.js/TypeScript/Tailwind/Supabase stack declaration + mandatory changelog requirement). All pre-existing sections (Branch Architecture, Path & Boundary Rules, Terminal & Environment, Persistent Memory & Reporting, Vercel/Cloud-Native Deployment Constraints) preserved unchanged.
+- `.clineignore` — Confirmed/rewritten to the exact canonical ignore set: `**/node_modules/`, `.next/`, `.vercel/`, `.git/`, `**/__pycache__/`, `*.pyc`, `.env`, `*.env.local`, `.DS_Store`.
+
+**Next Step:** None outstanding from this task — governance contract is now permanently in effect for all future sessions in this repo.
+
+---
+
+## Prior Entry — 2026-07-13 (Admin Hub Dashboard Migration — Full 1:1 Decomposition)
+
 
 ### Task: Port `hub.html` (2,689 lines, legacy Electron admin dashboard) into decomposed React/Tailwind components under `web/src/`
 

@@ -26,3 +26,27 @@ PERSISTENT MEMORY & REPORTING:
 - DATABASE INTEGRITY: The current Supabase database tables ('colors', 'site_traffic', 'print_jobs') are connected to live systems. The schemas, table names, and existing columns are SACRED AND IMMUTABLE. Any adjustments must be strictly additive and backward-compatible.
 - CURRENT ENVIRONMENT: Work exclusively inside the active Git sandbox branch 'feature/universal-web-target'. The 'main' branch must remain pristine for the working desktop build.
 - GIT-DRIVEN DEPLOYMENTS ONLY: Never run manual production CLI deployments (e.g., `vercel --prod` or `vercel deploy --prod`). All production deployments must be triggered exclusively by pushing commits to the connected remote Git repository, allowing Vercel's native Git integration to manage builds and promotion automatically.
+
+# OPERATING SYSTEM & ENVIRONMENT CONSTRAINTS
+- The user is strictly running a WINDOWS operating system.
+- The preferred and default terminal environment is POWERSHELL.
+- [CRITICAL] Do not attempt to guess or execute terminal shell commands to find out the OS environment.
+
+# NO-EXECUTION & COMPILATION STANDARDS
+- You must write fully completed, production-ready code files. Do not write incomplete placeholders, mock functions, or stubs like "// TODO" or "// Implement later".
+- Do not execute persistent terminal testing processes like `npm run dev` or start local servers. Simply generate the correct code, verify syntax mentally, and present the completed files. The user will handle execution manually.
+- Close or kill your active task terminal panes upon completion to prevent background process stacking.
+
+# ARCHITECTURAL BOUNDARY RULES
+- [SECRETS BOUNDARY] Database service-role keys, private API keys, and system secrets must live exclusively in local environment variables (.env.local). They must NEVER appear in any frontend component, page, or file that could be bundled and shipped to the browser.
+- [RECORD AUTHORITY] Quantities, stock counts, or authoritative database ledger fields must be treated as the absolute source of truth from Supabase. Never override or recalculate these values arbitrarily in frontend TypeScript code; always display values returned by your database queries.
+
+# DATABASE WRITE-ACCESS & SCHEMA GUARDRAILS
+- [CRITICAL] NEVER execute raw DDL statements (CREATE TABLE, ALTER TABLE, DROP TABLE) against the database from any script unless the user has explicitly reviewed and approved the exact SQL in this session.
+- [CRITICAL] All INSERT, UPDATE, and DELETE operations must be scoped with precise WHERE clauses. Never issue an unfiltered bulk update or delete without a row-level predicate (e.g., eq("id", ...) or eq("shop_slug", ...)).
+
+# MASTER ECOSYSTEM BLUEPRINT & LOGGING
+- This project utilizes Next.js App Router, TypeScript, Tailwind CSS, and Supabase client structures.
+- [MANDATORY CHANGELOG] Every time you successfully create, modify, or upgrade a feature in this codebase, you MUST append a concise entry to `Project_Log.md` tracking what was Added, Fixed, or Changed.
+
+
