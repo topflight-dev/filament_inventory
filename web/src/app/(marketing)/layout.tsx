@@ -12,7 +12,7 @@ export default function MarketingLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-1 flex-col">
+    <div className="flex flex-1 flex-col bg-[#FDFBF7]">
       <div className="flex-1">{children}</div>
       <Footer />
     </div>

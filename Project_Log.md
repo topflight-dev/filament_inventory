@@ -1,6 +1,35 @@
 # C3DW Workshop — Project Log
 
-## Latest Entry — 2026-07-13 (Site-Wide "Creative Studio" Theme Rollout)
+## Latest Entry — 2026-07-13 (Dark-Mode Bleed-Through Fix — Top/Bottom Black Bars)
+
+### Task: Eliminate lingering black bars above the Header and below the Footer on shorter pages
+
+**Branch:** `feature/universal-web-target`
+**Files Modified:**
+- `web/src/app/globals.css`
+- `web/src/app/layout.tsx`
+- `web/src/app/(marketing)/layout.tsx`
+
+### Root Cause
+`globals.css` (Next.js's default scaffold) still shipped a `@media (prefers-color-scheme: dark)` block that flipped the CSS var `--background` to near-black (`#0a0a0a`) whenever a visitor's OS/browser had dark mode enabled, and the `<body>` element never had an explicit background color of its own — it simply inherited `var(--background)`. Since the site's `Header`/`Footer` components already painted their own cream (`#FDFBF7`) backgrounds, any sliver of raw `<body>` peeking out above the Header (thin top bar) or below the Footer on pages shorter than the viewport (thick bottom bar) rendered as solid black instead of cream. `Header.tsx` and `Footer.tsx` themselves were audited and found already correctly using `bg-[#FDFBF7]` with faint `border-[#3D3D3D]/10` hairlines — no `bg-black`/`bg-zinc-900` classes were present in either file.
+
+### Fixed
+- `globals.css` — Removed the `prefers-color-scheme: dark` media query entirely (this is a single fixed warm-theme brand site with no dark-mode variant) and locked `:root` tokens to `--background: #FDFBF7` / `--foreground: #3D3D3D` so the color scheme is deterministic regardless of the visitor's system preference. Rule also now targets both `html, body` explicitly.
+- `layout.tsx` (root) — Added an explicit `bg-[#FDFBF7] text-[#3D3D3D]` className directly on `<body>` as a defense-in-depth guard against any FOUC/var-resolution timing gap.
+- `(marketing)/layout.tsx` — Added `bg-[#FDFBF7]` to the outer flex wrapper `<div>` so the marketing route group's own container never exposes a black gap on short pages before the Footer renders.
+
+**Business logic preserved:** Purely a CSS/background-color fix — no Supabase queries, routing, or component logic touched.
+
+### Verification
+- `npx tsc --noEmit -p tsconfig.json` inside `/web` — **passes clean, zero TypeScript errors.**
+
+### Next Step
+None outstanding for this fix — monitor production after next deploy to confirm the bars are gone across all marketing routes (Home, Inventory, Gallery, Contact, Team) and at various short viewport heights.
+
+---
+
+## Previous Entry — 2026-07-13 (Site-Wide "Creative Studio" Theme Rollout)
+
 
 ### Task: Bring the remaining shared components and public routes into visual alignment with the "Creative Studio" warm theme established on the Home page
 
