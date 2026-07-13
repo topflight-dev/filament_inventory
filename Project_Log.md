@@ -1,6 +1,188 @@
 # C3DW Workshop — Project Log
 
-## Latest Entry — 2026-07-12 (Phase 1 Investigation — Next.js/Tailwind/Supabase Monorepo Transition)
+## Latest Entry — 2026-07-12 (Phase 3 — Request Page Vertical Slice — FINAL Phase 3 Public Page)
+
+### Task: Port the legacy `request.html` multi-tenant print-job intake form to `web/src/app/(marketing)/request/page.tsx`
+
+**Branch:** `feature/universal-web-target`
+**Files Created/Modified:**
+- `web/src/app/(marketing)/request/page.tsx` — replaced the Phase 2 placeholder stub with a full port
+- `web/src/app/api/notify-discord/route.ts` — new server Route Handler for the Discord webhook notification
+
+---
+
+### Summary
+
+Inspected legacy `request.html` first, per task scope (`hub.html`/`src/pages/admin/hub.html` were never opened, per the strict file ban). Confirmed the legacy page implements: a strict `?shop=` slug gate validated against the `shops` table (blank slug or no match → "Shop Not Found" error card, replacing the entire page body), shop branding injection (`shop_name`/`logo_url` into the header), a shop-scoped filament checklist (`colors` where `inStock=true` and `shop_slug` matches) with multi-select "pill" chips, form validation (name + project + ≥1 filament required), and a direct Supabase insert into `print_jobs` using the exact legacy payload shape, followed by a fire-and-forget Discord webhook notification.
+
+Ported as a Client Component (`'use client'`), since the page is fully interactive (URL-param gate, live Supabase calls, form state):
+- **Shop-slug gate:** `useSearchParams()` + a `useEffect` gate (`'checking' | 'not-found' | 'ok'` state) reproduces the legacy 3-step validation exactly — missing slug or no matching `shops` row renders the same "Shop Not Found" card copy, before any of the rest of the page mounts. Per Next.js App Router rules, `useSearchParams()` requires a `<Suspense>` boundary, so the exported `RequestPage` is a thin `<Suspense>` wrapper around the real `RequestPageInner` client-logic component.
+- **Shop branding:** a second effect (gated on `gate === 'ok'`) fetches `shop_name`/`logo_url` and swaps the header between a rendered logo `<img>` or a text fallback, plus updates `document.title` — matching legacy behavior.
+- **Filament checklist + pills:** rebuilt as React state (`allFilaments`, `selectedFilaments`) instead of raw DOM manipulation, with the same scoped Supabase query (`inStock=true` + `shop_slug`), the same checkbox-list/pill-chip UX, restyled with Tailwind v4 utility classes consistent with the rest of the ported marketing pages (matching `contact/page.tsx`'s styling conventions) rather than copying the legacy inline `<style>` block.
+- **Validation + submit:** preserved 1:1 — requestor name + project name required, ≥1 filament color required, special-instructions text appended into `project_name` via the same `📝` separator convention, and the exact same `print_jobs` insert payload (`requestor_name, project_name, stl_url, filament_id, color_preference, status: 'Pending', shop_slug`) — no schema changes, satisfying Database Sacrosanctity.
+- **Supabase client:** uses the shared browser client (`lib/supabase/client.ts`) instead of the retired CDN-script + `js/api/api.js` pattern.
+- **Discord webhook — security hardening:** the legacy page read `window.DISCORD_WEBHOOK_URL` and POSTed to Discord directly from the browser — a client-exposed secret flagged in this log's Phase 1 "Flagged Findings" #1 alongside the retired `/api/env` leak. Closed that gap here: added a new server Route Handler `web/src/app/api/notify-discord/route.ts` that reads the server-only `DISCORD_WEBHOOK_URL` env var (already scaffolded in `.env.local.example`, never prefixed `NEXT_PUBLIC_`) and performs the actual Discord embed POST. The client component now does a fire-and-forget `fetch('/api/notify-discord', ...)` with just the job summary fields, never touching the webhook URL itself.
+
+**Root-level files touched:** none. `hub.html` and `src/pages/admin/hub.html` were never opened, read, or referenced, per the strict file ban for this task.
+
+---
+
+### Verification
+- `npm run build` inside `/web` — **passes clean**. Route table confirms `○ /request` compiles as a static prerendered route and `ƒ /api/notify-discord` compiles as a new dynamic server route, alongside all other existing routes (`/`, `/contact`, `/gallery`, `/hub`, `/inventory`, `/team`, `/api/keepalive`).
+
+---
+
+### Next Step
+
+This closes out the Phase 3 public-page vertical-slice ports — all five legacy public pages (`/`, `/inventory`, `/gallery`, `/contact`, `/team`, `/request`) are now fully ported to the Next.js App Router. The remaining major effort is the dedicated Hub admin dashboard decomposition (QueueTable, InventoryManager, AuthGate + Supabase Auth/RLS per Phase 1 Part 3 Rule 2) — a separate, focused future session. Root `main.cjs`/Electron build and `hub.html` remain completely untouched throughout.
+
+---
+
+## Previous Entry — 2026-07-12 (Phase 3 — Team Page Vertical Slice)
+
+
+### Task: Port the legacy `meettheteam.html` family bio grid to `web/src/app/(marketing)/team/page.tsx`
+
+**Branch:** `feature/universal-web-target`
+**Files Modified:**
+- `web/src/app/(marketing)/team/page.tsx` — replaced the Phase 2 placeholder stub with a full port
+- `web/public/images/{luis1,ellen,evan1,enrique3,ailey,jordiluis1}.jpg` — copied from the legacy root-level `public/images/` folder (new files, additive copy only)
+
+---
+
+### Summary
+
+Inspected legacy `meettheteam.html` first, per task scope. Confirmed it's fully static markup: an intro section ("Behind the Prints: A Family Affair") followed by a `.team-grid` of six `.team-card` entries, each with an `<img class="avatar">`, a role heading, and a bio paragraph — no dynamic data source, no Supabase involvement.
+
+Ported as a plain Server Component (no `'use client'` needed):
+- Reused the existing `<Header activePath="/team" subtitle="A family legacy, one layer at a time." />` component, matching the pattern already established by Home/Gallery/Contact.
+- Defined a local, typed `TEAM_MEMBERS: TeamMember[]` array (6 entries, 1:1 with the legacy cards) instead of a data-fetch layer, since these are static family bios with no backing table.
+- Rendered a responsive Tailwind v4 grid (`grid-cols-1 sm:grid-cols-2 lg:grid-cols-3`) of card components — rounded circular avatar via `next/image`, role heading, bio text — with hover-lift/shadow transitions, replacing the legacy `.team-card`/`.avatar` CSS rules from `styles/style.css` with equivalent utility classes.
+- Copied the six avatar photos (`luis1.jpg`, `ellen.jpg`, `evan1.jpg`, `enrique3.jpg`, `ailey.jpg`, `jordiluis1.jpg`) from the legacy root `public/images/` into `web/public/images/` so `next/image` can resolve them locally within `/web`'s own public directory — original root-level files were left completely untouched (additive copy only).
+
+**Root-level files touched:** none. `hub.html` and `src/pages/admin/hub.html` were never opened, read, or referenced, per the strict file ban for this task.
+
+---
+
+### Verification
+- `npm run build` inside `/web` — **passes clean**. Route table confirms `○ /team` compiles as a static prerendered route alongside the other public pages (`/`, `/contact`, `/gallery`, `/hub`, `/inventory`, `/request`, `/api/keepalive`).
+
+---
+
+### Next Step
+
+Continue the remaining Phase 3 public-page vertical-slice port in a follow-up session: Request (shop-slug gate) — the last remaining public marketing page. The Hub admin dashboard decomposition remains a separate, dedicated future effort. Root `main.cjs`/Electron build and `hub.html` remain completely untouched.
+
+---
+
+## Previous Entry — 2026-07-12 (Phase 3 — Contact Page Vertical Slice)
+
+
+### Task: Port the legacy `contact.html` Web3Forms contact form to `web/src/app/(marketing)/contact/page.tsx`
+
+**Branch:** `feature/universal-web-target`
+**Files Modified:**
+- `web/src/app/(marketing)/contact/page.tsx` — replaced the Phase 2 placeholder stub with a full port
+
+---
+
+### Summary
+
+Inspected legacy `contact.html` first, per task scope. It's a static form POSTing directly to `https://api.web3forms.com/submit`, using a hardcoded `access_key`, `from_name`, `redirect`, and a `botcheck` honeypot checkbox, with a name/email/inquiry-type-select/message field set and an hCaptcha widget rendered via Web3Forms' own client script (`web3forms.com/client/script.js`).
+
+Ported as a Client Component (`'use client'`) since the form now handles its own submit (AJAX `fetch` to Web3Forms' endpoint with inline success/error state) instead of the legacy hard `redirect` to `index.html`:
+- Reused the existing `<Header activePath="/contact" subtitle="..." />` component and the shared `<Footer>` from the marketing layout — no duplication.
+- Loaded the Web3Forms client script via `next/script` (`strategy="afterInteractive"`), replicating the legacy `<script async defer>` tag idiomatically for Next.js.
+- Ported all fields 1:1: honeypot, hidden `access_key`/`from_name`, name (pattern-validated), email, inquiry-type `<select>` (identical options/emoji labels), message textarea (`maxLength`), and the `.h-captcha` div for Web3Forms' auto-injected hCaptcha widget.
+- Styled with Tailwind v4 utility classes matching the site's existing palette (the `hsl(25,36%,37%)` accent used in `Header.tsx`), rounded inputs, focus rings, and a submit button with `disabled`/loading state plus inline success/error messaging.
+
+**Root-level files touched:** none. `hub.html` and `src/pages/admin/hub.html` were never opened, read, or referenced, per the strict file ban for this task.
+
+---
+
+### Verification
+- `npm run build` inside `/web` — **passes clean**. Route table confirms `○ /contact` compiles as a static prerendered route alongside the other public pages.
+
+---
+
+### Next Step
+
+Continue the remaining Phase 3 public-page vertical-slice ports in follow-up sessions: Team (family bios) and Request (shop-slug gate) — one page per session, matching this task's scope discipline. The Hub admin dashboard decomposition remains a separate, dedicated future effort. Root `main.cjs`/Electron build and `hub.html` remain completely untouched.
+
+---
+
+## Previous Entry — 2026-07-12 (Phase 3 — Gallery Page Vertical Slice)
+
+
+### Task: Port the legacy `gallery.html` static photo showcase to `web/src/app/(marketing)/gallery/page.tsx`
+
+**Branch:** `feature/universal-web-target`
+**Files Modified:**
+- `web/src/app/(marketing)/gallery/page.tsx` — replaced the Phase 2 placeholder stub with a full port
+- `web/public/gallery/Spool-Holder.jpg` — copied from the legacy root-level `gallery/Spool-Holder.jpg` asset (new file)
+
+---
+
+### Summary
+
+Inspected legacy `gallery.html` and `js/inventory.js` first, per task scope. Confirmed `js/inventory.js` contains zero gallery-specific logic — the legacy gallery page is 100% static markup: a single hardcoded `.gallery-item` (`gallery/Spool-Holder.jpg`, caption "Mini Spool Holder") inside a `#gallery` div, no data fetch, no Supabase involvement.
+
+Ported this as a plain Server Component (no `'use client'` needed — no interactivity):
+- Reused the existing `<Header activePath="/gallery" subtitle="..." />` component, matching the pattern already established by Home/Inventory pages.
+- Defined a local, typed `GALLERY_ITEMS: GalleryItem[]` array (currently one entry) instead of a data-fetch layer, since there is no backing Supabase table for gallery photos — keeps the port honest to the legacy source and easy to extend with more entries later.
+- Rendered a responsive Tailwind v4 flex-wrap grid of `<figure>` cards (rounded border, `next/image` for optimized image delivery, hover lift transition), replacing the legacy `.gallery-item`/`.gallery-item img` CSS rules from `styles/style.css` with equivalent utility classes.
+- Copied the one existing gallery photo asset into `web/public/gallery/` so `next/image` can resolve it locally within `/web`'s own public directory (no reach-back into the legacy root at runtime).
+
+**Root-level files touched:** none. `hub.html` and `src/pages/admin/hub.html` were never opened, read, or referenced, per the strict file ban for this task.
+
+---
+
+### Verification
+- `npm run build --prefix web` — **passes clean**. Route table confirms `○ /gallery` compiles as a static prerendered route alongside the other public pages (`/`, `/contact`, `/inventory`, `/request`, `/team`, `/hub`, `/api/keepalive`).
+
+---
+
+### Next Step
+
+Continue the remaining Phase 3 public-page vertical-slice ports in follow-up sessions: Contact (Web3Forms), Team (family bios), and Request (shop-slug gate) — one page per session, matching this task's scope discipline. The Hub admin dashboard decomposition remains a separate, dedicated future effort. Root `main.cjs`/Electron build and `hub.html` remain completely untouched.
+
+---
+
+## Previous Entry — 2026-07-12 (Phase 2 — Next.js Monorepo Scaffold + Inventory Vertical Slice)
+
+
+### Task: Scaffold `/web` Next.js 16 (App Router) + Tailwind v4 + Supabase monorepo, port Header/Footer/Tracker and fully port the public Inventory page as a vertical-slice proof of the migration pattern
+
+**Branch:** `feature/universal-web-target`
+**Files Created:** entire `web/` subdirectory (Next.js app created via `create-next-app` with TypeScript, Tailwind v4, App Router, `src/` dir, `@/*` import alias), plus:
+- `web/src/lib/supabase/{client.ts,server.ts,queries.ts}` — browser/server Supabase clients (`@supabase/ssr`) + `getInStockColors()` data-access function
+- `web/src/lib/analytics/track.ts` + `web/src/components/analytics/TrackerBeacon.tsx` — 1:1 port of `js/utils/tracker.js`'s `site_traffic` visit logging, mounted once in root layout
+- `web/src/components/layout/{Header.tsx,Footer.tsx}` — shared nav/footer ported from the duplicated markup across all 5 legacy public pages + `js/utils/footer.js`
+- `web/src/app/(marketing)/{layout.tsx,page.tsx,inventory/,gallery/,contact/,team/,request/}` — route group for all public pages; **Inventory is the fully-ported vertical slice** (Server Component fetch via `getInStockColors()` + Client Component `<InventoryGrid />` replicating `js/inventory.js`'s search/finish-filter/swatch-color logic exactly); Gallery/Contact/Team/Request are intentionally scoped as foundation stubs for a future pass
+- `web/src/app/(dashboard)/hub/page.tsx` — placeholder stub only; the 2,689-line hub.html decomposition is explicitly deferred to its own dedicated session
+- `web/src/app/api/keepalive/route.ts` + `web/vercel.json` `crons` entry — Keep-Alive Architecture implementation (Phase 1 Part 3 Rule 4), pings `colors` table on a schedule, no `functions`/`runtime` block
+- `web/.env.local` / `web/.env.local.example` — `NEXT_PUBLIC_SUPABASE_URL`/`NEXT_PUBLIC_SUPABASE_ANON_KEY` (build-time, RLS-protected) + server-only `ADMIN_KEY`/`DISCORD_WEBHOOK_URL` placeholders, replacing the leaky `/api/env.js` pattern
+- `web/next.config.ts` — pinned `turbopack.root` to the `/web` folder to resolve a workspace-root misdetection caused by the sibling root-level `package.json`/`package-lock.json` (legacy Electron app)
+
+**Root-level files touched:** none. `package.json`/`package-lock.json` were transiently modified by an errant root-level `npm install` and immediately reverted via `git restore` — confirmed clean via `git diff`. All new dependencies (`@supabase/ssr`, `@supabase/supabase-js`) live exclusively in `web/package.json`, fully isolated from the legacy Electron root project per SCOPE ISOLATION.
+
+---
+
+### Verification
+- `npm run build` inside `/web` — **passes clean**, all 9 routes compile (`/`, `/contact`, `/gallery`, `/hub`, `/inventory` (dynamic/ISR), `/request`, `/team`, `/api/keepalive`).
+- `npm run dev` — started successfully; live-fetched `http://localhost:3000/inventory` and confirmed real Supabase `colors` rows (37 in-stock swatches, e.g. "Beige", "Matte Army Blue", "Dual Silk Caribbean Sea") render correctly with working search input, finish-filter pill buttons, and gradient/solid swatch styling — a faithful, working port of the legacy public inventory page, now served from the Next.js App Router with zero client-side round-trip to `/api/env`.
+- No Supabase schema was modified — `getInStockColors()` reads `colors` via the exact existing column set (`id, color, finish, description, inStock, colorHex1, colorHex2, colorHex3, shop_slug`) confirmed in Phase 1's Database Sacrosanctity audit.
+
+---
+
+### Next Step
+
+Continue vertical-slice ports of the remaining public stub pages (Gallery, Contact w/ Web3Forms, Team, Request w/ shop-slug gate) in a follow-up session, then begin the dedicated Hub admin dashboard decomposition (QueueTable, InventoryManager, AuthGate + Supabase Auth/RLS per Phase 1 Part 3 Rule 2) as its own focused effort. Root `main.cjs`/Electron build remains completely untouched throughout.
+
+---
+
+## Previous Entry — 2026-07-12 (Phase 1 Investigation — Next.js/Tailwind/Supabase Monorepo Transition)
+
 
 ### Task: Investigation, Context-Building & Constraints-Mapping for Full-Stack Monorepo Refactor
 
