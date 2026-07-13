@@ -1,6 +1,55 @@
 # C3DW Workshop — Project Log
 
-## Latest Entry — 2026-07-12 (Phase 3 — Request Page Vertical Slice — FINAL Phase 3 Public Page)
+## Latest Entry — 2026-07-13 (Phase 4 — Editor Environment & Navigation Pass)
+
+### Task: Workspace config setup + Header nav-link verification, ahead of the dedicated Hub decomposition session
+
+**Branch:** `feature/universal-web-target`
+**Files Created/Modified:**
+- `.vscode/settings.json` (repo root, new) — isolates ESLint's working directory to `./web`, pins `typescript.tsdk` to `web/node_modules/typescript/lib`, and excludes `**/node_modules`/`**/.next` from both the file explorer and search.
+- `.vscode/tasks.json` (repo root, new) — adds a "Next.js Dev Server" task running `npm run dev` with `cwd` pinned to `${workspaceFolder}/web`.
+
+---
+
+### Summary
+
+Per this task's explicit file-unban, inspected both `hub.html` (root) and `src/pages/admin/hub.html` in full (2,689 lines each, confirmed byte-identical twins per the Phase 1 audit) to prepare a structural decomposition plan for the upcoming dedicated Hub dashboard session.
+
+**Workspace config:** Added the two `.vscode/*.json` files at the repository root (permitted per this task's scope exception) so VS Code's ESLint/TS tooling correctly targets the `/web` Next.js project instead of misfiring against the legacy root-level vanilla-JS files, and so a one-click dev server task is available.
+
+**Header "Home" link investigation:** Inspected `web/src/components/layout/Header.tsx` — the `NAV_LINKS` array's first entry is already `{ href: '/', label: 'Home' }` (line 4). Ran a byte-level check (`Get-Content -Encoding Byte`) confirming the file has no BOM and no non-ASCII/encoding artifacts around the nav array, and a targeted regex extraction confirming the `href` value between the quotes is exactly a single `/` character (byte 47, i.e. ASCII `/`) with no hidden whitespace, zero-width characters, or truncated path. **No code change was required** — the link was already correct; nothing was silently stalling it. This was a verify-only outcome, documented here rather than a no-op edit.
+
+**Root-level files touched:** none besides this log and the new root `.vscode/` configs. `hub.html` and `src/pages/admin/hub.html` were read-only for this pass (structural planning), never edited.
+
+---
+
+### Verification
+- `npm run build` inside `/web` — **passes clean**. Route table unchanged from the last entry (`/`, `/contact`, `/gallery`, `/hub`, `/inventory` (dynamic), `/request`, `/team`, `/api/keepalive`, `/api/notify-discord`), confirming the config-only changes introduced no regressions.
+
+---
+
+### Hub.html Structural Decomposition Plan (roadmap for next dedicated session)
+
+Having now read the full legacy file end-to-end, the proposed component breakdown is:
+
+- **`AuthGate.tsx`** — the shop-slug + passcode lockscreen overlay (`#auth-overlay`, `handleAuth()`). Ported 1:1 first as a client component wrapping the dashboard; long-term replaced by real Supabase Auth + RLS per Phase 1 Part 3 Rule 2.
+- **`HubShell.tsx`** — brand bar + tab nav (`.hub-brand-bar`, `.hub-tab-nav`, the Request Queue hover-dropdown w/ Active/Completed filter, Sign Out button), owns `activeTab` state and renders the two panes below.
+- **`QueueTable.tsx`** — the Print Queue tab: `fetchQueue`/`renderQueue`, inline edit (`editRow`/`saveRow`/`cancelEdit`), `cycleStatus`, batch-delete checkbox selection, auto-refresh toggle, and the Supabase Realtime `postgres_changes` INSERT subscription (instant new-job toast + desktop-only `Notification` API branch).
+- **`InventoryManager.tsx`** — the Filament Inventory tab: add-filament form (dynamic finish dropdown incl. "+ Add New Finish"), collapsible finish-grouped item list, stock toggle with the optimistic `localStorage` pending-state pattern, delete, and a nested **`InvEditModal.tsx`** for the color/finish edit modal.
+- **`useHubToast.ts`** — small shared hook wrapping the toast notification pattern (`#hub-toast`), used by both Queue and Inventory panes.
+- **Styling:** convert the ~950-line inline `<style>` block to Tailwind utility classes matching the existing dark theme, following the same conversion approach already used for `request/page.tsx`.
+- **Data layer:** extend `lib/supabase/queries.ts` with typed functions (`getQueueJobs`, `updateJobStatus`, `deleteJobs`, `getAdminColors`, `upsertColor`, etc.) — all existing table/column names (`print_jobs`, `colors`, `shops`) reused exactly as-is, satisfying Database Sacrosanctity.
+
+---
+
+### Next Step
+
+Begin the dedicated Hub admin dashboard decomposition session using the component breakdown above as the locked-in roadmap — starting with `AuthGate.tsx` + `HubShell.tsx` tab-switching shell, then `QueueTable.tsx`, then `InventoryManager.tsx`/`InvEditModal.tsx`. Root `main.cjs`/Electron build and both legacy `hub.html` files remain completely untouched throughout.
+
+---
+
+## Previous Entry — 2026-07-12 (Phase 3 — Request Page Vertical Slice — FINAL Phase 3 Public Page)
+
 
 ### Task: Port the legacy `request.html` multi-tenant print-job intake form to `web/src/app/(marketing)/request/page.tsx`
 
