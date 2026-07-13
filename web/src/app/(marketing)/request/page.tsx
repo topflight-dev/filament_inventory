@@ -5,8 +5,8 @@
  * Hub/Dashboard via the `?shop=` URL parameter.
  *
  * Preserved 1:1 from the legacy implementation:
- *   - Strict shop-slug gate: missing/invalid `?shop=` → "Shop Not Found" card,
- *     validated against the `shops` table before anything else renders.
+ *   - Strict shop-slug gate: missing/invalid resolved slug → "Shop Not Found"
+ *     card, validated against the `shops` table before anything else renders.
  *   - Shop branding injection (shop_name / logo_url) into the page header.
  *   - Filament checklist scoped to the shop (`colors` where inStock + shop_slug),
  *     multi-select with removable "pill" chips.
@@ -26,8 +26,21 @@
  *   - `useSearchParams()` requires this tree to be wrapped in `<Suspense>`
  *     per Next.js App Router rules, so the exported page component is a thin
  *     Suspense wrapper around the actual client-logic component.
+ *   - Multi-tenant shop-slug resolution is now a 3-tier dynamic fallback
+ *     chain instead of a strict single-source `?shop=` requirement, so that
+ *     `/request` (no query string) still resolves to an active shop profile
+ *     instead of throwing "Shop Not Found". Resolution order:
+ *       1. `?shop=` URL search param (multi-tenant override — unchanged).
+ *       2. `NEXT_PUBLIC_DEFAULT_SHOP_SLUG` build-time env var (per-deployment
+ *          default, safe to expose to the browser — it is a slug, not a
+ *          secret; see `.env.local.example`).
+ *       3. Hardcoded generic fallback identifier matching this shop's row
+ *          in the `shops` table, as an absolute last-resort safety net.
+ *     This keeps the feature trivially uncoupled/scalable into a commercial
+ *     multi-tenant tool later: swapping tier 2/3 is a config change only.
  */
 'use client';
+
 
 import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
@@ -51,9 +64,28 @@ type ShopBrand = {
   logo_url: string | null;
 } | null;
 
+/**
+ * Default fallback slug used when this shop's active tenant identifier
+ * cannot be resolved from the URL or the environment. Matches this shop's
+ * row in the `shops` table's `shop_slug` column — swap this value (or better,
+ * always set NEXT_PUBLIC_DEFAULT_SHOP_SLUG) when white-labeling this app for
+ * a different tenant.
+ */
+const HARDCODED_FALLBACK_SHOP_SLUG = 'crafted3dworkshop';
+
 function RequestPageInner() {
   const searchParams = useSearchParams();
-  const shopSlug = (searchParams.get('shop') || '').trim();
+
+  // -----------------------------------------------
+  // MULTI-TENANT SHOP-SLUG RESOLUTION — 3-tier dynamic fallback chain
+  // -----------------------------------------------
+  // 1) Explicit `?shop=` URL param always wins (real multi-tenant routing).
+  // 2) NEXT_PUBLIC_DEFAULT_SHOP_SLUG build-time env var (per-deployment
+  //    default; public/browser-safe since it is a slug, not a secret).
+  // 3) Hardcoded generic fallback identifier as an absolute last resort.
+  const urlShopSlug = (searchParams.get('shop') || '').trim();
+  const envDefaultShopSlug = (process.env.NEXT_PUBLIC_DEFAULT_SHOP_SLUG || '').trim();
+  const shopSlug = urlShopSlug || envDefaultShopSlug || HARDCODED_FALLBACK_SHOP_SLUG;
 
   const supabase = useMemo(() => createClient(), []);
 

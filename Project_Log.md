@@ -1,6 +1,35 @@
 # C3DW Workshop — Project Log
 
-## Latest Entry — 2026-07-13 (Dark-Mode Bleed-Through Fix — Top/Bottom Black Bars)
+## Latest Entry — 2026-07-13 (Request Page — Dynamic Multi-Tenant Shop-Slug Fallback Chain)
+
+### Task: Fix "Shop Not Found" error on `/request` when accessed without a `?shop=` URL param
+
+**Branch:** `feature/universal-web-target`
+**Files Modified:**
+- `web/src/app/(marketing)/request/page.tsx`
+- `web/.env.local.example`
+
+### Root Cause
+`RequestPageInner` derived `shopSlug` exclusively from `searchParams.get('shop')`. Visiting `/request` directly (no query string) produced an empty string, which the shop-validation gate `useEffect` treated as invalid, immediately rendering the "Shop Not Found" card — even though this deployment has one clearly active shop/tenant.
+
+### Added / Changed
+- Implemented a **3-tier dynamic fallback chain** for shop-slug resolution, preserving full multi-tenant discipline for future white-labeling/scaling:
+  1. `?shop=` URL search param (unchanged — real multi-tenant override, always wins if present).
+  2. `NEXT_PUBLIC_DEFAULT_SHOP_SLUG` public build-time env var (per-deployment default; documented in `.env.local.example`, safe to expose to the browser since it's a slug, not a secret).
+  3. Hardcoded literal fallback `'crafted3dworkshop'` as the final safety net, matching this shop's `shops.shop_slug` row.
+- No JSX/markup, styling, or visual changes — purely the slug-resolution logic at the top of `RequestPageInner`.
+- All downstream queries (`shops` gate check, branding fetch, `colors` fetch, `print_jobs` insert `shop_slug` column) were already parameterized off the single `shopSlug` variable and required no further changes.
+
+### Verification
+- `npx --no-install next build` inside `/web` (Turbopack production build, includes the full TypeScript typecheck pass) — **Compiled successfully, zero TypeScript errors.** `/request` correctly listed as a static (○) prerendered route.
+
+### Next Step
+None outstanding for this fix. If this app is ever spun out as a commercial multi-tenant product, tier 2 (`NEXT_PUBLIC_DEFAULT_SHOP_SLUG`) is the only value that should need to change per-deployment.
+
+---
+
+## Previous Entry — 2026-07-13 (Dark-Mode Bleed-Through Fix — Top/Bottom Black Bars)
+
 
 ### Task: Eliminate lingering black bars above the Header and below the Footer on shorter pages
 
