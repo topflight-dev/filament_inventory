@@ -10,12 +10,12 @@
  * branch is intentionally dropped — this is a pure web target; Electron's
  * hub.html remains the desktop notification path, untouched.
  *
- * Visual palette: "Studio Obsidian" dark theme — deep matte obsidian canvas
- * (#0B0F19), dark industrial gray panels (#161B26, border-gray-800/60,
- * rounded-xl), cobalt blue (#3B82F6) primary actions, Neon Mint (#10B981)
- * for the "Completed" status badge (functional success state), crisp white
- * (#F9FAFB) headings/values, muted silver (#9CA3AF) body text, slate
- * (#6B7280) table headers.
+ * Visual palette: "Deep Navy & Slate Gray" theme — deep navy canvas
+ * (#0F172A), slate gray panels (#1E293B, border-slate-700/60, rounded-xl),
+ * indigo (#4F46E5) primary actions, emerald (#10B981) for the "Completed"
+ * status badge (functional success state), crisp white (#F1F5F9)
+ * headings/values, muted slate (#94A3B8) body text, dim slate (#64748B)
+ * table headers.
  * ─────────────────────────────────────────────────────────────────────────────
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -39,14 +39,14 @@ const NEXT_STATUS: Record<StatusKey, StatusKey> = {
 
 const BADGE_CLASS: Record<StatusKey, string> = {
   pending: 'bg-amber-950 text-amber-400 border border-amber-800',
-  printing: 'bg-[#3B82F6]/10 text-[#3B82F6] border border-[#3B82F6]/40',
+  printing: 'bg-[#4F46E5]/10 text-[#818CF8] border border-[#4F46E5]/40',
   completed: 'bg-[#10B981]/10 text-[#10B981] border border-[#10B981]/40',
 };
 
 const ACTION_BTN: Record<StatusKey, { className: string; label: string }> = {
-  pending: { className: 'bg-[#3B82F6] text-white hover:bg-[#2563EB]', label: '▶ Start Printing' },
+  pending: { className: 'bg-[#4F46E5] text-white hover:bg-[#4338CA]', label: '▶ Start Printing' },
   printing: { className: 'bg-[#10B981] text-white hover:bg-emerald-600', label: '✅ Mark Complete' },
-  completed: { className: 'bg-[#161B26] text-[#9CA3AF] border border-gray-800/60 hover:bg-gray-800/60', label: '🔄 Reset to Pending' },
+  completed: { className: 'bg-[#1E293B] text-[#94A3B8] border border-slate-700/60 hover:bg-slate-700/60', label: '🔄 Reset to Pending' },
 };
 
 function normalizeStatus(status: string | null): StatusKey {
@@ -248,7 +248,7 @@ export default function QueueTable({
   return (
     <div>
       {/* TOP CONTROL BAR */}
-      <div className="mb-6 flex flex-wrap items-center gap-4 rounded-xl border border-gray-800/60 bg-[#161B26] p-4">
+      <div className="mb-6 flex flex-wrap items-center gap-4 rounded-xl border border-slate-700/60 bg-[#1E293B] p-4">
         <div className="flex items-center gap-2.5 rounded-lg border-2 border-yellow-400 bg-yellow-950 px-5 py-2.5">
           <span className="text-sm font-semibold uppercase tracking-wide text-yellow-400">⏳ Pending</span>
           <span className="min-w-[2ch] text-center text-2xl font-black text-yellow-400">
@@ -259,7 +259,7 @@ export default function QueueTable({
         <button
           onClick={fetchQueue}
           disabled={refreshing}
-          className="rounded-[10px] bg-[#3B82F6] px-5 py-3 text-base font-bold text-white transition-colors hover:not-disabled:bg-[#2563EB] disabled:bg-gray-700 disabled:cursor-not-allowed"
+          className="rounded-[10px] bg-[#4F46E5] px-5 py-3 text-base font-bold text-white transition-colors hover:not-disabled:bg-[#4338CA] disabled:bg-slate-700 disabled:cursor-not-allowed"
         >
           {refreshing ? '⏳ Refreshing...' : '🔄 Manual Refresh'}
         </button>
@@ -269,7 +269,7 @@ export default function QueueTable({
           className={`rounded-[10px] border-2 px-5 py-3 text-base font-bold transition-colors ${
             autoRefresh
               ? 'border-[#10B981] bg-[#10B981]/10 text-[#10B981] hover:bg-[#10B981]/20'
-              : 'border-gray-800/60 bg-[#161B26] text-[#9CA3AF] hover:bg-gray-800/40'
+              : 'border-slate-700/60 bg-[#1E293B] text-[#94A3B8] hover:bg-slate-700/40'
           }`}
         >
           {autoRefresh ? '🟢 Auto-Refresh: ON' : '⚫ Auto-Refresh: OFF'}
@@ -278,16 +278,16 @@ export default function QueueTable({
         <button
           onClick={handleDeleteSelected}
           disabled={selectedIds.size === 0 || deleting}
-          className="ml-auto rounded-[10px] border-2 border-red-500 bg-red-950 px-5 py-3 text-base font-bold text-red-300 transition-colors hover:not-disabled:bg-red-900 hover:not-disabled:text-white disabled:border-gray-800/60 disabled:bg-[#161B26] disabled:text-[#6B7280] disabled:opacity-60 disabled:cursor-not-allowed"
+          className="ml-auto rounded-[10px] border-2 border-red-500 bg-red-950 px-5 py-3 text-base font-bold text-red-300 transition-colors hover:not-disabled:bg-red-900 hover:not-disabled:text-white disabled:border-slate-700/60 disabled:bg-[#1E293B] disabled:text-[#64748B] disabled:opacity-60 disabled:cursor-not-allowed"
         >
           {deleting ? '⏳ Deleting...' : '🗑️ Delete Selected'}
         </button>
       </div>
 
       {/* TABLE */}
-      <div className="w-full overflow-x-auto rounded-xl border border-gray-800/60 bg-[#161B26]">
+      <div className="w-full overflow-x-auto rounded-xl border border-slate-700/60 bg-[#1E293B]">
         <table className="w-full border-collapse text-sm">
-          <thead className="border-b-2 border-gray-800/60 bg-[#0B0F19]">
+          <thead className="border-b-2 border-slate-700/60 bg-[#0F172A]">
             <tr>
               <th className="w-10 px-2.5 py-2 text-center">
                 <input
@@ -298,22 +298,22 @@ export default function QueueTable({
                     if (el) el.indeterminate = someChecked;
                   }}
                   onChange={(e) => toggleAll(e.target.checked)}
-                  className="h-4 w-4 cursor-pointer accent-[#3B82F6]"
+                  className="h-4 w-4 cursor-pointer accent-[#4F46E5]"
                 />
               </th>
-              <th className="whitespace-nowrap px-3 py-2 text-left text-xs font-bold uppercase tracking-wider text-[#6B7280]">Child Name</th>
-              <th className="whitespace-nowrap px-3 py-2 text-left text-xs font-bold uppercase tracking-wider text-[#6B7280]">Project</th>
-              <th className="whitespace-nowrap px-3 py-2 text-left text-xs font-bold uppercase tracking-wider text-[#6B7280]">Filament</th>
-              <th className="whitespace-nowrap px-3 py-2 text-left text-xs font-bold uppercase tracking-wider text-[#6B7280]">Status</th>
-              <th className="whitespace-nowrap px-3 py-2 text-left text-xs font-bold uppercase tracking-wider text-[#6B7280]">Action</th>
-              <th className="whitespace-nowrap px-3 py-2 text-left text-xs font-bold uppercase tracking-wider text-[#6B7280]">Edit</th>
+              <th className="whitespace-nowrap px-3 py-2 text-left text-xs font-bold uppercase tracking-wider text-[#64748B]">Child Name</th>
+              <th className="whitespace-nowrap px-3 py-2 text-left text-xs font-bold uppercase tracking-wider text-[#64748B]">Project</th>
+              <th className="whitespace-nowrap px-3 py-2 text-left text-xs font-bold uppercase tracking-wider text-[#64748B]">Filament</th>
+              <th className="whitespace-nowrap px-3 py-2 text-left text-xs font-bold uppercase tracking-wider text-[#64748B]">Status</th>
+              <th className="whitespace-nowrap px-3 py-2 text-left text-xs font-bold uppercase tracking-wider text-[#64748B]">Action</th>
+              <th className="whitespace-nowrap px-3 py-2 text-left text-xs font-bold uppercase tracking-wider text-[#64748B]">Edit</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
                 <td colSpan={7}>
-                  <div className="py-16 text-center text-[#9CA3AF]">
+                  <div className="py-16 text-center text-[#94A3B8]">
                     <span className="mb-4 block text-5xl">⏳</span>
                     <p className="text-lg">Loading queue...</p>
                   </div>
@@ -322,7 +322,7 @@ export default function QueueTable({
             ) : loadError ? (
               <tr>
                 <td colSpan={7}>
-                  <div className="py-16 text-center text-[#9CA3AF]">
+                  <div className="py-16 text-center text-[#94A3B8]">
                     <span className="mb-4 block text-5xl">⚠️</span>
                     <p className="text-lg">Failed to load queue. Check your connection.</p>
                   </div>
@@ -331,7 +331,7 @@ export default function QueueTable({
             ) : jobs.length === 0 ? (
               <tr>
                 <td colSpan={7}>
-                  <div className="py-16 text-center text-[#9CA3AF]">
+                  <div className="py-16 text-center text-[#94A3B8]">
                     <span className="mb-4 block text-5xl">✅</span>
                     <p className="text-lg">Queue is empty — all caught up!</p>
                   </div>
@@ -354,7 +354,7 @@ export default function QueueTable({
                   <tr
                     key={job.id}
                     className={`border-b border-white/5 transition-colors hover:bg-white/5 ${
-                      isSelected ? 'bg-[#3B82F6]/10' : ''
+                      isSelected ? 'bg-[#4F46E5]/10' : ''
                     }`}
                   >
                     <td className="px-2.5 py-2 text-center">
@@ -362,7 +362,7 @@ export default function QueueTable({
                         type="checkbox"
                         checked={isSelected}
                         onChange={() => toggleCheckbox(job.id)}
-                        className="h-4 w-4 cursor-pointer accent-[#3B82F6]"
+                        className="h-4 w-4 cursor-pointer accent-[#4F46E5]"
                       />
                     </td>
 
@@ -372,28 +372,28 @@ export default function QueueTable({
                           <input
                             value={editFields.requestor_name}
                             onChange={(e) => setEditFields((f) => ({ ...f, requestor_name: e.target.value }))}
-                            className="w-full min-w-[80px] rounded-md border border-gray-800/60 bg-[#0B0F19] px-2 py-1 text-sm text-[#F9FAFB] outline-none focus:border-[#3B82F6]"
+                            className="w-full min-w-[80px] rounded-md border border-slate-700/60 bg-[#0F172A] px-2 py-1 text-sm text-[#F1F5F9] outline-none focus:border-[#4F46E5]"
                           />
                         </td>
                         <td className="px-3 py-2">
                           <input
                             value={editFields.project_name}
                             onChange={(e) => setEditFields((f) => ({ ...f, project_name: e.target.value }))}
-                            className="w-full min-w-[80px] rounded-md border border-gray-800/60 bg-[#0B0F19] px-2 py-1 text-sm text-[#F9FAFB] outline-none focus:border-[#3B82F6]"
+                            className="w-full min-w-[80px] rounded-md border border-slate-700/60 bg-[#0F172A] px-2 py-1 text-sm text-[#F1F5F9] outline-none focus:border-[#4F46E5]"
                           />
                         </td>
                         <td className="px-3 py-2">
                           <input
                             value={editFields.color_preference}
                             onChange={(e) => setEditFields((f) => ({ ...f, color_preference: e.target.value }))}
-                            className="w-full min-w-[80px] rounded-md border border-gray-800/60 bg-[#0B0F19] px-2 py-1 text-sm text-[#F9FAFB] outline-none focus:border-[#3B82F6]"
+                            className="w-full min-w-[80px] rounded-md border border-slate-700/60 bg-[#0F172A] px-2 py-1 text-sm text-[#F1F5F9] outline-none focus:border-[#4F46E5]"
                           />
                         </td>
                       </>
                     ) : (
                       <>
-                        <td className="px-3 py-2 text-sm font-bold text-[#F9FAFB]">{job.requestor_name || job.child_name || '—'}</td>
-                        <td className="px-3 py-2 text-sm text-[#9CA3AF]">
+                        <td className="px-3 py-2 text-sm font-bold text-[#F1F5F9]">{job.requestor_name || job.child_name || '—'}</td>
+                        <td className="px-3 py-2 text-sm text-[#94A3B8]">
                           {projectTitle}
                           {stlUrl && (
                             <>
@@ -402,20 +402,20 @@ export default function QueueTable({
                                 href={stlUrl}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-xs font-semibold text-[#3B82F6] hover:text-[#60A5FA] hover:underline"
+                                className="text-xs font-semibold text-[#818CF8] hover:text-[#A5B4FC] hover:underline"
                               >
                                 🔗 View Model
                               </a>
                             </>
                           )}
                           {projectNote && (
-                            <span className="mt-0.5 block text-xs italic text-[#6B7280]">📝 {projectNote}</span>
+                            <span className="mt-0.5 block text-xs italic text-[#64748B]">📝 {projectNote}</span>
                           )}
                           {submitDateStr && (
-                            <span className="mt-0.5 block text-xs italic text-[#6B7280]">🕐 {submitDateStr}</span>
+                            <span className="mt-0.5 block text-xs italic text-[#64748B]">🕐 {submitDateStr}</span>
                           )}
                         </td>
-                        <td className="px-3 py-2 text-sm text-[#9CA3AF]">{job.color_preference || job.filament || '—'}</td>
+                        <td className="px-3 py-2 text-sm text-[#94A3B8]">{job.color_preference || job.filament || '—'}</td>
                       </>
                     )}
 
@@ -429,7 +429,7 @@ export default function QueueTable({
                       <button
                         onClick={() => handleCycleStatus(job)}
                         disabled={isEditing || updatingId === job.id}
-                        className={`min-w-[140px] rounded-lg px-4 py-2 text-center text-sm font-bold shadow-md transition-colors disabled:!bg-gray-700 disabled:!text-[#6B7280] disabled:cursor-not-allowed disabled:shadow-none ${actionBtn.className}`}
+                        className={`min-w-[140px] rounded-lg px-4 py-2 text-center text-sm font-bold shadow-md transition-colors disabled:!bg-slate-700 disabled:!text-[#64748B] disabled:cursor-not-allowed disabled:shadow-none ${actionBtn.className}`}
                       >
                         {updatingId === job.id ? '⏳ Updating...' : actionBtn.label}
                       </button>
@@ -447,7 +447,7 @@ export default function QueueTable({
                           </button>
                           <button
                             onClick={cancelEdit}
-                            className="min-w-[60px] rounded-lg border border-gray-800/60 bg-[#161B26] px-4 py-2 text-sm font-bold text-[#9CA3AF] transition-colors hover:bg-gray-800/40"
+                            className="min-w-[60px] rounded-lg border border-slate-700/60 bg-[#1E293B] px-4 py-2 text-sm font-bold text-[#94A3B8] transition-colors hover:bg-slate-700/40"
                           >
                             ✖ Cancel
                           </button>
@@ -455,7 +455,7 @@ export default function QueueTable({
                       ) : (
                         <button
                           onClick={() => startEdit(job)}
-                          className="min-w-[60px] rounded-lg border border-[#3B82F6]/40 bg-[#3B82F6]/10 px-4 py-2 text-sm font-bold text-[#3B82F6] transition-colors hover:bg-[#3B82F6]/20 hover:text-white"
+                          className="min-w-[60px] rounded-lg border border-[#4F46E5]/40 bg-[#4F46E5]/10 px-4 py-2 text-sm font-bold text-[#818CF8] transition-colors hover:bg-[#4F46E5]/20 hover:text-white"
                         >
                           ✏️ Edit
                         </button>
@@ -469,7 +469,7 @@ export default function QueueTable({
         </table>
       </div>
 
-      <div className="mt-9 pb-5 text-center text-sm text-[#6B7280]">
+      <div className="mt-9 pb-5 text-center text-sm text-[#64748B]">
         C3DW Workshop &mdash; Print Queue Manager
       </div>
     </div>

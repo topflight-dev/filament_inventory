@@ -8,12 +8,12 @@
  * in-stock toggle (with optimistic pending-state), delete, and search filter.
  * Edits to color/finish are delegated to InvEditModal.
  *
- * Visual palette: "Studio Obsidian" dark theme — deep matte obsidian canvas
- * (#0B0F19), dark industrial gray panels (#161B26, border-gray-800/60,
- * rounded-xl), cobalt blue (#3B82F6) primary actions, Neon Mint (#10B981)
- * for the "In Stock" status badge (functional active-state indicator),
- * crisp white (#F9FAFB) headings/values, muted silver (#9CA3AF) body/labels,
- * slate (#6B7280) secondary text.
+ * Visual palette: "Deep Navy & Slate Gray" theme — deep navy canvas
+ * (#0F172A), slate gray panels (#1E293B, border-slate-700/60, rounded-xl),
+ * indigo (#4F46E5) primary actions, emerald (#10B981) for the "In Stock"
+ * status badge (functional active-state indicator), crisp white (#F1F5F9)
+ * headings/values, muted slate (#94A3B8) body/labels, dim slate (#64748B)
+ * secondary text.
  * ─────────────────────────────────────────────────────────────────────────────
  */
 import { useCallback, useEffect, useMemo, useState } from 'react';
@@ -205,25 +205,25 @@ export default function InventoryManager({ showToast }: { showToast: (msg: strin
       {/* ADD FILAMENT FORM */}
       <form
         onSubmit={handleAddFilament}
-        className="mb-6 flex flex-wrap items-end gap-4 rounded-xl border border-gray-800/60 bg-[#161B26] p-4"
+        className="mb-6 flex flex-wrap items-end gap-4 rounded-xl border border-slate-700/60 bg-[#1E293B] p-4"
       >
         <div className="flex flex-col gap-1">
-          <label className="text-xs font-bold uppercase tracking-wide text-[#6B7280]">Color Name</label>
+          <label className="text-xs font-bold uppercase tracking-wide text-[#64748B]">Color Name</label>
           <input
             value={newColor}
             onChange={(e) => setNewColor(e.target.value)}
             placeholder="e.g. Galaxy Black"
             required
-            className="rounded-lg border border-gray-800/60 bg-[#0B0F19] px-3 py-2 text-sm text-[#F9FAFB] outline-none focus:border-[#3B82F6]"
+            className="rounded-lg border border-slate-700/60 bg-[#0F172A] px-3 py-2 text-sm text-[#F1F5F9] outline-none focus:border-[#4F46E5]"
           />
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className="text-xs font-bold uppercase tracking-wide text-[#6B7280]">Finish</label>
+          <label className="text-xs font-bold uppercase tracking-wide text-[#64748B]">Finish</label>
           <select
             value={newFinish}
             onChange={(e) => handleFinishSelect(e.target.value)}
-            className="rounded-lg border border-gray-800/60 bg-[#0B0F19] px-3 py-2 text-sm text-[#F9FAFB] outline-none focus:border-[#3B82F6]"
+            className="rounded-lg border border-slate-700/60 bg-[#0F172A] px-3 py-2 text-sm text-[#F1F5F9] outline-none focus:border-[#4F46E5]"
           >
             {finishes.map((f) => (
               <option key={f} value={f}>
@@ -235,12 +235,12 @@ export default function InventoryManager({ showToast }: { showToast: (msg: strin
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className="text-xs font-bold uppercase tracking-wide text-[#6B7280]">Description</label>
+          <label className="text-xs font-bold uppercase tracking-wide text-[#64748B]">Description</label>
           <input
             value={newDescription}
             onChange={(e) => setNewDescription(e.target.value)}
             placeholder="Optional notes"
-            className="rounded-lg border border-gray-800/60 bg-[#0B0F19] px-3 py-2 text-sm text-[#F9FAFB] outline-none focus:border-[#3B82F6]"
+            className="rounded-lg border border-slate-700/60 bg-[#0F172A] px-3 py-2 text-sm text-[#F1F5F9] outline-none focus:border-[#4F46E5]"
           />
         </div>
 
@@ -251,12 +251,12 @@ export default function InventoryManager({ showToast }: { showToast: (msg: strin
             [newHex3, setNewHex3] as const,
           ].map(([val, setter], i) => (
             <div key={i} className="flex flex-col gap-1">
-              <label className="text-xs font-bold uppercase tracking-wide text-[#6B7280]">Hex {i + 1}</label>
+              <label className="text-xs font-bold uppercase tracking-wide text-[#64748B]">Hex {i + 1}</label>
               <input
                 type="color"
                 value={val}
                 onChange={(e) => setter(e.target.value)}
-                className="h-9 w-11 cursor-pointer rounded-lg border border-gray-800/60 bg-[#0B0F19] p-0.5"
+                className="h-9 w-11 cursor-pointer rounded-lg border border-slate-700/60 bg-[#0F172A] p-0.5"
               />
             </div>
           ))}
@@ -265,7 +265,7 @@ export default function InventoryManager({ showToast }: { showToast: (msg: strin
         <button
           type="submit"
           disabled={submitting}
-          className="rounded-lg bg-[#3B82F6] px-5 py-2.5 text-sm font-bold text-white transition-colors hover:not-disabled:bg-[#2563EB] disabled:opacity-60"
+          className="rounded-lg bg-[#4F46E5] px-5 py-2.5 text-sm font-bold text-white transition-colors hover:not-disabled:bg-[#4338CA] disabled:opacity-60"
         >
           {submitting ? '⏳ Adding...' : '➕ Add Filament'}
         </button>
@@ -277,18 +277,18 @@ export default function InventoryManager({ showToast }: { showToast: (msg: strin
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="🔍 Search by color, finish, or description..."
-          className="w-full max-w-md rounded-lg border border-gray-800/60 bg-[#161B26] px-4 py-2.5 text-sm text-[#F9FAFB] outline-none focus:border-[#3B82F6]"
+          className="w-full max-w-md rounded-lg border border-slate-700/60 bg-[#1E293B] px-4 py-2.5 text-sm text-[#F1F5F9] outline-none focus:border-[#4F46E5]"
         />
       </div>
 
       {/* GROUPED LIST */}
       {loading ? (
-        <div className="py-16 text-center text-[#9CA3AF]">
+        <div className="py-16 text-center text-[#94A3B8]">
           <span className="mb-4 block text-5xl">⏳</span>
           <p className="text-lg">Loading inventory...</p>
         </div>
       ) : sortedFinishKeys.length === 0 ? (
-        <div className="py-16 text-center text-[#9CA3AF]">
+        <div className="py-16 text-center text-[#94A3B8]">
           <span className="mb-4 block text-5xl">🎨</span>
           <p className="text-lg">No filaments found.</p>
         </div>
@@ -298,15 +298,15 @@ export default function InventoryManager({ showToast }: { showToast: (msg: strin
             const items = groupedByFinish[finish];
             const isCollapsed = collapsed.has(finish);
             return (
-              <div key={finish} className="overflow-hidden rounded-xl border border-gray-800/60 bg-[#161B26]">
+              <div key={finish} className="overflow-hidden rounded-xl border border-slate-700/60 bg-[#1E293B]">
                 <button
                   onClick={() => toggleGroup(finish)}
-                  className="flex w-full items-center justify-between bg-[#0B0F19] px-4 py-3 text-left"
+                  className="flex w-full items-center justify-between bg-[#0F172A] px-4 py-3 text-left"
                 >
-                  <span className="text-sm font-bold uppercase tracking-wide text-[#9CA3AF]">
-                    {finish} <span className="text-[#6B7280]">({items.length})</span>
+                  <span className="text-sm font-bold uppercase tracking-wide text-[#94A3B8]">
+                    {finish} <span className="text-[#64748B]">({items.length})</span>
                   </span>
-                  <span className="text-[#6B7280]">{isCollapsed ? '▸' : '▾'}</span>
+                  <span className="text-[#64748B]">{isCollapsed ? '▸' : '▾'}</span>
                 </button>
 
                 {!isCollapsed && (
@@ -327,14 +327,14 @@ export default function InventoryManager({ showToast }: { showToast: (msg: strin
 
                           <button
                             onClick={() => setEditTarget({ id: item.id, fieldName: 'color', currentValue: item.color })}
-                            className="min-w-[120px] text-left text-sm font-bold text-[#F9FAFB] hover:text-[#3B82F6]"
+                            className="min-w-[120px] text-left text-sm font-bold text-[#F1F5F9] hover:text-[#818CF8]"
                             title="Click to edit color name"
                           >
                             {item.color}
                           </button>
 
                           {item.description && (
-                            <span className="text-xs italic text-[#6B7280]">{item.description}</span>
+                            <span className="text-xs italic text-[#64748B]">{item.description}</span>
                           )}
 
                           <button
@@ -373,7 +373,7 @@ export default function InventoryManager({ showToast }: { showToast: (msg: strin
         onSave={handleSaveEdit}
       />
 
-      <div className="mt-9 pb-5 text-center text-sm text-[#6B7280]">
+      <div className="mt-9 pb-5 text-center text-sm text-[#64748B]">
         C3DW Workshop &mdash; Filament Inventory Manager
       </div>
     </div>

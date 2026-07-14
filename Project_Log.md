@@ -1,6 +1,44 @@
 # C3DW Workshop — Project Log
 
-## Latest Entry — 2026-07-13 (Local-Dev Shop Safety Net + "Studio Obsidian" Dark Mode Rollout — Admin Hub & Request Portal)
+## Latest Entry — 2026-07-13 ("Deep Navy & Slate Gray" Theme Rollout — Admin Hub & Request Portal)
+
+### Task: Re-skin the public Request Portal and every Admin Hub component from the "Studio Obsidian" cobalt palette into the "Deep Navy & Slate Gray" indigo palette
+
+**Branch:** `feature/universal-web-target`
+**Files Modified (strictly scoped, per explicit user instruction):**
+- `web/src/app/(marketing)/request/page.tsx`
+- `web/src/components/hub/AuthGate.tsx`
+- `web/src/components/hub/HubShell.tsx`
+- `web/src/components/hub/QueueTable.tsx`
+- `web/src/components/hub/InventoryManager.tsx`
+- `web/src/components/hub/InvEditModal.tsx`
+- `web/src/hooks/useHubToast.tsx`
+
+### Changed — "Deep Navy & Slate Gray" Theme
+Replaced the "Studio Obsidian" token set (`#0B0F19` canvas / `#161B26` panels / `#3B82F6` cobalt / `#9CA3AF` / `#6B7280` / `#F9FAFB`) across all 7 files above with the "Deep Navy & Slate Gray" token set (already piloted on `AuthGate.tsx` and the `/request` gate states in the prior pass, now applied consistently everywhere):
+- **Canvas:** deep navy `#0F172A` for page/section backgrounds.
+- **Cards & panels:** slate gray `#1E293B` with `border-slate-700/60` hairlines and `rounded-xl` corners (brand bar, tab dropdown, queue table, inventory groups, modals, add-filament form, request form card, toast pill).
+- **Primary actions:** indigo `#4F46E5` for buttons, active tab underline, focus rings/borders, and input active states (with `#4338CA` as the hover-darken shade; `#818CF8` for indigo-tinted link/label text on dark backgrounds).
+- **Status badges:** emerald `#10B981` retained for "Completed"/"In Stock" active-state badges and the auto-refresh-on toggle (unchanged functional success color); amber (pending) and red (destructive) semantic colors also left as-is.
+- **Typography:** crisp white `#F1F5F9` for headings/primary values, muted slate `#94A3B8` for body/labels, dim slate `#64748B` for table headers/secondary text/placeholders.
+All existing business logic, Supabase query shapes, sessionStorage auth-gate behavior, Realtime subscription, and the passcode-validation flow were left completely untouched — this pass is Tailwind `className` values only, no logic changes. No files outside the 7 explicitly listed above were read or modified, per the strict scope-isolation instruction for this task.
+
+**Root-level files touched:** none. `hub.html`, `src/pages/admin/hub.html`, `main.cjs`, and all other marketing pages untouched. No Supabase schema/table/column changes.
+
+---
+
+### Verification
+Visual/manual review of all 7 files for consistent hex-token usage; no logic branches were altered so existing build/runtime behavior is expected to be unaffected. A full `next build` re-verification is recommended before merging, though no TypeScript-affecting changes (only `className` string literals) were introduced.
+
+---
+
+### Next Step
+Manually spot-check `/hub` (all tabs, modals, toast) and `/request` in a browser to confirm the Deep Navy/Slate Gray palette renders consistently and no obsidian-era classes were missed. Consider extending this same token set to the remaining marketing pages in a future dedicated pass if a unified dark mode across the whole site is desired.
+
+---
+
+## Previous Entry — 2026-07-13 (Local-Dev Shop Safety Net + "Studio Obsidian" Dark Mode Rollout — Admin Hub & Request Portal)
+
 
 ### Task: Add a resilient local-dev fallback to the `/request` shop gate, remove a temporary diagnostic hook, and reskin the Admin Hub + Request Portal into the new "Studio Obsidian" dark theme
 
