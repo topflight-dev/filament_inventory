@@ -16,7 +16,7 @@
  * is intentionally deferred to a future session per Phase 1 Part 3 Rule 2.
  * No fallback/bypass logic is added here — the admin passcode gate must
  * always validate real credentials against the `shops` table, even in local
- * dev. Only the visual palette below was updated to "Deep Navy & Slate Gray".
+ * dev. Only the visual palette below was updated to "Deep Oceanic Stealth".
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
@@ -79,7 +79,7 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
   }
 
   if (authState === 'checking') {
-    return <div className="min-h-screen bg-[#0F172A]" />;
+    return <div className="min-h-screen bg-slate-950" />;
   }
 
   if (authState === 'granted') {
@@ -89,13 +89,13 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
   return (
     <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/90 backdrop-blur-xl">
       <div
-        className={`w-[90%] max-w-[380px] rounded-xl border border-slate-700/60 bg-[#1E293B]/95 px-9 pt-11 pb-9 text-center shadow-[0_24px_64px_rgba(0,0,0,0.7),0_0_0_1px_rgba(79,70,229,0.15)] ${
+        className={`w-[90%] max-w-[380px] rounded-xl border border-slate-800/80 bg-slate-900/70 px-9 pt-11 pb-9 text-center shadow-[0_24px_64px_rgba(0,0,0,0.7),0_0_0_1px_rgba(56,189,248,0.15)] ${
           shake ? 'animate-auth-shake' : ''
         }`}
       >
-        <span className="mb-3 block text-[2.8rem] drop-shadow-[0_0_12px_rgba(79,70,229,0.5)]">🔒</span>
-        <h2 className="mb-1.5 text-lg font-extrabold tracking-wide text-[#F1F5F9]">Admin Hub Login</h2>
-        <p className="mb-7 text-sm text-[#94A3B8]">Enter your shop name and passcode to continue</p>
+        <span className="mb-3 block text-[2.8rem] drop-shadow-[0_0_12px_rgba(56,189,248,0.5)]">🔒</span>
+        <h2 className="mb-1.5 text-lg font-semibold tracking-wide text-slate-200">Admin Hub Login</h2>
+        <p className="mb-7 text-xs text-slate-400">Enter your shop name and passcode to continue</p>
 
         <form onSubmit={handleAuth}>
           <input
@@ -105,7 +105,7 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
             placeholder="Shop Name"
             autoComplete="off"
             spellCheck={false}
-            className="mb-3.5 block w-full rounded-[10px] border border-slate-700/60 bg-[#0F172A] px-4 py-3.5 text-center text-base tracking-wide text-[#F1F5F9] outline-none transition-colors placeholder:text-[#64748B] focus:border-[#4F46E5] focus:shadow-[0_0_0_3px_rgba(79,70,229,0.2)]"
+            className="mb-3.5 block w-full rounded-[10px] border border-slate-800/80 bg-slate-950 px-4 py-3.5 text-center text-sm tracking-wide text-slate-200 outline-none transition-colors placeholder:text-slate-500 focus:border-sky-500 focus:ring-2 focus:ring-sky-400"
           />
           <input
             type="password"
@@ -114,18 +114,18 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
             placeholder="Passcode..."
             autoComplete="current-password"
             spellCheck={false}
-            className="mb-3.5 block w-full rounded-[10px] border border-slate-700/60 bg-[#0F172A] px-4 py-3.5 text-center text-base tracking-wide text-[#F1F5F9] outline-none transition-colors placeholder:text-[#64748B] focus:border-[#4F46E5] focus:shadow-[0_0_0_3px_rgba(79,70,229,0.2)]"
+            className="mb-3.5 block w-full rounded-[10px] border border-slate-800/80 bg-slate-950 px-4 py-3.5 text-center text-sm tracking-wide text-slate-200 outline-none transition-colors placeholder:text-slate-500 focus:border-sky-500 focus:ring-2 focus:ring-sky-400"
           />
           <button
             type="submit"
             disabled={verifying}
-            className="block w-full rounded-[10px] bg-[#4F46E5] py-3.5 text-base font-bold tracking-wide text-white shadow-[0_4px_16px_rgba(79,70,229,0.35)] transition-colors hover:not-disabled:bg-[#4338CA] disabled:opacity-70"
+            className="block w-full rounded-[10px] bg-sky-500 py-3.5 text-sm font-medium tracking-wide text-slate-950 shadow-[0_4px_16px_rgba(56,189,248,0.35)] transition-colors hover:not-disabled:bg-sky-600 focus:outline-none focus:ring-2 focus:ring-sky-400 disabled:opacity-70"
           >
             {verifying ? '⏳ Verifying...' : '🔓 Authenticate Session'}
           </button>
 
           {error && (
-            <p className="mt-3.5 text-sm font-semibold text-red-400">
+            <p className="mt-3.5 text-xs font-semibold text-red-400">
               ❌ Invalid shop slug or passcode. Please try again.
             </p>
           )}

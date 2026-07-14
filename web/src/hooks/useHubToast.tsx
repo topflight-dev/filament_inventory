@@ -7,8 +7,8 @@
  * toast message + auto-dismiss timer, shared across QueueTable and
  * InventoryManager. Render <HubToast /> once near the root of the Hub tree.
  *
- * Visual palette: "Deep Navy & Slate Gray" theme — slate gray toast pill
- * (#1E293B, border-slate-700/60), crisp white (#F1F5F9) text.
+ * Visual palette: "Deep Oceanic Stealth" theme — frosted navy slate toast
+ * pill (bg-slate-900/70, border-slate-800/80), crisp slate-200 text.
  * ─────────────────────────────────────────────────────────────────────────────
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -37,7 +37,7 @@ export function useHubToast() {
 export function HubToast({ message, visible }: { message: string | null; visible: boolean }) {
   return (
     <div
-      className={`fixed bottom-8 left-1/2 z-[9999] min-w-[220px] -translate-x-1/2 rounded-full border border-slate-700/60 bg-[#1E293B] px-6 py-3.5 text-center text-base font-semibold text-[#F1F5F9] shadow-2xl transition-all duration-300 ${
+      className={`fixed bottom-8 left-1/2 z-[9999] min-w-[220px] -translate-x-1/2 rounded-full border border-slate-800/80 bg-slate-900/70 px-6 py-3.5 text-center text-sm font-medium text-slate-200 shadow-2xl transition-all duration-300 ${
         visible ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-4 opacity-0'
       }`}
     >

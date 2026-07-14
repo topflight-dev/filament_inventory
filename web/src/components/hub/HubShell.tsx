@@ -9,10 +9,11 @@
  * queueStatusFilter state and renders the two tab panes (QueueTable /
  * InventoryManager) as children via render props.
  *
- * Visual palette: "Deep Navy & Slate Gray" theme — deep navy canvas
- * (#0F172A), slate gray panels (#1E293B, border-slate-700/60, rounded-xl),
- * indigo (#4F46E5) primary actions, crisp white (#F1F5F9) headings, muted
- * slate (#94A3B8) body/labels, dim slate (#64748B) accents.
+ * Visual palette: "Deep Oceanic Stealth" theme — arctic twilight blue canvas
+ * (bg-slate-950), frosted navy slate panels (bg-slate-900/70,
+ * border-slate-800/80, rounded-xl), vibrant cyan (sky-500) primary/active
+ * accents with dark text for max contrast, slate-200/slate-400/slate-500
+ * text hierarchy.
  * ─────────────────────────────────────────────────────────────────────────────
  */
 import { useState } from 'react';
@@ -38,41 +39,41 @@ export default function HubShell({
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-[#0F172A] text-[#F1F5F9]">
+    <div className="flex min-h-screen flex-col bg-slate-950 text-slate-200">
       {/* BRAND BAR */}
-      <div className="flex items-center border-b border-slate-700/60 bg-[#0F172A] px-6 py-2.5">
-        <span className="select-none text-sm font-bold uppercase tracking-wider text-[#94A3B8]">
+      <div className="flex items-center border-b border-slate-800/80 bg-slate-950 px-6 py-2.5">
+        <span className="select-none text-xs font-semibold uppercase tracking-widest text-slate-500">
           ⚙️ C3DW Unified Administration Suite{shopName ? ` — ${shopName}` : ''}
         </span>
         <button
           onClick={handleSignOut}
-          className="ml-auto whitespace-nowrap rounded-full border border-slate-700/60 bg-[#1E293B] px-4 py-1.5 text-xs font-bold tracking-wide text-[#94A3B8] transition-colors hover:border-red-500 hover:bg-red-950 hover:text-red-400"
+          className="ml-auto whitespace-nowrap rounded-full border border-slate-800/80 bg-slate-900/70 px-4 py-1.5 text-xs font-medium tracking-wide text-slate-400 transition-colors hover:border-red-500 hover:bg-red-950 hover:text-red-400"
         >
           🚪 Sign Out
         </button>
       </div>
 
       {/* TAB NAVIGATION */}
-      <nav className="flex items-stretch gap-1 border-b-2 border-slate-700/60 bg-[#0F172A] px-6" aria-label="Admin Hub Tabs">
+      <nav className="flex items-stretch gap-1 border-b-2 border-slate-800/80 bg-slate-950 px-6" aria-label="Admin Hub Tabs">
         <div className="group relative flex">
           <button
             onClick={() => setActiveTab('queue')}
-            className={`-mb-0.5 whitespace-nowrap border-b-[3px] px-5 py-3 text-sm font-bold tracking-wide transition-colors ${
+            className={`-mb-0.5 whitespace-nowrap border-b-[3px] px-5 py-3 text-sm font-medium tracking-wide transition-colors ${
               activeTab === 'queue'
-                ? 'border-[#4F46E5] text-[#F1F5F9]'
-                : 'border-transparent text-[#64748B] hover:bg-white/5 hover:text-[#94A3B8]'
+                ? 'border-sky-500 text-slate-200'
+                : 'border-transparent text-slate-500 hover:bg-white/5 hover:text-slate-400'
             }`}
           >
             🖨️ Request Queue ▾
           </button>
-          <div className="invisible absolute top-full left-0 z-[500] min-w-[200px] flex-col gap-0.5 rounded-xl border border-slate-700/60 bg-[#1E293B] p-1.5 opacity-0 shadow-2xl transition-opacity group-hover:visible group-hover:flex group-hover:opacity-100">
+          <div className="invisible absolute top-full left-0 z-[500] min-w-[200px] flex-col gap-0.5 rounded-xl border border-slate-800/80 bg-slate-900/70 p-1.5 opacity-0 shadow-2xl transition-opacity group-hover:visible group-hover:flex group-hover:opacity-100">
             <button
               type="button"
               onClick={() => setQueueStatusFilter('active')}
-              className={`block w-full rounded-md px-3.5 py-2.5 text-left text-sm font-semibold tracking-wide transition-colors ${
+              className={`block w-full rounded-md px-3.5 py-2.5 text-left text-sm font-medium tracking-wide transition-colors ${
                 queueStatusFilter === 'active'
-                  ? 'bg-[#4F46E5]/10 text-[#818CF8]'
-                  : 'text-[#94A3B8] hover:bg-white/5 hover:text-[#F1F5F9]'
+                  ? 'bg-sky-500/10 text-sky-400'
+                  : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
               }`}
             >
               📥 Active Queue
@@ -80,10 +81,10 @@ export default function HubShell({
             <button
               type="button"
               onClick={() => setQueueStatusFilter('completed')}
-              className={`block w-full rounded-md px-3.5 py-2.5 text-left text-sm font-semibold tracking-wide transition-colors ${
+              className={`block w-full rounded-md px-3.5 py-2.5 text-left text-sm font-medium tracking-wide transition-colors ${
                 queueStatusFilter === 'completed'
-                  ? 'bg-[#4F46E5]/10 text-[#818CF8]'
-                  : 'text-[#94A3B8] hover:bg-white/5 hover:text-[#F1F5F9]'
+                  ? 'bg-sky-500/10 text-sky-400'
+                  : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
               }`}
             >
               📦 Completed Archive
@@ -92,10 +93,10 @@ export default function HubShell({
         </div>
         <button
           onClick={() => setActiveTab('inventory')}
-          className={`-mb-0.5 whitespace-nowrap border-b-[3px] px-5 py-3 text-sm font-bold tracking-wide transition-colors ${
+          className={`-mb-0.5 whitespace-nowrap border-b-[3px] px-5 py-3 text-sm font-medium tracking-wide transition-colors ${
             activeTab === 'inventory'
-              ? 'border-[#4F46E5] text-[#F1F5F9]'
-              : 'border-transparent text-[#64748B] hover:bg-white/5 hover:text-[#94A3B8]'
+              ? 'border-sky-500 text-slate-200'
+              : 'border-transparent text-slate-500 hover:bg-white/5 hover:text-slate-400'
           }`}
         >
           🎨 Filament Inventory

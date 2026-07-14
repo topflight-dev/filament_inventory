@@ -1,6 +1,47 @@
 # C3DW Workshop — Project Log
 
-## Latest Entry — 2026-07-13 ("Deep Navy & Slate Gray" Theme Rollout — Admin Hub & Request Portal)
+## Latest Entry — 2026-07-13 ("Deep Oceanic Stealth" Rollout — Admin Hub & Request Portal Typography/Color Overhaul)
+
+### Task: Total typography and color palette overhaul, migrating the Admin Hub + public Request Portal from the "Deep Navy & Slate Gray" indigo palette into the new "Deep Oceanic Stealth" theme with a refined, smaller typography hierarchy.
+
+**Branch:** `feature/universal-web-target`
+**Files Modified (strictly scoped, per explicit user instruction — same 7-file perimeter as the prior theme pass):**
+- `web/src/app/(marketing)/request/page.tsx`
+- `web/src/components/hub/AuthGate.tsx`
+- `web/src/components/hub/HubShell.tsx`
+- `web/src/components/hub/QueueTable.tsx`
+- `web/src/components/hub/InventoryManager.tsx`
+- `web/src/components/hub/InvEditModal.tsx`
+- `web/src/hooks/useHubToast.tsx`
+
+### Changed — "Deep Oceanic Stealth" Theme
+Replaced the "Deep Navy & Slate Gray" hex-token set (`#0F172A` / `#1E293B` / `#4F46E5` indigo / `#94A3B8` / `#64748B` / `#F1F5F9` / `#818CF8`) across all 7 files above with Tailwind's native slate/sky utility scale:
+- **Background Canvas:** Arctic Twilight Blue — `bg-slate-950` for all page/section backgrounds (replacing `bg-[#0F172A]`).
+- **Panels & Cards:** Frosted Navy Slate — `bg-slate-900/70 border border-slate-800/80 rounded-xl` for every card/panel/modal/dropdown/toast (brand bar dropdown, queue control bar + table wrapper, inventory add-form + finish groups, edit modal, auth lockscreen, request form card).
+- **Interactive Highlights:** High-contrast Vibrant Cyan — `bg-sky-500 hover:bg-sky-600 focus:ring-sky-400` for every primary button, active tab underline, and focus state, with `text-slate-950 font-medium` on cyan buttons for maximum contrast (per explicit spec) instead of the old white button text.
+- **Table Column Headers:** Shrunk drastically to `text-[11px] font-semibold tracking-widest uppercase text-slate-500` (QueueTable's `<th>` elements) to eliminate visual noise.
+- **Row Text Hierarchy:** Main row text (requestor names, project titles, color names) now `text-sm font-medium text-slate-200`; secondary info (dates, filament notes, descriptions, labels) now `text-xs text-slate-400`.
+- **Row Isolation:** Table/list row borders lightened to `border-slate-800/40` for clean, independent row spacing (was `border-white/5` / `divide-white/5`).
+- **Functional status colors preserved exactly:** amber (pending badge/counter), mint/emerald (completed status, in-stock badge, auto-refresh-on state), red (destructive/delete/error states) — only re-mapped from raw hex to Tailwind's standard `amber-*`/`emerald-*`/`red-*` utility families, with identical visual meaning and no logic changes.
+- All backend query shapes, Supabase table/column references, the passcode-validation flow (`validateShopCredentials`), sessionStorage auth-gate keys, and the Realtime `postgres_changes` subscription were left 100% untouched — this is a pure `className` re-skin.
+
+**Root-level files touched:** none. `hub.html`, `src/pages/admin/hub.html`, `main.cjs`, and all other marketing pages untouched. No Supabase schema/table/column changes (Database Sacrosanctity maintained).
+
+---
+
+### Verification
+- Re-read and manually diffed every one of the 7 files line-by-line after editing to confirm complete removal of legacy hex tokens (`#0F172A`, `#1E293B`, `#4F46E5`, `#4338CA`, `#94A3B8`, `#64748B`, `#F1F5F9`, `#818CF8`, `#A5B4FC`, `#10B981`) and indigo/`slate-700`/`border-white/5` remnants — `search_files` regex sweep across `web/src/**/*.tsx` confirmed zero matches remaining in the 7 scoped files (only unrelated marketing-page hex tokens and disabled-state utility classes intentionally outside scope were found).
+- Ran a full TypeScript compile check (`tsc -p tsconfig.json --noEmit` via the project's installed `typescript` package) — **exit code 0, zero type errors** across the entire `web/` project.
+
+---
+
+### Next Step
+Manually spot-check `/hub` (Request Queue + Filament Inventory tabs, edit modals, toast) and `/request` in a browser to visually confirm the Deep Oceanic Stealth palette (arctic canvas, frosted panels, vibrant cyan actions, shrunk table typography) renders as intended, and that amber/mint/red functional status colors remain immediately legible against the darker slate-950 background.
+
+---
+
+## Previous Entry — 2026-07-13 ("Deep Navy & Slate Gray" Theme Rollout — Admin Hub & Request Portal)
+
 
 ### Task: Re-skin the public Request Portal and every Admin Hub component from the "Studio Obsidian" cobalt palette into the "Deep Navy & Slate Gray" indigo palette
 

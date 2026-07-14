@@ -7,9 +7,10 @@
  * text input (color field) or a <select> populated from availableFinishes
  * (finish field), matching the legacy behavior exactly.
  *
- * Visual palette: "Deep Navy & Slate Gray" theme — slate gray panel
- * (#1E293B, border-slate-700/60, rounded-xl), indigo (#4F46E5) primary
- * action, crisp white (#F1F5F9)/muted slate (#94A3B8) typography.
+ * Visual palette: "Deep Oceanic Stealth" theme — frosted navy slate panel
+ * (bg-slate-900/70, border-slate-800/80, rounded-xl), vibrant cyan (sky-500)
+ * primary action with dark text for max contrast, slate-200/slate-400
+ * typography hierarchy.
  * ─────────────────────────────────────────────────────────────────────────────
  */
 import { useEffect, useState } from 'react';
@@ -52,8 +53,8 @@ export default function InvEditModal({
 
   return (
     <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/70">
-      <div className="w-[90%] max-w-[420px] rounded-xl border border-slate-700/60 bg-[#1E293B] p-7 text-[#94A3B8] shadow-2xl">
-        <h3 className="mb-4 text-sm font-bold uppercase tracking-wide text-[#94A3B8]">
+      <div className="w-[90%] max-w-[420px] rounded-xl border border-slate-800/80 bg-slate-900/70 p-7 text-slate-400 shadow-2xl">
+        <h3 className="mb-4 text-[11px] font-semibold uppercase tracking-widest text-slate-500">
           Edit {target.fieldName.charAt(0).toUpperCase() + target.fieldName.slice(1)}
         </h3>
 
@@ -61,7 +62,7 @@ export default function InvEditModal({
           <select
             value={value}
             onChange={(e) => setValue(e.target.value)}
-            className="mt-2 block w-full rounded-lg border border-slate-700/60 bg-[#0F172A] px-3.5 py-2.5 text-sm text-[#F1F5F9] outline-none focus:border-[#4F46E5]"
+            className="mt-2 block w-full rounded-lg border border-slate-800/80 bg-slate-950 px-3.5 py-2.5 text-sm text-slate-200 outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-400"
           >
             {availableFinishes.map((f) => (
               <option key={f} value={f}>
@@ -74,7 +75,7 @@ export default function InvEditModal({
             type="text"
             value={value}
             onChange={(e) => setValue(e.target.value)}
-            className="mt-2 block w-full rounded-lg border border-slate-700/60 bg-[#0F172A] px-3.5 py-2.5 text-sm text-[#F1F5F9] outline-none focus:border-[#4F46E5]"
+            className="mt-2 block w-full rounded-lg border border-slate-800/80 bg-slate-950 px-3.5 py-2.5 text-sm text-slate-200 outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-400"
           />
         )}
 
@@ -82,7 +83,7 @@ export default function InvEditModal({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg border border-slate-700/60 bg-[#0F172A] px-4.5 py-2.5 text-sm font-bold text-[#94A3B8] transition-colors hover:bg-slate-700/40"
+            className="rounded-lg border border-slate-800/80 bg-slate-950 px-4.5 py-2.5 text-sm font-medium text-slate-400 transition-colors hover:bg-slate-800/40"
           >
             Cancel
           </button>
@@ -90,7 +91,7 @@ export default function InvEditModal({
             type="button"
             onClick={handleSave}
             disabled={saving}
-            className="rounded-lg bg-[#4F46E5] px-4.5 py-2.5 text-sm font-bold text-white transition-colors hover:not-disabled:bg-[#4338CA] disabled:opacity-60"
+            className="rounded-lg bg-sky-500 px-4.5 py-2.5 text-sm font-medium text-slate-950 transition-colors hover:not-disabled:bg-sky-600 focus:outline-none focus:ring-2 focus:ring-sky-400 disabled:opacity-60"
           >
             {saving ? 'Saving...' : 'Save Changes'}
           </button>

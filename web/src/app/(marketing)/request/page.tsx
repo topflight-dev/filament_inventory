@@ -48,6 +48,12 @@
  *     to it), so the page never bricks into "Shop Not Found" during local
  *     development. Only if the `shops` table itself is completely empty does
  *     the page fall through to the real "Shop Not Found" state.
+ *
+ * Visual palette: "Deep Oceanic Stealth" theme — arctic twilight blue canvas
+ * (bg-slate-950), frosted navy slate panels (bg-slate-900/70,
+ * border-slate-800/80, rounded-xl), vibrant cyan (sky-500) primary actions
+ * with dark text for max contrast, slate-200/slate-400/slate-500 text
+ * hierarchy. Functional status colors (mint success / red error) unchanged.
  */
 'use client';
 
@@ -325,11 +331,11 @@ function RequestPageInner() {
   }
 
   // -----------------------------------------------
-  // RENDER — GATE STATES ("Deep Navy & Slate Gray" theme)
+  // RENDER — GATE STATES ("Deep Oceanic Stealth" theme)
   // -----------------------------------------------
   if (gate === 'checking') {
     return (
-      <main className="mx-auto min-h-screen max-w-lg bg-[#0F172A] px-6 py-24 text-center text-[#94A3B8]">
+      <main className="mx-auto min-h-screen max-w-lg bg-slate-950 px-6 py-24 text-center text-xs text-slate-400">
         <p>Loading…</p>
       </main>
     );
@@ -337,11 +343,11 @@ function RequestPageInner() {
 
   if (gate === 'not-found') {
     return (
-      <main className="mx-auto min-h-screen max-w-lg bg-[#0F172A] px-6 py-16">
-        <div className="mx-auto max-w-md rounded-xl border border-slate-700/60 bg-[#1E293B] px-8 py-10 text-center shadow-lg">
+      <main className="mx-auto min-h-screen max-w-lg bg-slate-950 px-6 py-16">
+        <div className="mx-auto max-w-md rounded-xl border border-slate-800/80 bg-slate-900/70 px-8 py-10 text-center shadow-lg">
           <span className="mb-3 block text-5xl">⚠️</span>
-          <h2 className="mb-3 text-xl font-bold text-[#F1F5F9]">Shop Not Found</h2>
-          <p className="leading-relaxed text-[#94A3B8]">
+          <h2 className="mb-3 text-lg font-semibold text-slate-200">Shop Not Found</h2>
+          <p className="text-xs leading-relaxed text-slate-400">
             Please double-check the web address provided by your 3D print operator.
           </p>
         </div>
@@ -350,8 +356,8 @@ function RequestPageInner() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0F172A]">
-      <header className="border-b border-slate-700/60 bg-[#0F172A] px-6 pt-10 pb-6 text-center">
+    <div className="min-h-screen bg-slate-950">
+      <header className="border-b border-slate-800/80 bg-slate-950 px-6 pt-10 pb-6 text-center">
         {shopBrand?.logo_url ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -360,24 +366,24 @@ function RequestPageInner() {
             className="mx-auto max-h-[60px] max-w-[220px] object-contain"
           />
         ) : (
-          <h1 className="text-3xl font-bold text-[#F1F5F9]">
+          <h1 className="text-2xl font-semibold text-slate-200">
             {shopBrand?.shop_name ?? 'Print Request'}
           </h1>
         )}
-        <p className="mt-2 text-lg italic text-[#94A3B8]">
+        <p className="mt-2 text-sm italic text-slate-400">
           Submit a job to the 3D print queue!
         </p>
       </header>
 
       <main className="px-6 py-6">
-        <div className="mx-auto w-full max-w-[500px] rounded-xl border border-slate-700/60 bg-[#1E293B] p-6 text-left shadow-lg">
-          <h2 className="mb-5 border-b border-slate-700/60 pb-2.5 text-lg font-semibold text-[#F1F5F9]">
+        <div className="mx-auto w-full max-w-[500px] rounded-xl border border-slate-800/80 bg-slate-900/70 p-6 text-left shadow-lg">
+          <h2 className="mb-5 border-b border-slate-800/80 pb-2.5 text-base font-semibold text-slate-200">
             🖨️ Submit a Print Request
           </h2>
 
           <form onSubmit={handleSubmit} noValidate>
             <div className="mb-4">
-              <label htmlFor="requestorName" className="mb-1.5 block text-sm font-bold text-[#94A3B8]">
+              <label htmlFor="requestorName" className="mb-1.5 block text-xs font-semibold text-slate-400">
                 Your Name
               </label>
               <input
@@ -388,12 +394,12 @@ function RequestPageInner() {
                 placeholder="e.g., Jane Smith"
                 required
                 autoComplete="name"
-                className="block w-full rounded-md border border-slate-700/60 bg-[#0F172A] px-3 py-2.5 text-[15px] text-[#F1F5F9] transition-colors placeholder:text-[#64748B] focus:border-[#4F46E5] focus:shadow-[0_0_0_3px_rgba(79,70,229,0.25)] focus:outline-none"
+                className="block w-full rounded-md border border-slate-800/80 bg-slate-950 px-3 py-2.5 text-sm text-slate-200 transition-colors placeholder:text-slate-500 focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-400"
               />
             </div>
 
             <div className="mb-4">
-              <label htmlFor="projectName" className="mb-1.5 block text-sm font-bold text-[#94A3B8]">
+              <label htmlFor="projectName" className="mb-1.5 block text-xs font-semibold text-slate-400">
                 Project Name
               </label>
               <input
@@ -403,13 +409,13 @@ function RequestPageInner() {
                 onChange={(e) => setProjectName(e.target.value)}
                 placeholder="e.g., Desk Organizer"
                 required
-                className="block w-full rounded-md border border-slate-700/60 bg-[#0F172A] px-3 py-2.5 text-[15px] text-[#F1F5F9] transition-colors placeholder:text-[#64748B] focus:border-[#4F46E5] focus:shadow-[0_0_0_3px_rgba(79,70,229,0.25)] focus:outline-none"
+                className="block w-full rounded-md border border-slate-800/80 bg-slate-950 px-3 py-2.5 text-sm text-slate-200 transition-colors placeholder:text-slate-500 focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-400"
               />
             </div>
 
             <div className="mb-4">
-              <label htmlFor="modelLink" className="mb-1.5 block text-sm font-bold text-[#94A3B8]">
-                Link to Model <span className="text-xs font-normal text-[#64748B]">(optional)</span>
+              <label htmlFor="modelLink" className="mb-1.5 block text-xs font-semibold text-slate-400">
+                Link to Model <span className="text-xs font-normal text-slate-500">(optional)</span>
               </label>
               <input
                 type="text"
@@ -417,31 +423,31 @@ function RequestPageInner() {
                 value={modelLink}
                 onChange={(e) => setModelLink(e.target.value)}
                 placeholder="e.g., https://www.thingiverse.com/thing:..."
-                className="block w-full rounded-md border border-slate-700/60 bg-[#0F172A] px-3 py-2.5 text-[15px] text-[#F1F5F9] transition-colors placeholder:text-[#64748B] focus:border-[#4F46E5] focus:shadow-[0_0_0_3px_rgba(79,70,229,0.25)] focus:outline-none"
+                className="block w-full rounded-md border border-slate-800/80 bg-slate-950 px-3 py-2.5 text-sm text-slate-200 transition-colors placeholder:text-slate-500 focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-400"
               />
             </div>
 
             <div className="mb-4">
-              <label className="mb-1.5 block text-sm font-bold text-[#94A3B8]">
-                Filament Color(s) <span className="text-xs font-normal text-[#64748B]">(select one or more)</span>
+              <label className="mb-1.5 block text-xs font-semibold text-slate-400">
+                Filament Color(s) <span className="text-xs font-normal text-slate-500">(select one or more)</span>
               </label>
 
               {/* Selected color pills */}
               <div className="mt-1 flex min-h-0 flex-wrap gap-1.5">
                 {selectedFilaments.length === 0 ? (
-                  <span className="text-sm italic text-[#64748B]">No colors selected yet…</span>
+                  <span className="text-xs italic text-slate-500">No colors selected yet…</span>
                 ) : (
                   selectedFilaments.map((f) => (
                     <span
                       key={f.id}
-                      className="inline-flex items-center gap-1.5 rounded-full border border-[#4F46E5]/40 bg-[#4F46E5]/10 px-2.5 py-1 text-xs font-semibold text-[#818CF8]"
+                      className="inline-flex items-center gap-1.5 rounded-full border border-sky-500/40 bg-sky-500/10 px-2.5 py-1 text-xs font-semibold text-sky-400"
                     >
                       {f.label}
                       <button
                         type="button"
                         aria-label={`Remove ${f.label}`}
                         onClick={() => removeFilament(f.id)}
-                        className="leading-none text-[#818CF8]/70 hover:text-[#818CF8]"
+                        className="leading-none text-sky-400/70 hover:text-sky-400"
                       >
                         ✕
                       </button>
@@ -451,28 +457,28 @@ function RequestPageInner() {
               </div>
 
               {/* Scrollable checklist */}
-              <div className="mt-2 max-h-[200px] overflow-y-auto rounded-md border border-slate-700/60 bg-[#0F172A] py-1">
+              <div className="mt-2 max-h-[200px] overflow-y-auto rounded-md border border-slate-800/80 bg-slate-950 py-1">
                 {filamentsLoading ? (
-                  <div className="px-3 py-2.5 text-sm italic text-[#64748B]">Loading filaments…</div>
+                  <div className="px-3 py-2.5 text-xs italic text-slate-500">Loading filaments…</div>
                 ) : filamentsError ? (
-                  <div className="px-3 py-2.5 text-sm italic text-[#64748B]">Could not load filaments</div>
+                  <div className="px-3 py-2.5 text-xs italic text-slate-500">Could not load filaments</div>
                 ) : allFilaments.length === 0 ? (
-                  <div className="px-3 py-2.5 text-sm italic text-[#64748B]">No filaments available</div>
+                  <div className="px-3 py-2.5 text-xs italic text-slate-500">No filaments available</div>
                 ) : (
                   allFilaments.map((f) => {
                     const checked = selectedIds.has(String(f.id));
                     return (
                       <label
                         key={f.id}
-                        className={`flex cursor-pointer select-none items-center gap-2.5 px-3 py-2 text-[15px] text-[#F1F5F9] transition-colors hover:bg-[#4F46E5]/10 ${
-                          checked ? 'bg-[#4F46E5]/15' : ''
+                        className={`flex cursor-pointer select-none items-center gap-2.5 px-3 py-2 text-sm text-slate-200 transition-colors hover:bg-sky-500/10 ${
+                          checked ? 'bg-sky-500/15' : ''
                         }`}
                       >
                         <input
                           type="checkbox"
                           checked={checked}
                           onChange={(e) => toggleFilament(f, e.target.checked)}
-                          className="h-[17px] w-[17px] flex-shrink-0 accent-[#4F46E5]"
+                          className="h-[17px] w-[17px] flex-shrink-0 accent-sky-500"
                         />
                         <span>
                           {f.color} — {f.finish}
@@ -485,9 +491,9 @@ function RequestPageInner() {
             </div>
 
             <div className="mb-4">
-              <label htmlFor="specialInstructions" className="mb-1.5 block text-sm font-bold text-[#94A3B8]">
+              <label htmlFor="specialInstructions" className="mb-1.5 block text-xs font-semibold text-slate-400">
                 Special Instructions / Comments{' '}
-                <span className="text-xs font-normal text-[#64748B]">(optional)</span>
+                <span className="text-xs font-normal text-slate-500">(optional)</span>
               </label>
               <textarea
                 id="specialInstructions"
@@ -495,14 +501,14 @@ function RequestPageInner() {
                 onChange={(e) => setSpecialInstructions(e.target.value)}
                 placeholder="e.g., Please use a raft, print at 20% infill, or any other notes..."
                 rows={3}
-                className="block min-h-[80px] w-full resize-y rounded-md border border-slate-700/60 bg-[#0F172A] px-3 py-2.5 text-[15px] text-[#F1F5F9] transition-colors placeholder:text-[#64748B] focus:border-[#4F46E5] focus:shadow-[0_0_0_3px_rgba(79,70,229,0.25)] focus:outline-none"
+                className="block min-h-[80px] w-full resize-y rounded-md border border-slate-800/80 bg-slate-950 px-3 py-2.5 text-sm text-slate-200 transition-colors placeholder:text-slate-500 focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-400"
               />
             </div>
 
             <button
               type="submit"
               disabled={submitting}
-              className="mt-2 w-full rounded-full bg-[#4F46E5] py-3.5 text-base font-bold text-white transition-colors hover:not-disabled:bg-[#4338CA] disabled:cursor-not-allowed disabled:bg-slate-700"
+              className="mt-2 w-full rounded-full bg-sky-500 py-3.5 text-sm font-medium text-slate-950 transition-colors hover:not-disabled:bg-sky-600 focus:outline-none focus:ring-2 focus:ring-sky-400 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-400"
             >
               {submitting ? 'Submitting...' : '🚀 Submit Request'}
             </button>
@@ -511,7 +517,7 @@ function RequestPageInner() {
               <div
                 className={`mt-4 rounded-lg border px-4 py-3 text-center text-sm ${
                   statusMessage.type === 'success'
-                    ? 'border-[#10B981]/40 bg-[#10B981]/10 text-[#10B981]'
+                    ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-400'
                     : 'border-red-500/40 bg-red-500/10 text-red-400'
                 }`}
               >
@@ -529,7 +535,7 @@ export default function RequestPage() {
   return (
     <Suspense
       fallback={
-        <main className="mx-auto min-h-screen max-w-lg bg-[#0F172A] px-6 py-24 text-center text-[#94A3B8]">
+        <main className="mx-auto min-h-screen max-w-lg bg-slate-950 px-6 py-24 text-center text-xs text-slate-400">
           <p>Loading…</p>
         </main>
       }
