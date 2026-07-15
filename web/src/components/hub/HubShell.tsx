@@ -1,13 +1,21 @@
 'use client';
 
 /**
- * components/hub/HubShell.tsx — Brand Bar + Tab Nav Shell
+ * components/hub/HubShell.tsx — Collapsible Vertical Sidebar Shell
  * ─────────────────────────────────────────────────────────────────────────────
- * Ported from hub.html's .hub-brand-bar / .hub-tab-nav, including the
- * hover-activated "Request Queue" dropdown (Active/Completed filter) added
- * in the "Request Queue Hover Dropdown" log entry. Owns activeTab +
- * queueStatusFilter state and renders the two tab panes (QueueTable /
- * InventoryManager) as children via render props.
+ * Rewritten from the legacy top horizontal tab bar + hover dropdown (see
+ * "Request Queue Hover Dropdown" log entry, now retired) to a state-driven
+ * collapsible vertical sidebar (Gemini-style) — see "Collapsible Sidebar
+ * Navigation Deployment" log entry. Owns activeTab + queueStatusFilter state
+ * and renders the two tab panes (QueueTable / InventoryManager) as children
+ * via render props — the render-prop signature is unchanged so the parent
+ * hub/page.tsx requires zero modification.
+ *
+ * The former "Active Queue" / "Completed Archive" hover-dropdown options are
+ * now first-class sidebar nav items ("Request Queue" and "Completed"), both
+ * mapped onto the same underlying activeTab === 'queue' pane, distinguished
+ * only by queueStatusFilter — QueueTable's data fetching/subscription logic
+ * is untouched.
  *
  * Visual palette: "Deep Oceanic Stealth" theme — arctic twilight blue canvas
  * (bg-slate-950), frosted navy slate panels (bg-slate-900/70,
@@ -21,6 +29,8 @@ import type { QueueStatusFilter } from '@/lib/supabase/hub-queries';
 
 type TabName = 'queue' | 'inventory';
 
+type NavKey = 'queue' | 'completed' | 'inventory';
+
 export default function HubShell({
   shopName,
   children,
@@ -30,6 +40,7 @@ export default function HubShell({
 }) {
   const [activeTab, setActiveTab] = useState<TabName>('queue');
   const [queueStatusFilter, setQueueStatusFilter] = useState<QueueStatusFilter>('active');
+  const [collapsed, setCollapsed] = useState(false);
 
   function handleSignOut() {
     sessionStorage.removeItem('c3dw_hub_auth');
@@ -38,73 +49,106 @@ export default function HubShell({
     window.location.reload();
   }
 
-  return (
-    <div className="flex min-h-screen flex-col bg-slate-950 text-slate-200">
-      {/* BRAND BAR */}
-      <div className="flex items-center border-b border-slate-800/80 bg-slate-950 px-6 py-2.5">
-        <span className="select-none text-xs font-semibold uppercase tracking-widest text-slate-500">
-          ⚙️ C3DW Unified Administration Suite{shopName ? ` — ${shopName}` : ''}
-        </span>
-        <button
-          onClick={handleSignOut}
-          className="ml-auto whitespace-nowrap rounded-full border border-slate-800/80 bg-slate-900/70 px-4 py-1.5 text-xs font-medium tracking-wide text-slate-400 transition-colors hover:border-red-500 hover:bg-red-950 hover:text-red-400"
-        >
-          🚪 Sign Out
-        </button>
-      </div>
+  const activeNav: NavKey =
+    activeTab === 'inventory' ? 'inventory' : queueStatusFilter === 'completed' ? 'completed' : 'queue';
 
-      {/* TAB NAVIGATION */}
-      <nav className="flex items-stretch gap-1 border-b-2 border-slate-800/80 bg-slate-950 px-6" aria-label="Admin Hub Tabs">
-        <div className="group relative flex">
+  function selectNav(nav: NavKey) {
+    if (nav === 'inventory') {
+      setActiveTab('inventory');
+      return;
+    }
+    setActiveTab('queue');
+    setQueueStatusFilter(nav === 'completed' ? 'completed' : 'active');
+  }
+
+  const navItems: { key: NavKey; icon: string; label: string }[] = [
+    { key: 'queue', icon: '🖨️', label: 'Request Queue' },
+    { key: 'completed', icon: '📦', label: 'Completed' },
+    { key: 'inventory', icon: '🎨', label: 'Filament Inventory' },
+  ];
+
+  return (
+    <div className="flex min-h-screen bg-slate-950 text-slate-200">
+      {/* VERTICAL SIDEBAR */}
+      <aside
+        className={`flex flex-shrink-0 flex-col border-r border-slate-800/80 bg-slate-950 transition-all duration-300 ${
+          collapsed ? 'w-16' : 'w-64'
+        }`}
+      >
+        {/* SIDEBAR HEADER — shop name pinned to top */}
+        <div className="flex items-center gap-2 border-b border-slate-800/80 px-3 py-3">
           <button
-            onClick={() => setActiveTab('queue')}
-            className={`-mb-0.5 whitespace-nowrap border-b-[3px] px-5 py-3 text-sm font-medium tracking-wide transition-colors ${
-              activeTab === 'queue'
-                ? 'border-sky-500 text-slate-200'
-                : 'border-transparent text-slate-500 hover:bg-white/5 hover:text-slate-400'
+            type="button"
+            onClick={() => setCollapsed((v) => !v)}
+            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border border-slate-800/80 bg-slate-900/70 text-slate-400 transition-colors hover:border-sky-500 hover:text-sky-400"
+          >
+            ☰
+          </button>
+          <div
+            className={`overflow-hidden whitespace-nowrap transition-all duration-300 ${
+              collapsed ? 'max-w-0 opacity-0' : 'max-w-[180px] opacity-100'
             }`}
           >
-            🖨️ Request Queue ▾
-          </button>
-          <div className="invisible absolute top-full left-0 z-[500] min-w-[200px] flex-col gap-0.5 rounded-xl border border-slate-800/80 bg-slate-900/70 p-1.5 opacity-0 shadow-2xl transition-opacity group-hover:visible group-hover:flex group-hover:opacity-100">
-            <button
-              type="button"
-              onClick={() => setQueueStatusFilter('active')}
-              className={`block w-full rounded-md px-3.5 py-2.5 text-left text-sm font-medium tracking-wide transition-colors ${
-                queueStatusFilter === 'active'
-                  ? 'bg-sky-500/10 text-sky-400'
-                  : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
-              }`}
-            >
-              📥 Active Queue
-            </button>
-            <button
-              type="button"
-              onClick={() => setQueueStatusFilter('completed')}
-              className={`block w-full rounded-md px-3.5 py-2.5 text-left text-sm font-medium tracking-wide transition-colors ${
-                queueStatusFilter === 'completed'
-                  ? 'bg-sky-500/10 text-sky-400'
-                  : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
-              }`}
-            >
-              📦 Completed Archive
-            </button>
+            <span className="block text-[11px] font-semibold uppercase tracking-widest text-slate-500">
+              ⚙️ C3DW Admin
+            </span>
+            {shopName && (
+              <span className="block truncate text-xs font-medium text-slate-300">{shopName}</span>
+            )}
           </div>
         </div>
-        <button
-          onClick={() => setActiveTab('inventory')}
-          className={`-mb-0.5 whitespace-nowrap border-b-[3px] px-5 py-3 text-sm font-medium tracking-wide transition-colors ${
-            activeTab === 'inventory'
-              ? 'border-sky-500 text-slate-200'
-              : 'border-transparent text-slate-500 hover:bg-white/5 hover:text-slate-400'
-          }`}
-        >
-          🎨 Filament Inventory
-        </button>
-      </nav>
 
-      {/* CONTENT */}
-      <div className="hub-scroll flex-1 overflow-y-auto px-6 py-5 pb-10">
+        {/* NAV ITEMS */}
+        <nav className="flex flex-1 flex-col gap-1 overflow-y-auto px-2 py-3" aria-label="Admin Hub Navigation">
+          {navItems.map((item) => {
+            const isActive = activeNav === item.key;
+            return (
+              <button
+                key={item.key}
+                type="button"
+                onClick={() => selectNav(item.key)}
+                title={collapsed ? item.label : undefined}
+                className={`flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium tracking-wide transition-colors ${
+                  isActive
+                    ? 'bg-sky-500/10 text-sky-400'
+                    : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
+                }`}
+              >
+                <span className="flex-shrink-0 text-base leading-none">{item.icon}</span>
+                <span
+                  className={`overflow-hidden whitespace-nowrap transition-all duration-300 ${
+                    collapsed ? 'max-w-0 opacity-0' : 'max-w-[160px] opacity-100'
+                  }`}
+                >
+                  {item.label}
+                </span>
+              </button>
+            );
+          })}
+        </nav>
+
+        {/* SIGN OUT — pinned to bottom footer */}
+        <div className="border-t border-slate-800/80 px-2 py-3">
+          <button
+            onClick={handleSignOut}
+            title={collapsed ? 'Sign Out' : undefined}
+            className="flex w-full items-center gap-3 rounded-xl border border-slate-800/80 bg-slate-900/70 px-3 py-2.5 text-xs font-medium tracking-wide text-slate-400 transition-colors hover:border-red-500 hover:bg-red-950 hover:text-red-400"
+          >
+            <span className="flex-shrink-0 text-base leading-none">🚪</span>
+            <span
+              className={`overflow-hidden whitespace-nowrap transition-all duration-300 ${
+                collapsed ? 'max-w-0 opacity-0' : 'max-w-[140px] opacity-100'
+              }`}
+            >
+              Sign Out
+            </span>
+          </button>
+        </div>
+      </aside>
+
+      {/* MAIN CONTENT — fluid, adapts to sidebar width */}
+      <div className="hub-scroll flex-1 overflow-y-auto px-6 py-5 pb-10 transition-all duration-300">
         {children(activeTab, queueStatusFilter)}
       </div>
 

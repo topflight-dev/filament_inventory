@@ -249,6 +249,18 @@ export default function QueueTable({
 
   return (
     <div>
+      {/* VIEW-INDICATOR TITLE — replaces the retired hover-dropdown labels */}
+      <div className="mb-4 flex items-center gap-2">
+        <h1 className="text-lg font-semibold tracking-wide text-slate-200">
+          {queueStatusFilter === 'completed' ? '📦 Completed Archive' : '📥 Active Queue'}
+        </h1>
+        <span className="text-xs text-slate-500">
+          {queueStatusFilter === 'completed'
+            ? '— finished / archived print jobs'
+            : '— pending & in-progress incoming jobs'}
+        </span>
+      </div>
+
       {/* TOP CONTROL BAR */}
       <div className="mb-6 flex flex-wrap items-center gap-4 rounded-xl border border-slate-800/80 bg-slate-900/70 p-4">
         <div className="flex items-center gap-2.5 rounded-lg border-2 border-amber-400 bg-amber-950 px-5 py-2.5">
@@ -257,6 +269,7 @@ export default function QueueTable({
             {loading ? '—' : pendingCount}
           </span>
         </div>
+
 
         <button
           onClick={fetchQueue}

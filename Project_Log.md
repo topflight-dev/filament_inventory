@@ -1,6 +1,45 @@
 # C3DW Workshop — Project Log
 
-## Latest Entry — 2026-07-13 ("Deep Oceanic Stealth" Rollout — Admin Hub & Request Portal Typography/Color Overhaul)
+## Latest Entry — 2026-07-14 (Collapsible Sidebar Navigation Deployment)
+
+### Task: Replace the Admin Hub's top horizontal tab bar + mouse-over dropdown (which had an overlapping visual bug) with a vertical, collapsible left-side navigation panel, Gemini-style, driven by state instead of CSS `:hover`.
+
+**Branch:** `feature/universal-web-target`
+**Files Modified (strict file perimeter, per explicit user instruction):**
+- `web/src/components/hub/HubShell.tsx`
+- `web/src/components/hub/QueueTable.tsx`
+
+### Added — Vertical Collapsible Sidebar
+- `HubShell.tsx` was restructured from a top brand-bar + `<nav>` tab strip into a `flex` row layout: a fixed-position `<aside>` sidebar on the left plus a `flex-1` fluid main content region on the right.
+- The sidebar toggles between `w-64` (expanded) and `w-16` (collapsed) via a `collapsed` boolean state and a `☰` toggle button, animated with `transition-all duration-300`. Nav labels and the shop-name subtitle fade/collapse via `max-w-0 opacity-0` ⇄ `max-w-[…] opacity-100`, so the collapse/expand motion is smooth rather than an abrupt reflow.
+- Three vertical nav buttons replace the old tab bar + hover dropdown entirely:
+  - 🖨️ **Request Queue** — `activeTab='queue'`, `queueStatusFilter='active'`
+  - 📦 **Completed** — `activeTab='queue'`, `queueStatusFilter='completed'` (this is the former "Completed Archive" hover-dropdown option, now promoted to a first-class sidebar item)
+  - 🎨 **Filament Inventory** — `activeTab='inventory'`
+- The old `:hover`-triggered dropdown panel (`group-hover:visible`/`opacity-0`→`opacity-100`) — the source of the reported overlapping visual bug — has been completely removed; all view-switching is now click-driven state, eliminating any stacking/z-index overlap conditions.
+- Shop name + "⚙️ C3DW Admin" label are pinned to the sidebar header (top); the 🚪 Sign Out button is pinned to a bordered footer at the bottom of the sidebar (`border-t`), replacing the old top brand-bar sign-out button.
+- The render-prop signature `children(activeTab, queueStatusFilter)` exposed by `HubShell` is **unchanged**, so the parent `web/src/app/(dashboard)/hub/page.tsx` required zero modifications — full backward compatibility with the existing tab-pane wiring.
+
+### Changed — QueueTable.tsx View-Indicator Title
+- Since the removed hover dropdown previously labeled which filter was active ("📥 Active Queue" / "📦 Completed Archive"), `QueueTable.tsx` now renders a contextual heading at the top of its own pane driven by the existing `queueStatusFilter` prop, so users retain clear visual confirmation of the active view. This is a purely cosmetic JSX addition — the `fetchQueue`, Supabase Realtime `postgres_changes` INSERT subscription, batch-delete, inline-edit, and status-cycling logic are all 100% untouched.
+
+**Root-level files touched:** none. `hub.html`, `src/pages/admin/hub.html`, `main.cjs`, and all other components/pages outside the 2-file perimeter untouched. No Supabase schema/table/column changes (Database Sacrosanctity maintained); `hub-queries.ts` was not modified.
+
+---
+
+### Verification
+- Manually line-by-line re-read both modified files after saving to confirm the render-prop contract, `QueueStatusFilter`/`TabName` type usage, and all existing Supabase-backed handlers (`fetchQueue`, realtime subscription, `handleCycleStatus`, `saveEdit`, `handleDeleteSelected`) were carried over verbatim with no logic changes — only JSX structure/layout in `HubShell.tsx` and an additive heading block in `QueueTable.tsx`.
+- Ran a full production build (`npm run build` → `next build`), which runs the TypeScript compiler as part of the build pipeline — **compiled successfully, zero TypeScript errors**, all 12 routes (including `/hub`) generated without issue. The generated `.next` build artifact was removed afterward to avoid leaving stray build output in the workspace.
+
+---
+
+### Next Step
+Manually spot-check `/hub` in a browser to confirm the sidebar collapse/expand transition feels smooth, the three nav items switch views correctly (including "Completed" correctly filtering the queue table), and that the fluid `flex-1` main content area resizes cleanly as the sidebar toggles between expanded/collapsed widths.
+
+---
+
+## Previous Entry — 2026-07-13 ("Deep Oceanic Stealth" Rollout — Admin Hub & Request Portal Typography/Color Overhaul)
+
 
 ### Task: Total typography and color palette overhaul, migrating the Admin Hub + public Request Portal from the "Deep Navy & Slate Gray" indigo palette into the new "Deep Oceanic Stealth" theme with a refined, smaller typography hierarchy.
 
