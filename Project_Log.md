@@ -1,6 +1,19 @@
 # C3DW Workshop — Project Log
 
-## Latest Entry — 2026-09-23 (Cleanup Roadmap Phase 3 — Remove Legacy Root Static Site)
+## Latest Entry — 2026-09-23 (Cleanup Roadmap Phase 4 — Remove `server.js` and Reduce Root `package.json` to Metadata Only)
+
+**Task:** Delete `server.js` and reduce root `package.json` to non-functional metadata per Cleanup Roadmap Phase 4 in `.clinerules`.
+
+**Files removed:** `server.js`, root `package-lock.json`, root `node_modules/` (untracked, gitignored).
+**Files modified:** `package.json` (kept only `name`, `version`, `description` (rewritten to a retirement notice), `private: true`, `repository`, `license`; removed `type`, `main`, `scripts`, `build`, `engines`, `keywords`, `author`, `dependencies`, `devDependencies`, `bugs`, `homepage`).
+
+**Verified:** Searched for literal `server.js` and each dependency name (`express`, `cors`, `helmet`, `dotenv`, `airtable`, `@cline/sdk`, `@supabase/supabase-js`) across the repo — all live hits traced back to `server.js`/`package.json`/`package-lock.json` themselves or stale `.vercel/` build-cache artifacts; zero references from `web/`. Confirmed root `.env` was only ever consumed by `server.js`'s `dotenv.config()` call and `web/` has its own independent `.env.local`, so `.env` is now unused but left in place per task instructions (secret removal is out of scope). Checked `git ls-files` before deleting: root `package-lock.json` was tracked (removed via `git rm`), root `node_modules/` was untracked (removed via `Remove-Item`). Staged only `server.js` (removal), `package-lock.json` (removal), `package.json`, and this log entry — deliberately excluded the pre-existing unrelated `.clinerules` working-tree change from the commit.
+
+`CLAUDE.md` and `README.md` were left untouched per Phase 6 scope isolation.
+
+---
+
+## Previous Entry — 2026-09-23 (Cleanup Roadmap Phase 3 — Remove Legacy Root Static Site)
 
 **Task:** Delete the legacy root static site per Cleanup Roadmap Phase 3 in `.clinerules`.
 
