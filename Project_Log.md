@@ -1,6 +1,20 @@
 # C3DW Workshop — Project Log
 
-## Latest Entry — 2026-09-23 (Cleanup Roadmap Phase 1 — Remove Dead `api/env.js`)
+## Latest Entry — 2026-09-23 (Cleanup Roadmap Phase 2 — Remove Retired Electron Desktop App)
+
+**Task:** Delete the retired Electron desktop app per Cleanup Roadmap Phase 2 in `.clinerules`.
+
+**Files removed:** `main.cjs`, root `hub.html`, `src/pages/` (`admin/hub.html`, `public/request.html`), root `icon.png`, `icon-maskable.png`, `dist/`, `dist_build.log`, and the build scripts `final_build.ps1`, `check_and_build.ps1`, `kill_and_build.ps1`, `find_lock.ps1`, `find_lock2.ps1`, `find_lock3.ps1`, `force_clean_build.ps1`, `run_dist.ps1`, `verify_hub.ps1`.
+
+**Verified:** Searched `web/` (semantic search + literal grep for `main.cjs`, `hub.html`, `icon-maskable`, `icon.png`, `src/pages`) — zero references found, confirming the live Next.js app has no dependency on the Electron build. Checked `git ls-files` before deleting: `dist/` and `dist_build.log` were already untracked (covered by `.gitignore`'s `dist/` and `*.log` rules), so they were removed with plain `Remove-Item`; all other files were git-tracked and removed with `git rm`. `web/src/app/(dashboard)/hub/page.tsx` (the live app) and `images/icon.png` (Phase 3 scope) were not touched.
+
+**Note for Phase 3:** Root `manifest.json` still references `/icon.png` and `/icon-maskable.png` in its `icons` array. Those files are now deleted, so `manifest.json` has a dangling reference — left unmodified per Phase 2 scope; needs fixing when Phase 3 (legacy root static site removal) is done.
+
+`package.json` was not modified — it still references the deleted Electron build scripts/config; that cleanup is scoped to Phase 4 per the roadmap.
+
+---
+
+## Previous Entry — 2026-09-23 (Cleanup Roadmap Phase 1 — Remove Dead `api/env.js`)
 
 **Task:** Delete `api/env.js`, the retired Vercel serverless config endpoint, per Cleanup Roadmap Phase 1 in `.clinerules`.
 
