@@ -1,6 +1,18 @@
 # C3DW Workshop — Project Log
 
-## Latest Entry — 2026-09-23 (Cleanup Roadmap Phase 2 — Remove Retired Electron Desktop App)
+## Latest Entry — 2026-09-23 (Cleanup Roadmap Phase 3 — Remove Legacy Root Static Site)
+
+**Task:** Delete the legacy root static site per Cleanup Roadmap Phase 3 in `.clinerules`.
+
+**Files removed:** `index.html`, `gallery.html`, `contact.html`, `meettheteam.html`, `request.html`, `inventory.html`, `styles/` (`style.css`), `js/` (`api/api.js`, `inventory.js`, `utils/footer.js`, `utils/tracker.js`), root `images/` (only contained an empty `Old Photos/` subfolder), root `gallery/` (`Spool-Holder.jpg`), `manifest.json`, `Crafted 3D.ico`, `check_lock.ps1`, `output.txt`, `test_ignore_file.txt`.
+
+**Verified:** Listed root `images/` and `gallery/` contents first (per task instructions) rather than assuming — `images/` held only an empty `Old Photos/` folder, `gallery/` held only `Spool-Holder.jpg`. Searched `web/src` for every filename/path found plus `styles/`, `js/inventory`, `js/api`, `js/utils`, `manifest.json`, and `Crafted 3D.ico` — zero live references; all hits were confined to the legacy HTML files themselves and doc files (`CLAUDE.md`, `README.md`, prior `Project_Log.md` entries), confirming `web/public/images/` and `web/public/gallery/` already hold their own independent copies (e.g. `web/public/gallery/Spool-Holder.jpg` per the Phase 2/gallery-port log entry). Checked `git ls-files` to split tracked vs. untracked: root `images/` was entirely untracked (removed via `Remove-Item`); `test_ignore_file.txt` was also untracked (`git ls-files` and `git log --all -- test_ignore_file.txt` both empty, confirming it was never tracked, not just newly ignored) and was plain-deleted. All remaining files (`index.html`, `gallery.html`, `contact.html`, `meettheteam.html`, `request.html`, `inventory.html`, `styles/style.css`, `js/api/api.js`, `js/inventory.js`, `js/utils/footer.js`, `js/utils/tracker.js`, `gallery/Spool-Holder.jpg`, `manifest.json`, `Crafted 3D.ico`, `check_lock.ps1`, `output.txt`) were git-tracked and removed via `git rm`.
+
+`CNAME`, the four documentation screenshots (`Admin Hub.png`, `Filament Inventory Insert.png`, `Inventory Management.png`, `Request Form.png`), `server.js`, `package.json`, `CLAUDE.md`, and `README.md` were left untouched per Phase 4/6 scope isolation.
+
+---
+
+## Previous Entry — 2026-09-23 (Cleanup Roadmap Phase 2 — Remove Retired Electron Desktop App)
 
 **Task:** Delete the retired Electron desktop app per Cleanup Roadmap Phase 2 in `.clinerules`.
 
