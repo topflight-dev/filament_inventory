@@ -1,6 +1,16 @@
 # C3DW Workshop — Project Log
 
-## Latest Entry — 2026-07-14 (Collapsible Sidebar Navigation Deployment)
+## Latest Entry — 2026-09-23 (Cleanup Roadmap Phase 1 — Remove Dead `api/env.js`)
+
+**Task:** Delete `api/env.js`, the retired Vercel serverless config endpoint, per Cleanup Roadmap Phase 1 in `.clinerules`.
+
+**File removed:** `api/env.js`
+
+**Verified:** Repo-wide search for `api/env` / `env.js` found no live/functional reference outside `js/api/api.js`'s `fetch('/api/env')` call — the legacy root site's known caller, already non-functional in production since Vercel's Root Directory is `web/` and never served `api/env.js`; left untouched (removal scoped to Phase 3). Remaining hits were historical `Project_Log.md` entries and `web/` comments noting the pattern was already replaced by `process.env` reads inside Route Handlers. No other files modified.
+
+---
+
+## Previous Entry — 2026-07-14 (Collapsible Sidebar Navigation Deployment)
 
 ### Task: Replace the Admin Hub's top horizontal tab bar + mouse-over dropdown (which had an overlapping visual bug) with a vertical, collapsible left-side navigation panel, Gemini-style, driven by state instead of CSS `:hover`.
 
