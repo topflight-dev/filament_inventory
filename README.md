@@ -1,86 +1,58 @@
-# 🏺 Crafted 3D Printing – Filament Inventory Ecosystem
-> A full-stack inventory management, gallery, and print queue solution for 3D printing, featuring a public web interface, a native desktop administrative hub, and secure Supabase integration.
+# 🏺 Crafted 3D Workshop — Filament Inventory & Print Queue
+
+Full-stack site for a family-run 3D printing business: a public marketing site, a live filament inventory display, a print-request intake form, and an admin queue/inventory dashboard — all one Next.js app talking directly to Supabase.
+
+**Live site:** [crafted3dworkshop.com](https://crafted3dworkshop.com)
 
 ---
 
-## ⚠️ Architectural Constraints & Project Boundaries (Dual-Target Release)
-This repository is currently utilizing a **Dual-Target Architecture** designed to simultaneously support compiling the standalone Windows desktop app (`C3DW Hub 1.0.0.exe`) and a responsive web-based Hub interface for tablets and mobile devices.
+## Architecture
 
-### Strict Boundaries:
-1. **Production Isolation:** The live marketing/business website (`www.crafted3dworkshop.com`) is completely OUT OF SCOPE. No configuration, deployment paths, or code changes should ever impact the live domain.
-2. **Database Integrity:** The current Supabase database tables are actively connected to production tools. Schemas, tables, and existing columns are **sacred and immutable**. Any future scaling must be entirely backward-compatible.
-3. **Current Working Branch:** All universal web/tablet modifications must be performed inside the `feature/universal-web-target` sandbox branch. The `main` branch must remain pristine for the working desktop build.
+This repo has one deployable app: **`web/`** — a Next.js 16 (App Router) + React 19 + TypeScript + Tailwind 4 app, deployed by Vercel (Root Directory = `web`) on every push to `main`. There is no separate backend API — the app talks to Supabase directly from both the browser and Route Handlers via `@supabase/ssr`, protected by Row Level Security.
 
----
+`main` is the only branch. Everything at the repo root outside `web/` is either config (`.clinerules`, `vercel.json`, `CNAME`) or historical reference — not part of the live app.
 
-## 📂 System Architecture
-Understanding the purpose and flow of the project:
+### Routes
 
-### 1. Public Facing (Web)
-* **`index.html`** – Home and brand introduction page.
-* **`inventory.html`** – Real-time filament stock display with dynamic data fetching.
-* **`gallery.html`** – High-resolution showcase of completed printed objects.
-* **`src/pages/public/request.html`** – Public-facing print queue request form where users can submit new 3D printing jobs directly to the workshop database.
-  * *Phase 2 Addition:* Upon successful form submission, the request form now executes a fire-and-forget background `fetch()` call to a secure **Discord webhook**, instantly streaming a stylized Markdown push notification to the operator's phone — providing immediate awareness of new print job submissions without any polling or manual refresh.
+- `web/src/app/(marketing)/` — public pages: home, inventory (`/inventory`), gallery, contact, team, and the print-request intake form (`/request`)
+- `web/src/app/(dashboard)/hub/` — the admin dashboard: incoming request queue, inventory management (add/edit/delete filaments, toggle stock)
+- `web/src/app/api/` — `keepalive` (Vercel Cron target, keeps Supabase warm) and `notify-discord` (fires a Discord webhook notification on new print requests)
 
-### 2. Administrative Layer (Desktop App)
-The administrative layer has been packaged into a native **Electron desktop environment**, running as a standalone, borderless utility app on Windows. This removes the need for a browser-based admin portal and provides a dedicated, always-available dashboard experience.
+### Data layer
 
-* **`src/pages/admin/hub.html`** – The administrative print queue dashboard (C3DW Hub). Displays all incoming public print requests, allows status updates, and provides real-time queue management.
-  * *Purpose:* Central command for reviewing, managing, and fulfilling submitted print jobs.
-  * *Environment:* Runs inside the Electron shell — not served via a web browser.
-  * *Phase 2 Addition:* Now includes a live **Supabase Realtime subscription** (`postgres_changes` on `INSERT`) that dynamically syncs incoming requests to the dashboard without requiring a manual page refresh. When running inside the Electron shell protocol (`file:`), the Hub also triggers native **HTML5 OS desktop notification banners** to alert the operator of new submissions in real time.
-* **`main.cjs`** – The Electron framework main process controller.
-  * *Purpose:* Launches the Admin Hub as a standalone, borderless desktop utility app. Manages the application window lifecycle, IPC communication, and native OS integration.
-
-### 3. Data & Logic
-* **`/js/supabase-config.js`** – Centralized initialization for the Supabase client.
-* **`/js/api/api.js`** – Central API gateway that exposes public global variables (`window.SUPABASE_URL` and `window.SUPABASE_ANON_KEY`) to drive the frontend subscription layer, ensuring all public-facing and admin pages share a single, consistent Supabase connection surface.
-* **`/js/inventory.js`** – Handles public data fetching, rendering, and filtering.
-* **`/js/admin.js`** – Manages administrative database operations (POST/PATCH/DELETE).
-* **`final_build.ps1`** – An administrative automation script used to clean build processes and compile the standalone Windows executable (`C3DW Hub 1.0.0.exe`). Handles lock-file cleanup, dependency checks, and triggers `electron-builder` to produce the final distributable.
+- `web/src/lib/supabase/client.ts` / `server.ts` — Supabase client setup (browser and server)
+- `web/src/lib/supabase/queries.ts` / `hub-queries.ts` — data access for the public site and the Hub dashboard, respectively
+- `web/src/components/hub/` — `HubShell`, `QueueTable`, `InventoryManager`, `InvEditModal`, `AuthGate`
 
 ---
 
-## 🔐 Database & Security (Supabase)
-This project leverages Supabase with **Row Level Security (RLS)** to ensure all data is protected and integrity is maintained.
+## Database (Supabase)
 
-### Tables & RLS Policies
-1. **`colors` Table**
-   * **Purpose:** Stores core filament inventory (Color, Finish, Stock Status).
-   * **Public Access:** `SELECT` only. Users can view inventory but cannot modify it.
-   * **Admin Access:** Full `INSERT`, `UPDATE`, and `DELETE` permissions for authorized sessions.
+Row Level Security is enabled on every table. Schema changes require explicit approval — see `.clinerules`.
 
-2. **`site_traffic` Table**
-   * **Purpose:** Tracks engagement and site analytics.
-   * **Public Access:** `INSERT` only. Allows the site to log visits without exposing logs to the public.
-   * **Admin Access:** `SELECT` and `DELETE` for traffic review and maintenance.
-
-3. **`requests` Table** *(Print Queue)*
-   * **Purpose:** Stores incoming public print requests submitted via the request form. Fields include Project Name, Filament Link, Status, and submission timestamp.
-   * **Public Access:** `INSERT` only. Users can submit new jobs but cannot view or modify the queue.
-   * **Admin Access:** Full `SELECT`, `UPDATE`, and `DELETE` for queue management and real-time status tracking via the Hub dashboard.
+- **`colors`** — filament inventory (color, finish, stock status)
+- **`print_jobs`** — the print request queue submitted via `/request`
+- **`shops`** — multi-tenant shop/branding config
+- **`site_traffic`** — visit analytics, written by `TrackerBeacon`
 
 ---
 
-## 🛠 Maintenance & CLI Workflow
-Use these commands to manage development, deployment, and the desktop application build pipeline:
+## Local Development
 
-### Git & Deployment
-* **Check Status:** `git status` (See pending changes).
-* **Save Progress:** `git add .` followed by `git commit -m "Your descriptive note"`.
-* **Deploy/Update:** `git push origin main`.
-* **Version Control:** Ensure you update the internal version number in your project files before major feature pushes.
+```bash
+cd web
+npm install
+npm run dev
+```
 
-### Desktop App (Electron Hub)
-* **`npm start`** – Launches the Electron hub locally in developer mode for testing and UI iteration.
-* **`npm run dist`** – Packages the local code — including the real-time Supabase Realtime notifications, Discord webhook push alerts, local asset mirrors, and viewport scrolling containers — into a standalone, single-file Windows executable located in the `dist/` folder (`./dist/C3DW Hub 1.0.0.exe`).
+You'll need a `web/.env.local` with your own Supabase project URL/anon key and any admin/webhook secrets. Never commit `.env.local`.
+
+## Deployment
+
+Production deploys happen only through `git push origin main` — Vercel's Git integration builds and deploys automatically. Never run `vercel --prod` manually (see `.clinerules`).
 
 ---
 
-## 🚀 Setup Checklist
-1. **Database:** Create a Supabase project and set up the `colors`, `site_traffic`, and `requests` tables with RLS enabled.
-2. **Configuration:** Copy your **Project URL** and **Anon Key** into your local configuration file.
-3. **Security:** Add your configuration files to `.gitignore` to prevent API keys from being tracked in version control.
-4. **Desktop Build:** Run `npm install` to restore Electron dependencies, then use `npm start` to test or `npm run dist` to compile the production executable.
-5. **Legacy Note:** Files such as `inventory.csv` and `json-to-csv.js` are archived and not required for the Supabase-live version.
+## Repo History
+
+This project was previously a plain HTML/CSS/JS site with a separate Express.js API hosted on Render, plus a native Electron desktop admin app. Both were fully retired and removed as of the 2026-09-23 cleanup (see `Project_Log.md` and `.clinerules`'s Cleanup Roadmap for the commit-by-commit history). The `web/` Next.js app has been the only live implementation since then.
