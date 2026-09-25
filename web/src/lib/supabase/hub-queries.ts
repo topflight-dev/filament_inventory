@@ -6,6 +6,21 @@
  * SACRED, IMMUTABLE table/column names exactly as-is from the legacy
  * hub.html implementation — see Project_Log.md "Database Sacrosanctity".
  * No schema changes. No renamed/dropped columns.
+ *
+ * Queue write functions (updateJobStatus / updateJobFields / batchDeleteJobs)
+ * require a shopSlug parameter and enforce a `.eq('shop_slug', shopSlug)`
+ * filter alongside the id filter, so a caller can never mutate another
+ * shop's print_jobs rows even if an id/array of ids from another shop were
+ * somehow supplied. Callers are the Route Handlers under app/api/hub/queue/*,
+ * which derive shopSlug from the verified session cookie — never from
+ * client-supplied input.
+ *
+ * Colors write functions (updateColorFields / updateColorStock /
+ * updateColorField / deleteColor) follow the exact same pattern and require
+ * a shopSlug parameter enforcing a `.eq('shop_slug', shopSlug)` filter
+ * alongside the id filter. Callers are the Route Handlers under
+ * app/api/hub/colors/*, which derive shopSlug from the verified session
+ * cookie — never from client-supplied input.
  * ─────────────────────────────────────────────────────────────────────────────
  */
 import { SupabaseClient } from '@supabase/supabase-js';
@@ -58,23 +73,51 @@ export async function getQueueJobs(
   return Array.isArray(data) ? (data as PrintJob[]) : [];
 }
 
-export async function updateJobStatus(supabase: SupabaseClient, id: string, status: string) {
-  const { error } = await supabase.from('print_jobs').update({ status }).eq('id', id);
+export async function updateJobStatus(
+  supabase: SupabaseClient,
+  id: string,
+  status: string,
+  shopSlug: string
+): Promise<PrintJob[]> {
+  const { data, error } = await supabase
+    .from('print_jobs')
+    .update({ status })
+    .eq('id', id)
+    .eq('shop_slug', shopSlug)
+    .select();
   if (error) throw error;
+  return Array.isArray(data) ? (data as PrintJob[]) : [];
 }
 
 export async function updateJobFields(
   supabase: SupabaseClient,
   id: string,
-  fields: Record<string, string>
-) {
-  const { error } = await supabase.from('print_jobs').update(fields).eq('id', id);
+  fields: Record<string, string>,
+  shopSlug: string
+): Promise<PrintJob[]> {
+  const { data, error } = await supabase
+    .from('print_jobs')
+    .update(fields)
+    .eq('id', id)
+    .eq('shop_slug', shopSlug)
+    .select();
   if (error) throw error;
+  return Array.isArray(data) ? (data as PrintJob[]) : [];
 }
 
-export async function batchDeleteJobs(supabase: SupabaseClient, ids: string[]) {
-  const { error } = await supabase.from('print_jobs').delete().in('id', ids);
+export async function batchDeleteJobs(
+  supabase: SupabaseClient,
+  ids: string[],
+  shopSlug: string
+): Promise<PrintJob[]> {
+  const { data, error } = await supabase
+    .from('print_jobs')
+    .delete()
+    .in('id', ids)
+    .eq('shop_slug', shopSlug)
+    .select();
   if (error) throw error;
+  return Array.isArray(data) ? (data as PrintJob[]) : [];
 }
 
 /** Ported 1:1 from hub.html handleAuth() — validates shop_slug + passcode. */
@@ -92,6 +135,35 @@ export async function validateShopCredentials(
 
   if (error) throw error;
   return data && data.shop_slug ? data : null;
+}
+
+/** Looks up passcode_hash for a single shop by shop_slug — used by the change-passcode Route Handler. */
+export async function getShopPasscodeHash(
+  supabase: SupabaseClient,
+  shopSlug: string
+): Promise<string | null> {
+  const { data, error } = await supabase
+    .from('shops')
+    .select('passcode_hash')
+    .eq('shop_slug', shopSlug)
+    .maybeSingle();
+
+  if (error) throw error;
+  return data?.passcode_hash ?? null;
+}
+
+/** Writes a new passcode_hash for a single shop by shop_slug — used by the change-passcode Route Handler. */
+export async function updateShopPasscodeHash(
+  supabase: SupabaseClient,
+  shopSlug: string,
+  passcodeHash: string
+): Promise<void> {
+  const { error } = await supabase
+    .from('shops')
+    .update({ passcode_hash: passcodeHash })
+    .eq('shop_slug', shopSlug);
+
+  if (error) throw error;
 }
 
 /** Ported 1:1 from hub.html populateFinishDropdown(). */
@@ -128,13 +200,23 @@ export type NewColorPayload = {
   shop_slug: string | null;
 };
 
-export async function insertColor(supabase: SupabaseClient, payload: NewColorPayload) {
-  const { error } = await supabase.from('colors').insert([payload]);
+export async function insertColor(supabase: SupabaseClient, payload: NewColorPayload): Promise<ColorItem> {
+  const { data, error } = await supabase.from('colors').insert([payload]).select().single();
   if (error) throw error;
+  return data as ColorItem;
 }
 
-export async function updateColorStock(supabase: SupabaseClient, id: number | string, inStock: boolean) {
-  const { error } = await supabase.from('colors').update({ inStock }).eq('id', id);
+export async function updateColorStock(
+  supabase: SupabaseClient,
+  id: number | string,
+  inStock: boolean,
+  shopSlug: string
+) {
+  const { error } = await supabase
+    .from('colors')
+    .update({ inStock })
+    .eq('id', id)
+    .eq('shop_slug', shopSlug);
   if (error) throw error;
 }
 
@@ -142,16 +224,51 @@ export async function updateColorField(
   supabase: SupabaseClient,
   id: number | string,
   field: string,
-  value: string
+  value: string,
+  shopSlug: string
 ) {
   const { error } = await supabase
     .from('colors')
     .update({ [field]: value })
-    .eq('id', id);
+    .eq('id', id)
+    .eq('shop_slug', shopSlug);
   if (error) throw error;
 }
 
-export async function deleteColor(supabase: SupabaseClient, id: number | string) {
-  const { error } = await supabase.from('colors').delete().eq('id', id);
+/**
+ * Builds one merged object and applies it via one atomic .update() call —
+ * the function the app/api/hub/colors/[id] Route Handler actually calls.
+ * `fields` may contain any combination of the three Hub-editable columns;
+ * whichever keys are present are written in a single request. Empty array
+ * = no row matched the given id + shop_slug (wrong id or wrong shop).
+ */
+export async function updateColorFields(
+  supabase: SupabaseClient,
+  id: number | string,
+  fields: Partial<{ inStock: boolean; color: string; finish: string }>,
+  shopSlug: string
+): Promise<ColorItem[]> {
+  const { data, error } = await supabase
+    .from('colors')
+    .update(fields)
+    .eq('id', id)
+    .eq('shop_slug', shopSlug)
+    .select();
   if (error) throw error;
+  return Array.isArray(data) ? (data as ColorItem[]) : [];
+}
+
+export async function deleteColor(
+  supabase: SupabaseClient,
+  id: number | string,
+  shopSlug: string
+): Promise<ColorItem[]> {
+  const { data, error } = await supabase
+    .from('colors')
+    .delete()
+    .eq('id', id)
+    .eq('shop_slug', shopSlug)
+    .select();
+  if (error) throw error;
+  return Array.isArray(data) ? (data as ColorItem[]) : [];
 }

@@ -1,6 +1,48 @@
 # C3DW Workshop — Project Log
 
-## Latest Entry — 2026-09-23 (Cleanup Roadmap Phase 4 — Remove `server.js` and Reduce Root `package.json` to Metadata Only)
+## Latest Entry — 2026-09-25 (Independent Verification — Hub Change Passcode Feature)
+
+**Task:** Independently verify the "Hub Change Passcode Feature" entry below (implemented by Cline) — code-review the four touched files and confirm a clean typecheck/build, as a second check before considering that feature done.
+
+**Files reviewed (no changes made):** `web/src/app/api/hub/change-passcode/route.ts`, `web/src/components/hub/ChangePasscodeModal.tsx`, `web/src/lib/supabase/hub-queries.ts` (`getShopPasscodeHash`/`updateShopPasscodeHash`), `web/src/components/hub/HubShell.tsx`.
+
+**Findings:** All four files match Cline's reported implementation. `POST /api/hub/change-passcode` derives `shop_slug` solely from the verified session cookie, bcrypt-verifies `currentPasscode` against `passcode_hash` before writing a new hash, enforces the 6-char minimum on `newPasscode`, and never reads/writes the plaintext `passcode` column. Confirmed no logic gap against `api/hub/login/route.ts`: login already validates against `passcode_hash` via bcrypt (from the earlier login-migration entry), so a passcode changed through the new modal takes effect on the next login — no mismatch between what this feature writes and what login checks. `bcryptjs` was already a `web/package.json` dependency, so no new install was required.
+
+**Note on verification method:** initial pass mistakenly checked a stale, separately-uploaded copy of this repo (not this working tree) and found the four files missing — resolved by re-checking directly against this `D:\Projects\filament_inventory_site` project instead, where all four were present and correct.
+
+**Verified:** Re-ran the build independently (not just re-reading Cline's report) — `npx tsc --noEmit && npm run build` from `web/` in the user's own terminal, clean: `✓ Compiled successfully`, `✓ Finished TypeScript`, `/api/hub/change-passcode` listed as a new dynamic (`ƒ`) route alongside the rest of `/api/hub/*`.
+
+---
+
+## Previous Entry — 2026-09-25 (Hub Change Passcode Feature)
+
+**Task:** Add a self-service "Change Passcode" feature to the Hub, reachable only while already logged in. No RLS/schema changes, `passcode` column left untouched.
+
+**Files modified:** `web/src/lib/supabase/hub-queries.ts` — added `getShopPasscodeHash(supabase, shopSlug)` and `updateShopPasscodeHash(supabase, shopSlug, passcodeHash)`. `web/src/components/hub/HubShell.tsx` — added `showChangePasscode` state, a "🔑 Change Passcode" sidebar-footer button (non-destructive styling, above Sign Out), and renders `<ChangePasscodeModal>`.
+
+**Files created:** `web/src/app/api/hub/change-passcode/route.ts` (POST — session-derived `shop_slug`, bcrypt-verifies `currentPasscode` against `passcode_hash`, requires `newPasscode` ≥ 6 chars, writes a fresh bcrypt hash; never logs either passcode value; session cookie stays valid). `web/src/components/hub/ChangePasscodeModal.tsx` (matches `InvEditModal.tsx` visual pattern; inline error/success messaging, no toast dependency; closes ~1.5s after success).
+
+**Untouched (per task scope):** `QueueTable.tsx`, `InventoryManager.tsx`, `AuthGate.tsx`, RLS policies, schema, `passcode` column.
+
+**Verified:** `npx tsc --noEmit` clean (exit 0); `npm run build` succeeded with `/api/hub/change-passcode` listed as a new dynamic (`ƒ`) route alongside the existing `/api/hub/*` routes.
+
+---
+
+## Previous Entry — 2026-09-24 (Hub Inventory/Colors Data Ops Moved Server-Side)
+
+**Task:** Move the Hub's inventory/colors data operations server-side, same pattern as the prior queue migration — the session cookie (`getHubSessionFromRequest`) is the sole source of `shop_slug`, never the client.
+
+**Files modified:** `web/src/lib/supabase/hub-queries.ts` — added `updateColorFields(supabase, id, fields, shopSlug)` (one merged `.update().eq('id').eq('shop_slug').select()`, returns `ColorItem[]`); added `shopSlug` param + `.eq('shop_slug', shopSlug)` to `updateColorStock`/`updateColorField` (kept for consistency, unused by the new route); `deleteColor` now takes `shopSlug` and returns deleted rows via `.select()`; `insertColor` now returns the created row via `.select().single()`. `web/src/components/hub/InventoryManager.tsx` — removed the direct Supabase client, the `shopSlug` sessionStorage read, and all hub-queries write imports; `refresh`/add/toggle-stock/delete/save-edit now call the new API routes via `fetch`, preserving existing optimistic-update and toast logic.
+
+**Files created:** `web/src/app/api/hub/colors/route.ts` (GET list, POST insert — `shop_slug` always forced from session), `web/src/app/api/hub/colors/[id]/route.ts` (PATCH with an explicit `inStock`/`color`/`finish` allowlist, DELETE), `web/src/app/api/hub/finishes/route.ts` (GET).
+
+**Untouched (per task scope):** `QueueTable.tsx`, `AuthGate.tsx`, `HubShell.tsx`, `InvEditModal.tsx`, RLS policies, schema.
+
+**Verified:** `npx tsc --noEmit` clean; `npm run build` succeeded with the three new routes listed as dynamic (`ƒ`) alongside the existing `/api/hub/queue*` routes.
+
+---
+
+## Previous Entry — 2026-09-23 (Cleanup Roadmap Phase 4 — Remove `server.js` and Reduce Root `package.json` to Metadata Only)
 
 **Task:** Delete `server.js` and reduce root `package.json` to non-functional metadata per Cleanup Roadmap Phase 4 in `.clinerules`.
 

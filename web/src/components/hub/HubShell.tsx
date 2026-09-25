@@ -26,6 +26,7 @@
  */
 import { useState } from 'react';
 import type { QueueStatusFilter } from '@/lib/supabase/hub-queries';
+import ChangePasscodeModal from './ChangePasscodeModal';
 
 type TabName = 'queue' | 'inventory';
 
@@ -41,8 +42,14 @@ export default function HubShell({
   const [activeTab, setActiveTab] = useState<TabName>('queue');
   const [queueStatusFilter, setQueueStatusFilter] = useState<QueueStatusFilter>('active');
   const [collapsed, setCollapsed] = useState(false);
+  const [showChangePasscode, setShowChangePasscode] = useState(false);
 
-  function handleSignOut() {
+  async function handleSignOut() {
+    try {
+      await fetch('/api/hub/logout', { method: 'POST' });
+    } catch (err) {
+      console.warn('[C3DW Auth] Sign-out request failed:', err);
+    }
     sessionStorage.removeItem('c3dw_hub_auth');
     sessionStorage.removeItem('c3dw_shop_slug');
     sessionStorage.removeItem('c3dw_shop_name');
@@ -131,6 +138,20 @@ export default function HubShell({
         {/* SIGN OUT — pinned to bottom footer */}
         <div className="border-t border-slate-800/80 px-2 py-3">
           <button
+            onClick={() => setShowChangePasscode(true)}
+            title={collapsed ? 'Change Passcode' : undefined}
+            className="mb-2 flex w-full items-center gap-3 rounded-xl border border-slate-800/80 bg-slate-900/70 px-3 py-2.5 text-xs font-medium tracking-wide text-slate-400 transition-colors hover:border-sky-500 hover:text-sky-400"
+          >
+            <span className="flex-shrink-0 text-base leading-none">🔑</span>
+            <span
+              className={`overflow-hidden whitespace-nowrap transition-all duration-300 ${
+                collapsed ? 'max-w-0 opacity-0' : 'max-w-[140px] opacity-100'
+              }`}
+            >
+              Change Passcode
+            </span>
+          </button>
+          <button
             onClick={handleSignOut}
             title={collapsed ? 'Sign Out' : undefined}
             className="flex w-full items-center gap-3 rounded-xl border border-slate-800/80 bg-slate-900/70 px-3 py-2.5 text-xs font-medium tracking-wide text-slate-400 transition-colors hover:border-red-500 hover:bg-red-950 hover:text-red-400"
@@ -151,6 +172,8 @@ export default function HubShell({
       <div className="hub-scroll flex-1 overflow-y-auto px-6 py-5 pb-10 transition-all duration-300">
         {children(activeTab, queueStatusFilter)}
       </div>
+
+      <ChangePasscodeModal open={showChangePasscode} onClose={() => setShowChangePasscode(false)} />
 
       <style>{`
         .hub-scroll { scrollbar-width: thin; scrollbar-color: transparent transparent; }

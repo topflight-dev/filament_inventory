@@ -22,14 +22,7 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import {
-  batchDeleteJobs,
-  getQueueJobs,
-  updateJobFields,
-  updateJobStatus,
-  type PrintJob,
-  type QueueStatusFilter,
-} from '@/lib/supabase/hub-queries';
+import { type PrintJob, type QueueStatusFilter } from '@/lib/supabase/hub-queries';
 
 type StatusKey = 'pending' | 'printing' | 'completed';
 
@@ -85,10 +78,6 @@ export default function QueueTable({
   showToast: (msg: string) => void;
 }) {
   const supabase = useMemo(() => createClient(), []);
-  const shopSlug = useMemo(
-    () => (typeof window !== 'undefined' ? sessionStorage.getItem('c3dw_shop_slug') : null),
-    []
-  );
 
   const [jobs, setJobs] = useState<PrintJob[]>([]);
   const [loading, setLoading] = useState(true);
@@ -110,7 +99,9 @@ export default function QueueTable({
     setRefreshing(true);
     setLoadError(false);
     try {
-      const data = await getQueueJobs(supabase, shopSlug, queueStatusFilter);
+      const res = await fetch(`/api/hub/queue?filter=${queueStatusFilter}`);
+      if (!res.ok) throw new Error(`Request failed with status ${res.status}`);
+      const data = (await res.json()) as PrintJob[];
       setJobs(data);
       setSelectedIds(new Set());
     } catch (err) {
@@ -122,7 +113,7 @@ export default function QueueTable({
       setRefreshing(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [supabase, shopSlug, queueStatusFilter]);
+  }, [queueStatusFilter]);
 
   useEffect(() => {
     fetchQueue();
@@ -186,7 +177,12 @@ export default function QueueTable({
 
     setDeleting(true);
     try {
-      await batchDeleteJobs(supabase, ids);
+      const res = await fetch('/api/hub/queue', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids }),
+      });
+      if (!res.ok) throw new Error(`Request failed with status ${res.status}`);
       showToast(`🗑️ Deleted ${ids.length} job${ids.length !== 1 ? 's' : ''}`);
       await fetchQueue();
     } catch (err) {
@@ -214,11 +210,16 @@ export default function QueueTable({
   async function saveEdit(id: string) {
     setSavingEdit(true);
     try {
-      await updateJobFields(supabase, id, {
-        requestor_name: editFields.requestor_name.trim(),
-        project_name: editFields.project_name.trim(),
-        color_preference: editFields.color_preference.trim(),
+      const res = await fetch(`/api/hub/queue/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          requestor_name: editFields.requestor_name.trim(),
+          project_name: editFields.project_name.trim(),
+          color_preference: editFields.color_preference.trim(),
+        }),
       });
+      if (!res.ok) throw new Error(`Request failed with status ${res.status}`);
       showToast('✅ Job updated successfully');
       setEditingId(null);
       await fetchQueue();
@@ -236,7 +237,12 @@ export default function QueueTable({
     const next = NEXT_STATUS[current];
     setUpdatingId(job.id);
     try {
-      await updateJobStatus(supabase, job.id, capitalize(next));
+      const res = await fetch(`/api/hub/queue/${job.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: capitalize(next) }),
+      });
+      if (!res.ok) throw new Error(`Request failed with status ${res.status}`);
       setJobs((prev) => prev.map((j) => (j.id === job.id ? { ...j, status: capitalize(next) } : j)));
       showToast(`✅ Job → ${capitalize(next)}`);
     } catch (err) {

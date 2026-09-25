@@ -1,33 +1,30 @@
 'use client';
 
 /**
- * components/hub/AuthGate.tsx — Passcode Lockscreen (1:1 port)
+ * components/hub/AuthGate.tsx — Passcode Lockscreen (server-verified session)
  * ─────────────────────────────────────────────────────────────────────────────
- * Ported 1:1 from hub.html's #auth-overlay + handleAuth(). Since the Next.js
- * web target has no Electron `file://` branch, this always gates on the
- * "Web / Mobile path" from the legacy DOMContentLoaded logic: check
- * sessionStorage for a valid session flag; if absent, show the glassmorphism
- * lockscreen and block all children from rendering until the shop slug +
- * passcode validate against the `shops` table.
+ * Gates the Admin Hub behind a server-verified httpOnly session cookie
+ * instead of a client-side-only sessionStorage flag. On mount, asks the
+ * server (/api/hub/session) whether a valid session cookie is present;
+ * on submit, POSTs the shop slug + passcode to /api/hub/login, which
+ * validates against the `shops` table server-side (service role, bcrypt
+ * compare against passcode_hash) and — on success — sets the session
+ * cookie itself. This component no longer talks to Supabase directly.
  *
- * Deliberately unchanged from legacy: sessionStorage keys
- * (c3dw_hub_auth / c3dw_shop_slug / c3dw_shop_name), the shake-on-failure
- * animation, and the exact validation query shape. Real Supabase Auth + RLS
- * is intentionally deferred to a future session per Phase 1 Part 3 Rule 2.
- * No fallback/bypass logic is added here — the admin passcode gate must
- * always validate real credentials against the `shops` table, even in local
- * dev. Only the visual palette below was updated to "Deep Oceanic Stealth".
+ * c3dw_shop_slug / c3dw_shop_name are still written to sessionStorage on
+ * successful login for other components (InventoryManager, QueueTable,
+ * hub/page.tsx) that read them for display/query-scoping — but they no
+ * longer control access; the server-verified cookie is the only gate.
+ *
+ * Visual palette, shake-on-failure animation, and copy are unchanged.
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
-import { FormEvent, useEffect, useMemo, useState } from 'react';
-import { createClient } from '@/lib/supabase/client';
-import { validateShopCredentials } from '@/lib/supabase/hub-queries';
+import { FormEvent, useEffect, useState } from 'react';
 
 type AuthState = 'checking' | 'locked' | 'granted';
 
 export default function AuthGate({ children }: { children: React.ReactNode }) {
-  const supabase = useMemo(() => createClient(), []);
   const [authState, setAuthState] = useState<AuthState>('checking');
   const [shopSlugInput, setShopSlugInput] = useState('');
   const [passcodeInput, setPasscodeInput] = useState('');
@@ -35,12 +32,24 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
   const [shake, setShake] = useState(false);
   const [verifying, setVerifying] = useState(false);
 
-  // On mount, check for an existing valid session (mirrors legacy DOMContentLoaded check)
+  // On mount, ask the server whether a valid session cookie already exists.
   useEffect(() => {
-    const hasSession =
-      sessionStorage.getItem('c3dw_hub_auth') === 'granted' &&
-      !!sessionStorage.getItem('c3dw_shop_slug');
-    setAuthState(hasSession ? 'granted' : 'locked');
+    let cancelled = false;
+
+    (async () => {
+      try {
+        const res = await fetch('/api/hub/session');
+        const data = await res.json();
+        if (!cancelled) setAuthState(data?.authenticated ? 'granted' : 'locked');
+      } catch (err) {
+        console.warn('[C3DW Auth] Session check failed:', err);
+        if (!cancelled) setAuthState('locked');
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   async function handleAuth(e: FormEvent) {
@@ -57,16 +66,20 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
     setError(false);
 
     try {
-      const data = await validateShopCredentials(supabase, slug, passcode);
+      const res = await fetch('/api/hub/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ shop_slug: slug, passcode }),
+      });
 
-      if (data) {
-        sessionStorage.setItem('c3dw_hub_auth', 'granted');
-        sessionStorage.setItem('c3dw_shop_slug', data.shop_slug);
-        if (data.shop_name) sessionStorage.setItem('c3dw_shop_name', data.shop_name);
-        setAuthState('granted');
-      } else {
+      if (!res.ok) {
         throw new Error('Invalid credentials');
       }
+
+      const data = await res.json();
+      sessionStorage.setItem('c3dw_shop_slug', data.shop_slug);
+      if (data.shop_name) sessionStorage.setItem('c3dw_shop_name', data.shop_name);
+      setAuthState('granted');
     } catch (err) {
       console.warn('[C3DW Auth] Authentication failed:', err);
       setError(true);

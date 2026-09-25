@@ -16,28 +16,13 @@
  * slate-400/slate-500 secondary text hierarchy.
  * ─────────────────────────────────────────────────────────────────────────────
  */
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { createClient } from '@/lib/supabase/client';
-import {
-  deleteColor,
-  getColors,
-  getFinishes,
-  insertColor,
-  updateColorField,
-  updateColorStock,
-  type ColorItem,
-} from '@/lib/supabase/hub-queries';
+import { useCallback, useEffect, useState } from 'react';
+import { type ColorItem } from '@/lib/supabase/hub-queries';
 import InvEditModal, { type InvEditTarget } from './InvEditModal';
 
 const ADD_NEW_FINISH = '__add_new__';
 
 export default function InventoryManager({ showToast }: { showToast: (msg: string) => void }) {
-  const supabase = useMemo(() => createClient(), []);
-  const shopSlug = useMemo(
-    () => (typeof window !== 'undefined' ? sessionStorage.getItem('c3dw_shop_slug') : null),
-    []
-  );
-
   const [colors, setColors] = useState<ColorItem[]>([]);
   const [finishes, setFinishes] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
@@ -58,10 +43,14 @@ export default function InventoryManager({ showToast }: { showToast: (msg: strin
   const refresh = useCallback(async () => {
     setLoading(true);
     try {
-      const [colorData, finishData] = await Promise.all([
-        getColors(supabase, shopSlug),
-        getFinishes(supabase, shopSlug),
+      const [colorsRes, finishesRes] = await Promise.all([
+        fetch('/api/hub/colors'),
+        fetch('/api/hub/finishes'),
       ]);
+      if (!colorsRes.ok) throw new Error(`Request failed with status ${colorsRes.status}`);
+      if (!finishesRes.ok) throw new Error(`Request failed with status ${finishesRes.status}`);
+      const colorData = (await colorsRes.json()) as ColorItem[];
+      const finishData = (await finishesRes.json()) as string[];
       setColors(colorData);
       setFinishes(finishData);
       if (!newFinish && finishData.length > 0) setNewFinish(finishData[0]);
@@ -72,7 +61,7 @@ export default function InventoryManager({ showToast }: { showToast: (msg: strin
       setLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [supabase, shopSlug]);
+  }, []);
 
   useEffect(() => {
     refresh();
@@ -100,16 +89,20 @@ export default function InventoryManager({ showToast }: { showToast: (msg: strin
 
     setSubmitting(true);
     try {
-      await insertColor(supabase, {
-        color: newColor.trim(),
-        finish: newFinish.trim(),
-        description: newDescription.trim(),
-        colorHex1: newHex1,
-        colorHex2: newHex2,
-        colorHex3: newHex3,
-        inStock: true,
-        shop_slug: shopSlug,
+      const res = await fetch('/api/hub/colors', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          color: newColor.trim(),
+          finish: newFinish.trim(),
+          description: newDescription.trim(),
+          colorHex1: newHex1,
+          colorHex2: newHex2,
+          colorHex3: newHex3,
+          inStock: true,
+        }),
       });
+      if (!res.ok) throw new Error(`Request failed with status ${res.status}`);
       showToast('✅ Filament added successfully');
       setNewColor('');
       setNewDescription('');
@@ -132,7 +125,12 @@ export default function InventoryManager({ showToast }: { showToast: (msg: strin
     setColors((prev) => prev.map((c) => (c.id === item.id ? { ...c, inStock: nextValue } : c)));
 
     try {
-      await updateColorStock(supabase, item.id, nextValue);
+      const res = await fetch(`/api/hub/colors/${item.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ inStock: nextValue }),
+      });
+      if (!res.ok) throw new Error(`Request failed with status ${res.status}`);
     } catch (err) {
       console.error('Stock toggle failed:', err);
       setColors((prev) => prev.map((c) => (c.id === item.id ? { ...c, inStock: item.inStock } : c)));
@@ -151,7 +149,8 @@ export default function InventoryManager({ showToast }: { showToast: (msg: strin
     if (!confirmed) return;
 
     try {
-      await deleteColor(supabase, item.id);
+      const res = await fetch(`/api/hub/colors/${item.id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error(`Request failed with status ${res.status}`);
       showToast('🗑️ Filament deleted');
       await refresh();
     } catch (err) {
@@ -162,7 +161,12 @@ export default function InventoryManager({ showToast }: { showToast: (msg: strin
 
   async function handleSaveEdit(id: number | string, fieldName: string, value: string) {
     try {
-      await updateColorField(supabase, id, fieldName, value);
+      const res = await fetch(`/api/hub/colors/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ [fieldName]: value }),
+      });
+      if (!res.ok) throw new Error(`Request failed with status ${res.status}`);
       showToast('✅ Updated successfully');
       setEditTarget(null);
       await refresh();
