@@ -19,10 +19,12 @@
  * Deliberately changed vs. legacy:
  *   - Uses the shared browser Supabase client (`lib/supabase/client.ts`)
  *     instead of the retired CDN-script + js/api/api.js pattern.
- *   - The Discord webhook notification is now a fire-and-forget POST to our
- *     own server Route Handler (`/api/notify-discord`), which reads the
- *     server-only `DISCORD_WEBHOOK_URL` env var — closing the client-exposed
- *     webhook leak flagged in Project_Log.md Phase 1 "Flagged Findings" #1.
+ *   - The notification fire-and-forget POST now goes to `/api/notify-request`
+ *     (not the retired `/api/notify-discord`), passing `shopSlug` so the
+ *     server can look up THAT shop's own notification_email /
+ *     discord_webhook_url — see claude/notifications-redesign-plan.md in the
+ *     Claude Project. The server never trusts a webhook URL or address from
+ *     the client; it derives everything from `shops` via the service client.
  *   - `useSearchParams()` requires this tree to be wrapped in `<Suspense>`
  *     per Next.js App Router rules, so the exported page component is a thin
  *     Suspense wrapper around the actual client-logic component.
@@ -311,16 +313,20 @@ function RequestPageInner() {
       setSpecialInstructions('');
       setSelectedFilaments([]);
 
-      // Fire-and-forget secure server-side Discord notification
-      fetch('/api/notify-discord', {
+      // Fire-and-forget secure server-side notification (email and/or Discord,
+      // per-shop — see /api/notify-request). shopSlug lets the server look up
+      // THIS shop's own settings; the server never trusts client-supplied
+      // contact info.
+      fetch('/api/notify-request', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          shopSlug: resolvedShopSlug,
           projectName: trimmedProject,
           requestorName: trimmedName,
           colorPreference,
         }),
-      }).catch((err) => console.warn('Discord notification failed (non-critical):', err));
+      }).catch((err) => console.warn('Print-request notification failed (non-critical):', err));
     } catch (err) {
       console.error('Submission error:', err);
       const message = err instanceof Error ? err.message : 'Unknown error';

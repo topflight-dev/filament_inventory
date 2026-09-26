@@ -21,6 +21,12 @@
  * alongside the id filter. Callers are the Route Handlers under
  * app/api/hub/colors/*, which derive shopSlug from the verified session
  * cookie — never from client-supplied input.
+ *
+ * Notification settings functions (getShopNotificationSettings /
+ * updateShopNotificationSettings) added 2026-09-26 as part of the
+ * multi-tenant notifications redesign (see
+ * claude/notifications-redesign-plan.md in the Claude Project) — same
+ * shop_slug-scoped pattern as the passcode functions below.
  * ─────────────────────────────────────────────────────────────────────────────
  */
 import { SupabaseClient } from '@supabase/supabase-js';
@@ -161,6 +167,51 @@ export async function updateShopPasscodeHash(
   const { error } = await supabase
     .from('shops')
     .update({ passcode_hash: passcodeHash })
+    .eq('shop_slug', shopSlug);
+
+  if (error) throw error;
+}
+
+export type ShopNotificationSettings = {
+  notification_email: string | null;
+  discord_webhook_url: string | null;
+};
+
+/**
+ * Looks up notification settings for a single shop by shop_slug — used by
+ * the notify-request Route Handler (to decide where to send a print-request
+ * alert) and the Hub notification-settings Route Handler (to populate the
+ * settings modal). Returns null only if no row matches shopSlug at all;
+ * either column individually may still be null (channel not configured).
+ */
+export async function getShopNotificationSettings(
+  supabase: SupabaseClient,
+  shopSlug: string
+): Promise<ShopNotificationSettings | null> {
+  const { data, error } = await supabase
+    .from('shops')
+    .select('notification_email, discord_webhook_url')
+    .eq('shop_slug', shopSlug)
+    .maybeSingle();
+
+  if (error) throw error;
+  return data ? (data as ShopNotificationSettings) : null;
+}
+
+/**
+ * Writes new notification settings for a single shop by shop_slug — used by
+ * the Hub notification-settings Route Handler. `fields` may contain either
+ * or both keys; an explicit `null` clears that channel (e.g. removing a
+ * Discord webhook without touching the email address).
+ */
+export async function updateShopNotificationSettings(
+  supabase: SupabaseClient,
+  shopSlug: string,
+  fields: Partial<ShopNotificationSettings>
+): Promise<void> {
+  const { error } = await supabase
+    .from('shops')
+    .update(fields)
     .eq('shop_slug', shopSlug);
 
   if (error) throw error;
