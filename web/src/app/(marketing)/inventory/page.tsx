@@ -19,11 +19,22 @@ import { getInStockColors } from '@/lib/supabase/queries';
  * Restyled for the "Creative Studio" warm theme: cream page background
  * (#FDFBF7) matching the rest of the site, charcoal heading text — the
  * data table/card styling itself lives in <InventoryGrid />.
+ *
+ * UPDATED 2026-09-26 (multi-tenant safety): this page previously called
+ * getInStockColors() with no shop filter, so it showed every shop's colors
+ * mixed together in the `colors` table, not just this site's own. Harmless
+ * today only because no other shop has any color rows yet (confirmed via
+ * Supabase — see claude/dashboard-domain-split-plan.md in the Claude
+ * Project), but the same latent gap /request had before its own fix. This
+ * marketing page is inherently single-tenant — it's Luis's own storefront,
+ * not a per-tenant route like /request — so it's scoped to exactly this
+ * site's own shop via NEXT_PUBLIC_DEFAULT_SHOP_SLUG (the same env var
+ * /request already uses to mean "this deployment's own shop").
  */
 export const revalidate = 60;
 
 export default async function InventoryPage() {
-  const items = await getInStockColors();
+  const items = await getInStockColors(process.env.NEXT_PUBLIC_DEFAULT_SHOP_SLUG);
 
   return (
     <>
