@@ -16,6 +16,17 @@
  * config, a bad webhook, Resend being down — must never block or fail a
  * customer's print-request submission, so every failure path here logs a
  * warning and still returns 200.
+ *
+ * UPDATED 2026-09-26 (domain-split prep): the "View Dashboard" link in both
+ * the email and Discord embed used to hardcode
+ * `https://www.crafted3dworkshop.com/hub` — wrong for any shop but Luis's own
+ * (every shop's notification pointed at Luis's Hub), and it would have needed
+ * a code change the moment the Hub moved to its own domain. It now reads
+ * HUB_DASHBOARD_URL, which is correct for every shop (the link is just
+ * "wherever /hub lives" — /hub itself resolves the right shop from the
+ * viewer's own session after they log in, so one shared URL is right for
+ * everyone). Falls back to the current live URL if the env var isn't set yet,
+ * so this ships with zero behavior change until Luis adds the var.
  * ─────────────────────────────────────────────────────────────────────────────
  */
 import { NextRequest, NextResponse } from 'next/server';
@@ -28,6 +39,13 @@ const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KE
 // Sending address on the DNS-verified subdomain (mail.crafted3dworkshop.com).
 // Swap the display name / local part freely — the domain is what's verified.
 const FROM_ADDRESS = 'Crafted 3D Workshop <alerts@mail.crafted3dworkshop.com>';
+
+// Where /hub actually lives today. See the header comment above — update via
+// the HUB_DASHBOARD_URL env var (no code change) once the dashboard moves to
+// its own domain/subdomain.
+const HUB_DASHBOARD_URL = (
+  process.env.HUB_DASHBOARD_URL ?? 'https://www.crafted3dworkshop.com'
+).replace(/\/+$/, '');
 
 function escapeHtml(value: string): string {
   return value
@@ -95,7 +113,7 @@ export async function POST(request: NextRequest) {
             <p><strong>Project:</strong> ${escapeHtml(projectName)}</p>
             <p><strong>Requester:</strong> ${escapeHtml(requestorName)}</p>
             <p><strong>Filament:</strong> ${escapeHtml(colorPreference)}</p>
-            <p><a href="https://www.crafted3dworkshop.com/hub">View Dashboard</a></p>
+            <p><a href="${HUB_DASHBOARD_URL}/hub">View Dashboard</a></p>
           `,
         });
         sent.push('email');
@@ -120,7 +138,7 @@ export async function POST(request: NextRequest) {
                 { name: '👤 Requester', value: String(requestorName), inline: true },
                 { name: '🎨 Filament', value: String(colorPreference), inline: false },
               ],
-              description: '[🔗 View Dashboard](https://www.crafted3dworkshop.com/hub)',
+              description: `[🔗 View Dashboard](${HUB_DASHBOARD_URL}/hub)`,
               footer: { text: 'C3DW Print Queue — Real-Time Alert' },
               timestamp: new Date().toISOString(),
             },
