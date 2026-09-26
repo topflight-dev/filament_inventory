@@ -17,12 +17,18 @@
  * only by queueStatusFilter — QueueTable's data fetching/subscription logic
  * is untouched.
  *
- * Sidebar footer (bottom-up: Sign Out, Change Passcode, Notifications) now
- * also opens NotificationSettingsModal — added 2026-09-26 as part of the
- * multi-tenant notifications redesign (see claude/notifications-redesign-plan.md
- * in the Claude Project). Same pattern as Change Passcode: a state flag flips
- * on click, the modal is rendered unconditionally at the bottom of this
- * component and no-ops (returns null) while closed.
+ * Sidebar footer (top-down: Share Your Link, Notifications, Change Passcode,
+ * Sign Out) opens one of three modals — ShareLinkModal and
+ * NotificationSettingsModal both added 2026-09-26 as part of the multi-tenant
+ * notifications redesign (see claude/notifications-redesign-plan.md in the
+ * Claude Project). Same pattern for all three: a state flag flips on click,
+ * the modal is rendered unconditionally at the bottom of this component and
+ * no-ops (returns null) while closed.
+ *
+ * Share Your Link is listed first because handing a shop owner their own
+ * exact, correct `/request?shop=<slug>` link is the multi-tenant fix that
+ * makes the whole feature trustworthy — see ShareLinkModal.tsx's own header
+ * comment for the full incident this closes out.
  *
  * Visual palette: "Deep Oceanic Stealth" theme — arctic twilight blue canvas
  * (bg-slate-950), frosted navy slate panels (bg-slate-900/70,
@@ -35,6 +41,7 @@ import { useState } from 'react';
 import type { QueueStatusFilter } from '@/lib/supabase/hub-queries';
 import ChangePasscodeModal from './ChangePasscodeModal';
 import NotificationSettingsModal from './NotificationSettingsModal';
+import ShareLinkModal from './ShareLinkModal';
 
 type TabName = 'queue' | 'inventory';
 
@@ -52,6 +59,7 @@ export default function HubShell({
   const [collapsed, setCollapsed] = useState(false);
   const [showChangePasscode, setShowChangePasscode] = useState(false);
   const [showNotificationSettings, setShowNotificationSettings] = useState(false);
+  const [showShareLink, setShowShareLink] = useState(false);
 
   async function handleSignOut() {
     try {
@@ -144,8 +152,22 @@ export default function HubShell({
           })}
         </nav>
 
-        {/* FOOTER — Notifications, Change Passcode, Sign Out — pinned to bottom */}
+        {/* FOOTER — Share Link, Notifications, Change Passcode, Sign Out — pinned to bottom */}
         <div className="border-t border-slate-800/80 px-2 py-3">
+          <button
+            onClick={() => setShowShareLink(true)}
+            title={collapsed ? 'Share Your Link' : undefined}
+            className="mb-2 flex w-full items-center gap-3 rounded-xl border border-slate-800/80 bg-slate-900/70 px-3 py-2.5 text-xs font-medium tracking-wide text-slate-400 transition-colors hover:border-sky-500 hover:text-sky-400"
+          >
+            <span className="flex-shrink-0 text-base leading-none">🔗</span>
+            <span
+              className={`overflow-hidden whitespace-nowrap transition-all duration-300 ${
+                collapsed ? 'max-w-0 opacity-0' : 'max-w-[140px] opacity-100'
+              }`}
+            >
+              Share Your Link
+            </span>
+          </button>
           <button
             onClick={() => setShowNotificationSettings(true)}
             title={collapsed ? 'Notifications' : undefined}
@@ -201,6 +223,7 @@ export default function HubShell({
         open={showNotificationSettings}
         onClose={() => setShowNotificationSettings(false)}
       />
+      <ShareLinkModal open={showShareLink} onClose={() => setShowShareLink(false)} />
 
       <style>{`
         .hub-scroll { scrollbar-width: thin; scrollbar-color: transparent transparent; }

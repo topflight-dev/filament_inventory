@@ -28,11 +28,14 @@
  *   - `useSearchParams()` requires this tree to be wrapped in `<Suspense>`
  *     per Next.js App Router rules, so the exported page component is a thin
  *     Suspense wrapper around the actual client-logic component.
- *   - Multi-tenant shop-slug resolution is now a 3-tier dynamic fallback
- *     chain instead of a strict single-source `?shop=` requirement, so that
+ *   - Multi-tenant shop-slug resolution is a 3-tier dynamic fallback chain
+ *     instead of a strict single-source `?shop=` requirement, so that
  *     `/request` (no query string) still resolves to an active shop profile
  *     instead of throwing "Shop Not Found". Resolution order:
- *       1. `?shop=` URL search param (multi-tenant override — unchanged).
+ *       1. `?shop=` URL search param (multi-tenant override — this is the
+ *          real per-shop routing mechanism; see the Hub's "🔗 Share Your
+ *          Link" modal, which hands each shop owner their own exact,
+ *          session-derived link built from this param).
  *       2. `NEXT_PUBLIC_DEFAULT_SHOP_SLUG` build-time env var (per-deployment
  *          default, safe to expose to the browser — it is a slug, not a
  *          secret; see `.env.local.example`).
@@ -40,16 +43,30 @@
  *          in the `shops` table, as an absolute last-resort safety net.
  *     This keeps the feature trivially uncoupled/scalable into a commercial
  *     multi-tenant tool later: swapping tier 2/3 is a config change only.
- *   - RESILIENT LOCAL-DEV SAFETY NET: if none of the 3 tiers above resolve to
- *     an existing row in the `shops` table (e.g. a fresh local/dev database
- *     that hasn't been seeded with this shop's row yet), the gate performs a
- *     final fallback query — grab the first available row in `shops` via
- *     `.limit(1).maybeSingle()` — and if found, adopts THAT row's real
- *     `shop_slug` as the active tenant identifier for the rest of the page
- *     (branding, filament checklist, and the `print_jobs` insert all switch
- *     to it), so the page never bricks into "Shop Not Found" during local
- *     development. Only if the `shops` table itself is completely empty does
- *     the page fall through to the real "Shop Not Found" state.
+ *   - FIXED 2026-09-26: tiers 2/3 previously pointed at 'crafted3dworkshop',
+ *     which does not match any real `shops.shop_slug` row (the real one is
+ *     'crafted3d') — every request with a missing/wrong slug was silently
+ *     falling through to the dev-only safety net below and landing on
+ *     whatever shop happened to be first in the table. Both now point at the
+ *     correct slug. See claude/notifications-redesign-plan.md (Claude
+ *     Project) for the full incident write-up.
+ *   - RESILIENT LOCAL-DEV SAFETY NET (local development only, see
+ *     `process.env.NODE_ENV` guard below): if none of the 3 tiers above
+ *     resolve to an existing row in the `shops` table (e.g. a fresh
+ *     local/dev database that hasn't been seeded with this shop's row yet),
+ *     the gate performs a final fallback query — grab the first available
+ *     row in `shops` via `.limit(1).maybeSingle()` — and if found, adopts
+ *     THAT row's real `shop_slug` as the active tenant identifier for the
+ *     rest of the page, so the page never bricks into "Shop Not Found"
+ *     during local development.
+ *   - THIS SAFETY NET NO LONGER RUNS IN PRODUCTION. It used to, and that was
+ *     a real multi-tenant correctness bug: a customer opening a bad or stale
+ *     link would be silently routed into an arbitrary shop's queue instead
+ *     of seeing an honest error, meaning that shop would get notified about
+ *     a request that was never meant for it. In production, an unmatched
+ *     slug now always shows "Shop Not Found" — a shop's link either
+ *     unambiguously resolves to that shop, or it visibly fails. Only local
+ *     development gets the convenience fallback.
  *
  * Visual palette: "Deep Oceanic Stealth" theme — arctic twilight blue canvas
  * (bg-slate-950), frosted navy slate panels (bg-slate-900/70,
@@ -88,7 +105,7 @@ type ShopBrand = {
  * always set NEXT_PUBLIC_DEFAULT_SHOP_SLUG) when white-labeling this app for
  * a different tenant.
  */
-const HARDCODED_FALLBACK_SHOP_SLUG = 'crafted3dworkshop';
+const HARDCODED_FALLBACK_SHOP_SLUG = 'crafted3d';
 
 function RequestPageInner() {
   const searchParams = useSearchParams();
@@ -153,21 +170,24 @@ function RequestPageInner() {
           return;
         }
 
-        // RESILIENT DEV FALLBACK — the requested slug doesn't exist locally
-        // (e.g. a fresh/empty local database). Grab whatever the first
-        // available `shops` row is so the page never bricks in local dev.
-        const { data: fallbackShop, error: fallbackError } = await supabase
-          .from('shops')
-          .select('shop_slug')
-          .limit(1)
-          .maybeSingle();
+        // RESILIENT DEV FALLBACK — local development ONLY. Production must
+        // never silently guess a different shop when the requested slug
+        // doesn't match — see the file header for why (this was a live
+        // multi-tenant correctness bug until 2026-09-26).
+        if (process.env.NODE_ENV !== 'production') {
+          const { data: fallbackShop, error: fallbackError } = await supabase
+            .from('shops')
+            .select('shop_slug')
+            .limit(1)
+            .maybeSingle();
 
-        if (cancelled) return;
+          if (cancelled) return;
 
-        if (!fallbackError && fallbackShop?.shop_slug) {
-          setResolvedShopSlug(fallbackShop.shop_slug);
-          setGate('ok');
-          return;
+          if (!fallbackError && fallbackShop?.shop_slug) {
+            setResolvedShopSlug(fallbackShop.shop_slug);
+            setGate('ok');
+            return;
+          }
         }
 
         setGate('not-found');
