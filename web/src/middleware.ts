@@ -10,6 +10,13 @@ import { NextRequest, NextResponse } from 'next/server';
  * plan.md, website-architecture-audit.md) for the fuller history this
  * follows on from.
  *
+ * UPDATED 2026-09-27 (later same day) — added /api/print-request to
+ * DASHBOARD_PREFIXES: the public /request page's print-job submission now
+ * goes through this new server route (see api/print-request/route.ts —
+ * closes the previously-unrestricted anon INSERT on print_jobs found during
+ * the RLS review) instead of a direct client-side Supabase insert, so it
+ * needs the same host-split treatment as /api/notify-request already gets.
+ *
  * UPDATED 2026-09-27 — product name/domain committed: the dashboard now has
  * its own genuinely separate domain, printcue.ink ("Printcue"), replacing the
  * app.crafted3dworkshop.com subdomain this middleware originally split onto.
@@ -62,7 +69,7 @@ const APP_HOST = 'printcue.ink';
 const OLD_APP_HOST = 'app.crafted3dworkshop.com';
 
 // Path prefixes that belong to the dashboard product, not the marketing site.
-const DASHBOARD_PREFIXES = ['/hub', '/request', '/api/hub', '/api/notify-request'];
+const DASHBOARD_PREFIXES = ['/hub', '/request', '/api/hub', '/api/notify-request', '/api/print-request'];
 
 // Never redirected based on host — hit directly by Vercel Cron, not a browser.
 const ALWAYS_ALLOW_PREFIXES = ['/api/keepalive'];

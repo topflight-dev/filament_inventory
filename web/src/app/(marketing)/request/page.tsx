@@ -337,19 +337,32 @@ function RequestPageInner() {
 
     setSubmitting(true);
 
-    const payload = {
-      requestor_name: trimmedName,
-      project_name: finalProjectName,
-      stl_url: trimmedLink || null,
-      filament_id: filamentId,
-      color_preference: colorPreference,
-      status: 'Pending',
-      shop_slug: resolvedShopSlug,
-    };
-
     try {
-      const { error } = await supabase.from('print_jobs').insert([payload]);
-      if (error) throw error;
+      // The print_jobs insert now happens server-side (see
+      // /api/print-request). An RLS audit (2026-09-27) found the anon
+      // client's direct insert into print_jobs was fully unrestricted at the
+      // database level (any shop_slug, no rate limit) — this route does the
+      // same insert via the service-role client, plus a shop-existence
+      // check and a basic per-shop rate limit. The anon INSERT grant on
+      // print_jobs has been revoked in Supabase, so a direct client-side
+      // insert can no longer succeed at all.
+      const res = await fetch('/api/print-request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          shopSlug: resolvedShopSlug,
+          requestorName: trimmedName,
+          projectName: finalProjectName,
+          stlUrl: trimmedLink || null,
+          filamentId,
+          colorPreference,
+        }),
+      });
+
+      if (!res.ok) {
+        const errorBody = await res.json().catch(() => null);
+        throw new Error(errorBody?.error || 'Submission failed');
+      }
 
       setStatusMessage({ text: 'Request added to the queue!', type: 'success' });
       setRequestorName('');
