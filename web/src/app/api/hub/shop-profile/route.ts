@@ -22,7 +22,12 @@
  * ─────────────────────────────────────────────────────────────────────────────
  */
 import { NextRequest, NextResponse } from 'next/server';
-import { createHubSessionToken, getHubSessionFromRequest, HUB_SESSION_COOKIE } from '@/lib/hub-session';
+import {
+  createHubSessionToken,
+  getHubSessionFromRequest,
+  HUB_SESSION_COOKIE,
+  SESSION_DURATION_SECONDS,
+} from '@/lib/hub-session';
 import { createServiceClient } from '@/lib/supabase/service';
 import { getShopName, updateShopName } from '@/lib/supabase/hub-queries';
 
@@ -83,7 +88,7 @@ export async function PATCH(request: NextRequest) {
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
       path: '/',
-      maxAge: 60 * 60 * 12,
+      maxAge: SESSION_DURATION_SECONDS,
     });
 
     return response;

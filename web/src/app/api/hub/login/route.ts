@@ -15,7 +15,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import { createServiceClient } from '@/lib/supabase/service';
-import { createHubSessionToken, HUB_SESSION_COOKIE } from '@/lib/hub-session';
+import {
+  createHubSessionToken,
+  HUB_SESSION_COOKIE,
+  SESSION_DURATION_SECONDS,
+} from '@/lib/hub-session';
 
 export async function POST(request: NextRequest) {
   let body: { shop_slug?: unknown; passcode?: unknown };
@@ -66,7 +70,7 @@ export async function POST(request: NextRequest) {
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
     path: '/',
-    maxAge: 60 * 60 * 12,
+    maxAge: SESSION_DURATION_SECONDS,
   });
 
   return response;

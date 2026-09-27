@@ -16,7 +16,13 @@ import type { NextRequest } from 'next/server';
 
 export const HUB_SESSION_COOKIE = 'c3dw_hub_session';
 
-const SESSION_DURATION_SECONDS = 60 * 60 * 12; // 12 hours
+// Raised 2026-09-27 from 12 hours to 30 days — the Hub is meant to be signed
+// into once on a shop's own TV/kiosk/laptop and left running, not re-logged
+// into daily. Exported so every Route Handler that sets this cookie (login,
+// shop-profile rename) shares one source of truth instead of hardcoding
+// matching maxAge values that can drift out of sync with the JWT's own
+// expiry.
+export const SESSION_DURATION_SECONDS = 60 * 60 * 24 * 30; // 30 days
 
 export type HubSessionPayload = {
   shop_slug: string;
