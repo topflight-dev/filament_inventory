@@ -157,7 +157,7 @@ export default function HubShell({
           >
             <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-widest text-zinc-400">
               <Settings className="h-3 w-3" />
-              C3DW Admin
+              Shop Admin
             </span>
             {shopName && (
               <span className="block truncate text-xs font-medium text-zinc-700">{shopName}</span>

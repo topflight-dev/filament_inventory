@@ -37,8 +37,12 @@ import { getShopNotificationSettings } from '@/lib/supabase/hub-queries';
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
 // Sending address on the DNS-verified subdomain (mail.crafted3dworkshop.com).
-// Swap the display name / local part freely — the domain is what's verified.
-const FROM_ADDRESS = 'Crafted 3D Workshop <alerts@mail.crafted3dworkshop.com>';
+// Display name is deliberately generic (not "Crafted 3D Workshop") since this
+// same route sends every shop's own notification email — a future shop
+// owner's inbox shouldn't read "From: Crafted 3D Workshop" for their own
+// print-request alert. Swap the local part freely; the domain is what's
+// verified, and moves only when the dashboard gets its own domain.
+const FROM_ADDRESS = 'Print Queue Alerts <alerts@mail.crafted3dworkshop.com>';
 
 // Where /hub actually lives today. See the header comment above — update via
 // the HUB_DASHBOARD_URL env var (no code change) once the dashboard moves to
