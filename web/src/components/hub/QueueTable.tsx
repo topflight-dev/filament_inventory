@@ -549,7 +549,7 @@ export default function QueueTable({
       </div>
 
       <div className="mt-9 pb-5 text-center text-xs text-zinc-400">
-        Print Queue Manager
+        Printcue — Print Queue Manager
       </div>
     </div>
   );

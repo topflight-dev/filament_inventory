@@ -27,6 +27,13 @@
  * viewer's own session after they log in, so one shared URL is right for
  * everyone). Falls back to the current live URL if the env var isn't set yet,
  * so this ships with zero behavior change until Luis adds the var.
+ *
+ * UPDATED 2026-09-27 — product name committed (Printcue, printcue.ink): the
+ * fallback below now points there directly (the dashboard's real, permanent
+ * home) instead of the old marketing-site URL, and the display name / embed
+ * footer read "Printcue" instead of the placeholder "Print Queue Alerts" /
+ * "C3DW". Still just a fallback — set HUB_DASHBOARD_URL=https://printcue.ink
+ * in Vercel so this constant is never actually relied on in production.
  * ─────────────────────────────────────────────────────────────────────────────
  */
 import { NextRequest, NextResponse } from 'next/server';
@@ -37,18 +44,20 @@ import { getShopNotificationSettings } from '@/lib/supabase/hub-queries';
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
 // Sending address on the DNS-verified subdomain (mail.crafted3dworkshop.com).
-// Display name is deliberately generic (not "Crafted 3D Workshop") since this
-// same route sends every shop's own notification email — a future shop
-// owner's inbox shouldn't read "From: Crafted 3D Workshop" for their own
-// print-request alert. Swap the local part freely; the domain is what's
-// verified, and moves only when the dashboard gets its own domain.
-const FROM_ADDRESS = 'Print Queue Alerts <alerts@mail.crafted3dworkshop.com>';
+// Display name reads "Printcue" (the dashboard product's own committed name)
+// rather than "Crafted 3D Workshop" since this same route sends every shop's
+// own notification email — a future shop owner's inbox shouldn't read "From:
+// Crafted 3D Workshop" for their own print-request alert. The sending domain
+// itself is unchanged — that's an infra move (new Resend domain + DNS
+// verification), not a text change, and isn't needed just because the
+// dashboard has its own domain now.
+const FROM_ADDRESS = 'Printcue Alerts <alerts@mail.crafted3dworkshop.com>';
 
 // Where /hub actually lives today. See the header comment above — update via
-// the HUB_DASHBOARD_URL env var (no code change) once the dashboard moves to
-// its own domain/subdomain.
+// the HUB_DASHBOARD_URL env var (no code change) if the dashboard ever moves
+// domains again.
 const HUB_DASHBOARD_URL = (
-  process.env.HUB_DASHBOARD_URL ?? 'https://www.crafted3dworkshop.com'
+  process.env.HUB_DASHBOARD_URL ?? 'https://printcue.ink'
 ).replace(/\/+$/, '');
 
 function escapeHtml(value: string): string {
@@ -143,7 +152,7 @@ export async function POST(request: NextRequest) {
                 { name: '🎨 Filament', value: String(colorPreference), inline: false },
               ],
               description: `[🔗 View Dashboard](${HUB_DASHBOARD_URL}/hub)`,
-              footer: { text: 'C3DW Print Queue — Real-Time Alert' },
+              footer: { text: 'Printcue — Real-Time Alert' },
               timestamp: new Date().toISOString(),
             },
           ],

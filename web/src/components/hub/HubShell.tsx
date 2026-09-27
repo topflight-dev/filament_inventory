@@ -54,6 +54,13 @@
  * slide transition (framer-motion) on the main content area, keyed on the
  * active nav item, so switching Queue/Completed/Inventory feels like a real
  * view transition instead of an instant content swap.
+ *
+ * UPDATED 2026-09-27 — the sidebar's top eyebrow label ("Shop Admin") now
+ * reads "Printcue" instead: with the product name committed and its own
+ * domain (printcue.ink) live, this label is the product's own wordmark, the
+ * same role a SaaS app's logo plays in its nav — distinct from the shop's own
+ * name directly beneath it, which still identifies whichever tenant is
+ * logged in.
  * ─────────────────────────────────────────────────────────────────────────────
  */
 import { useState } from 'react';
@@ -163,7 +170,7 @@ export default function HubShell({
           >
             <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-widest text-zinc-400">
               <Settings className="h-3 w-3" />
-              Shop Admin
+              Printcue
             </span>
             {shopName && (
               <span className="block truncate text-xs font-medium text-zinc-700">{shopName}</span>

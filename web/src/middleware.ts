@@ -10,36 +10,56 @@ import { NextRequest, NextResponse } from 'next/server';
  * plan.md, website-architecture-audit.md) for the fuller history this
  * follows on from.
  *
- * Two hostnames point at this SAME Next.js deployment (one Vercel project,
- * one codebase — see the domain-split plan doc for why a second deployment
- * wasn't needed for this):
+ * UPDATED 2026-09-27 — product name/domain committed: the dashboard now has
+ * its own genuinely separate domain, printcue.ink ("Printcue"), replacing the
+ * app.crafted3dworkshop.com subdomain this middleware originally split onto.
+ * This was flagged as a one-line change (update APP_HOST) when the subdomain
+ * split first shipped, and it was — the only other change needed was adding
+ * OLD_APP_HOST below so links already shared under the subdomain (including
+ * "Share Your Link" links already sent out before this move) keep working
+ * instead of 404ing, exactly the same guarantee the marketing/app split
+ * already made for pre-split links.
+ *
+ * Three hostnames point at this SAME Next.js deployment (one Vercel project,
+ * one codebase):
  *   - crafted3dworkshop.com / www.crafted3dworkshop.com  → marketing site
- *   - app.crafted3dworkshop.com                          → dashboard product
+ *     (Luis's own shop's storefront — unaffected by the product rename)
+ *   - printcue.ink / www.printcue.ink                    → dashboard product
+ *   - app.crafted3dworkshop.com                          → legacy dashboard
+ *     subdomain, now permanently redirected to printcue.ink (see below)
  *
  * This middleware enforces that split at the edge, before any page renders:
- *   - On the app/dashboard host, only dashboard routes are served; the bare
+ *   - Any request to the legacy app.crafted3dworkshop.com host redirects to
+ *     the same path (+ query string) on printcue.ink, permanently.
+ *   - On the printcue.ink host, only dashboard routes are served; the bare
  *     root path goes straight to /hub, and anything else (a marketing page)
  *     redirects to the same path on the marketing host.
  *   - On the marketing host, dashboard routes (/hub, /request, their APIs)
- *     redirect to the same path on the app host — so any link already shared
- *     before this split (including the "Share Your Link" links already sent
- *     out) keeps working instead of 404ing.
+ *     redirect to the same path on printcue.ink — so any link already shared
+ *     under any prior domain keeps working instead of 404ing.
  *   - Any other host (localhost, a Vercel preview URL, etc.) passes straight
  *     through untouched — local dev and preview deployments keep serving
  *     everything, unsplit, exactly as before.
  *
- * Moving to a genuinely separate product domain later (not just this
- * subdomain) is a one-line change here (update APP_HOST) plus the matching
- * DNS/Vercel domain setup — nothing else in the app hardcodes this domain.
- * ShareLinkModal already builds its link from window.location.origin, and
- * the two notification "View Dashboard" links now read HUB_DASHBOARD_URL
- * instead of a hardcoded string — see api/notify-request/route.ts.
+ * ShareLinkModal already builds its link from window.location.origin, so it
+ * needs no change here — it will simply start handing out printcue.ink links
+ * the moment a shop owner opens it from the new domain. The notification
+ * "View Dashboard" links read HUB_DASHBOARD_URL, not a hardcoded string — see
+ * api/notify-request/route.ts; that env var needs updating to
+ * https://printcue.ink in Vercel alongside this deploy.
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
 const MARKETING_HOSTS = new Set(['crafted3dworkshop.com', 'www.crafted3dworkshop.com']);
 const CANONICAL_MARKETING_HOST = 'www.crafted3dworkshop.com';
-const APP_HOST = 'app.crafted3dworkshop.com';
+
+const APP_HOSTS = new Set(['printcue.ink', 'www.printcue.ink']);
+const APP_HOST = 'printcue.ink';
+
+// Legacy dashboard subdomain from the 2026-09-26 split — retired in favor of
+// printcue.ink, but permanently redirected (not removed) so nothing already
+// shared under it breaks.
+const OLD_APP_HOST = 'app.crafted3dworkshop.com';
 
 // Path prefixes that belong to the dashboard product, not the marketing site.
 const DASHBOARD_PREFIXES = ['/hub', '/request', '/api/hub', '/api/notify-request'];
@@ -59,7 +79,14 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const onAppHost = host === APP_HOST;
+  // Legacy subdomain — send everything to the real domain, path + query intact.
+  if (host === OLD_APP_HOST) {
+    const url = request.nextUrl.clone();
+    url.host = APP_HOST;
+    return NextResponse.redirect(url, 308);
+  }
+
+  const onAppHost = APP_HOSTS.has(host);
   const onMarketingHost = MARKETING_HOSTS.has(host);
 
   // Unknown host (localhost, a *.vercel.app preview, etc.) — no split, pass through.

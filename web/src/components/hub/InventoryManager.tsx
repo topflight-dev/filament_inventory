@@ -414,7 +414,7 @@ export default function InventoryManager({ showToast }: { showToast: (msg: strin
       />
 
       <div className="mt-9 pb-5 text-center text-xs text-zinc-400">
-        Filament Inventory Manager
+        Printcue — Filament Inventory Manager
       </div>
     </div>
   );
