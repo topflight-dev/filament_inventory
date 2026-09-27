@@ -172,6 +172,39 @@ export async function updateShopPasscodeHash(
   if (error) throw error;
 }
 
+/** Looks up the current shop_name for a single shop by shop_slug — used by the Hub shop-profile Route Handler. */
+export async function getShopName(
+  supabase: SupabaseClient,
+  shopSlug: string
+): Promise<string | null> {
+  const { data, error } = await supabase
+    .from('shops')
+    .select('shop_name')
+    .eq('shop_slug', shopSlug)
+    .maybeSingle();
+
+  if (error) throw error;
+  return data?.shop_name ?? null;
+}
+
+/**
+ * Writes a new shop_name for a single shop by shop_slug — used by the Hub
+ * shop-profile Route Handler, both for the editable-anytime settings field
+ * and the mandatory first-login prompt (see ShopNameModal.tsx).
+ */
+export async function updateShopName(
+  supabase: SupabaseClient,
+  shopSlug: string,
+  shopName: string
+): Promise<void> {
+  const { error } = await supabase
+    .from('shops')
+    .update({ shop_name: shopName })
+    .eq('shop_slug', shopSlug);
+
+  if (error) throw error;
+}
+
 export type ShopNotificationSettings = {
   notification_email: string | null;
   discord_webhook_url: string | null;

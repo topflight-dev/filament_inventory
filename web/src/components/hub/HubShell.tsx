@@ -69,6 +69,7 @@ import {
   Palette,
   Printer,
   Settings,
+  Store,
   type LucideIcon,
 } from 'lucide-react';
 import type { QueueStatusFilter } from '@/lib/supabase/hub-queries';
@@ -83,9 +84,13 @@ type NavKey = 'queue' | 'completed' | 'inventory';
 
 export default function HubShell({
   shopName,
+  onEditShopName,
   children,
 }: {
   shopName: string | null;
+  /** Opens the (parent-owned) ShopNameModal — see hub/page.tsx, which also
+   *  drives the mandatory first-login version of the same modal. */
+  onEditShopName?: () => void;
   children: (activeTab: TabName, queueStatusFilter: QueueStatusFilter) => React.ReactNode;
 }) {
   const [activeTab, setActiveTab] = useState<TabName>('queue');
@@ -126,6 +131,7 @@ export default function HubShell({
   ];
 
   const footerItems: { key: string; icon: LucideIcon; label: string; onClick: () => void; danger?: boolean }[] = [
+    { key: 'shopname', icon: Store, label: 'Shop Name', onClick: () => onEditShopName?.() },
     { key: 'share', icon: Link2, label: 'Share Your Link', onClick: () => setShowShareLink(true) },
     { key: 'notifications', icon: Bell, label: 'Notifications', onClick: () => setShowNotificationSettings(true) },
     { key: 'passcode', icon: KeyRound, label: 'Change Passcode', onClick: () => setShowChangePasscode(true) },
