@@ -16,7 +16,13 @@
  * hub/page.tsx) that read them for display/query-scoping — but they no
  * longer control access; the server-verified cookie is the only gate.
  *
- * Visual palette, shake-on-failure animation, and copy are unchanged.
+ * UPDATED 2026-09-26 (icon pass): 🔒/🔓/❌ replaced with lucide-react icons.
+ *
+ * UPDATED 2026-09-26 (visual redesign, phase 2): neutral light SaaS theme —
+ * see HubShell.tsx's header comment. This screen renders in place of the
+ * whole page (nothing sits behind it), so the old dark scrim/blur backdrop
+ * is gone in favor of a plain zinc-50 canvas matching the rest of the app,
+ * with a white card and a soft shadow instead of a cyan glow.
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
@@ -93,7 +99,7 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
   }
 
   if (authState === 'checking') {
-    return <div className="min-h-screen bg-slate-950" />;
+    return <div className="min-h-screen bg-zinc-50" />;
   }
 
   if (authState === 'granted') {
@@ -101,15 +107,15 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/90 backdrop-blur-xl">
+    <div className="fixed inset-0 z-[10000] flex items-center justify-center bg-zinc-50">
       <div
-        className={`w-[90%] max-w-[380px] rounded-xl border border-slate-800/80 bg-slate-900/70 px-9 pt-11 pb-9 text-center shadow-[0_24px_64px_rgba(0,0,0,0.7),0_0_0_1px_rgba(56,189,248,0.15)] ${
+        className={`w-[90%] max-w-[380px] rounded-xl border border-zinc-200 bg-white px-9 pt-11 pb-9 text-center shadow-xl ${
           shake ? 'animate-auth-shake' : ''
         }`}
       >
-        <Lock className="mx-auto mb-3 h-11 w-11 text-sky-400 drop-shadow-[0_0_12px_rgba(56,189,248,0.5)]" strokeWidth={1.75} />
-        <h2 className="mb-1.5 text-lg font-semibold tracking-wide text-slate-200">Admin Hub Login</h2>
-        <p className="mb-7 text-xs text-slate-400">Enter your shop name and passcode to continue</p>
+        <Lock className="mx-auto mb-3 h-11 w-11 text-indigo-600" strokeWidth={1.75} />
+        <h2 className="mb-1.5 text-lg font-semibold tracking-wide text-zinc-900">Admin Hub Login</h2>
+        <p className="mb-7 text-xs text-zinc-500">Enter your shop name and passcode to continue</p>
 
         <form onSubmit={handleAuth}>
           <input
@@ -119,7 +125,7 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
             placeholder="Shop Name"
             autoComplete="off"
             spellCheck={false}
-            className="mb-3.5 block w-full rounded-[10px] border border-slate-800/80 bg-slate-950 px-4 py-3.5 text-center text-sm tracking-wide text-slate-200 outline-none transition-colors placeholder:text-slate-500 focus:border-sky-500 focus:ring-2 focus:ring-sky-400"
+            className="mb-3.5 block w-full rounded-[10px] border border-zinc-300 bg-white px-4 py-3.5 text-center text-sm tracking-wide text-zinc-900 outline-none transition-colors placeholder:text-zinc-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30"
           />
           <input
             type="password"
@@ -128,19 +134,19 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
             placeholder="Passcode..."
             autoComplete="current-password"
             spellCheck={false}
-            className="mb-3.5 block w-full rounded-[10px] border border-slate-800/80 bg-slate-950 px-4 py-3.5 text-center text-sm tracking-wide text-slate-200 outline-none transition-colors placeholder:text-slate-500 focus:border-sky-500 focus:ring-2 focus:ring-sky-400"
+            className="mb-3.5 block w-full rounded-[10px] border border-zinc-300 bg-white px-4 py-3.5 text-center text-sm tracking-wide text-zinc-900 outline-none transition-colors placeholder:text-zinc-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30"
           />
           <button
             type="submit"
             disabled={verifying}
-            className="flex w-full items-center justify-center gap-2 rounded-[10px] bg-sky-500 py-3.5 text-sm font-medium tracking-wide text-slate-950 shadow-[0_4px_16px_rgba(56,189,248,0.35)] transition-colors hover:not-disabled:bg-sky-600 focus:outline-none focus:ring-2 focus:ring-sky-400 disabled:opacity-70"
+            className="flex w-full items-center justify-center gap-2 rounded-[10px] bg-indigo-600 py-3.5 text-sm font-medium tracking-wide text-white transition-colors hover:not-disabled:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 disabled:opacity-70"
           >
             {verifying ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogIn className="h-4 w-4" />}
             {verifying ? 'Verifying...' : 'Authenticate Session'}
           </button>
 
           {error && (
-            <p className="mt-3.5 flex items-center justify-center gap-1.5 text-xs font-semibold text-red-400">
+            <p className="mt-3.5 flex items-center justify-center gap-1.5 text-xs font-semibold text-red-600">
               <AlertCircle className="h-3.5 w-3.5 flex-shrink-0" />
               Invalid shop slug or passcode. Please try again.
             </p>

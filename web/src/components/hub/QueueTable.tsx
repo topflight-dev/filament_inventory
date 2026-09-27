@@ -10,21 +10,16 @@
  * branch is intentionally dropped — this is a pure web target; Electron's
  * hub.html remains the desktop notification path, untouched.
  *
- * UPDATED 2026-09-26 (design pass): emoji icons (📥📦⏳🔄🟢⚫🗑️▶✅🔄💾✖✏️🔗📝🕐⚠️)
- * replaced with lucide-react icons throughout — real spinners (Loader2 +
- * animate-spin) on every "in-flight" state instead of an hourglass emoji, and
- * a plain colored dot for the auto-refresh toggle instead of 🟢/⚫. Toast copy
- * (showToast calls) is unchanged for now — same behavior, no visual changes
- * beyond the persistent chrome.
+ * UPDATED 2026-09-26 (icon pass): emoji icons replaced with lucide-react
+ * icons throughout — real spinners (Loader2 + animate-spin) on every
+ * "in-flight" state.
  *
- * Visual palette: "Deep Oceanic Stealth" theme — arctic twilight blue canvas
- * (bg-slate-950), frosted navy slate panels (bg-slate-900/70,
- * border-slate-800/80, rounded-xl), vibrant cyan (sky-500) primary actions
- * with dark text for max contrast. Functional status colors unchanged:
- * amber (pending), sky (printing/in-progress), mint/emerald (completed).
- * Table headers shrunk to text-[11px] tracking-widest uppercase text-slate-500;
- * main row text text-sm font-medium text-slate-200; secondary row text
- * text-xs text-slate-400; row borders subtle border-slate-800/40.
+ * UPDATED 2026-09-26 (visual redesign, phase 2): retired the dark "Deep
+ * Oceanic Stealth" theme for the neutral light SaaS theme shared across
+ * every Hub/Request file — see HubShell.tsx's header comment for the full
+ * reasoning. Status colors kept functionally distinct but re-tuned for a
+ * light background: amber (pending), indigo (printing/in-progress — ties to
+ * the one brand accent), emerald (completed), red (destructive).
  * ─────────────────────────────────────────────────────────────────────────────
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -58,15 +53,15 @@ const NEXT_STATUS: Record<StatusKey, StatusKey> = {
 };
 
 const BADGE_CLASS: Record<StatusKey, string> = {
-  pending: 'bg-amber-950 text-amber-400 border border-amber-800',
-  printing: 'bg-sky-500/10 text-sky-400 border border-sky-500/40',
-  completed: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/40',
+  pending: 'bg-amber-50 text-amber-700 border border-amber-200',
+  printing: 'bg-indigo-50 text-indigo-700 border border-indigo-200',
+  completed: 'bg-emerald-50 text-emerald-700 border border-emerald-200',
 };
 
 const ACTION_BTN: Record<StatusKey, { className: string; label: string; icon: LucideIcon }> = {
-  pending: { className: 'bg-sky-500 text-slate-950 font-medium hover:bg-sky-600', label: 'Start Printing', icon: Play },
-  printing: { className: 'bg-emerald-500 text-slate-950 font-medium hover:bg-emerald-600', label: 'Mark Complete', icon: CheckCircle2 },
-  completed: { className: 'bg-slate-900/70 text-slate-400 border border-slate-800/80 hover:bg-slate-800/60', label: 'Reset to Pending', icon: RotateCcw },
+  pending: { className: 'bg-indigo-600 text-white font-medium hover:bg-indigo-700', label: 'Start Printing', icon: Play },
+  printing: { className: 'bg-emerald-600 text-white font-medium hover:bg-emerald-700', label: 'Mark Complete', icon: CheckCircle2 },
+  completed: { className: 'bg-white text-zinc-600 border border-zinc-300 hover:bg-zinc-50', label: 'Reset to Pending', icon: RotateCcw },
 };
 
 function normalizeStatus(status: string | null): StatusKey {
@@ -282,15 +277,15 @@ export default function QueueTable({
     <div>
       {/* VIEW-INDICATOR TITLE — replaces the retired hover-dropdown labels */}
       <div className="mb-4 flex items-center gap-2">
-        <h1 className="flex items-center gap-2 text-lg font-semibold tracking-wide text-slate-200">
+        <h1 className="flex items-center gap-2 text-lg font-semibold tracking-wide text-zinc-900">
           {queueStatusFilter === 'completed' ? (
-            <Package className="h-5 w-5 text-slate-400" />
+            <Package className="h-5 w-5 text-zinc-400" />
           ) : (
-            <Inbox className="h-5 w-5 text-slate-400" />
+            <Inbox className="h-5 w-5 text-zinc-400" />
           )}
           {queueStatusFilter === 'completed' ? 'Completed Archive' : 'Active Queue'}
         </h1>
-        <span className="text-xs text-slate-500">
+        <span className="text-xs text-zinc-400">
           {queueStatusFilter === 'completed'
             ? '— finished / archived print jobs'
             : '— pending & in-progress incoming jobs'}
@@ -298,11 +293,11 @@ export default function QueueTable({
       </div>
 
       {/* TOP CONTROL BAR */}
-      <div className="mb-6 flex flex-wrap items-center gap-4 rounded-xl border border-slate-800/80 bg-slate-900/70 p-4">
-        <div className="flex items-center gap-2.5 rounded-lg border-2 border-amber-400 bg-amber-950 px-5 py-2.5">
-          <Clock className="h-3.5 w-3.5 text-amber-400" />
-          <span className="text-xs font-semibold uppercase tracking-wide text-amber-400">Pending</span>
-          <span className="min-w-[2ch] text-center text-xl font-bold text-amber-400">
+      <div className="mb-6 flex flex-wrap items-center gap-4 rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
+        <div className="flex items-center gap-2.5 rounded-lg border border-amber-200 bg-amber-50 px-5 py-2.5">
+          <Clock className="h-3.5 w-3.5 text-amber-700" />
+          <span className="text-xs font-semibold uppercase tracking-wide text-amber-700">Pending</span>
+          <span className="min-w-[2ch] text-center text-xl font-bold text-amber-700">
             {loading ? '—' : pendingCount}
           </span>
         </div>
@@ -310,7 +305,7 @@ export default function QueueTable({
         <button
           onClick={fetchQueue}
           disabled={refreshing}
-          className="flex items-center gap-2 rounded-[10px] bg-sky-500 px-5 py-3 text-sm font-medium text-slate-950 transition-colors hover:not-disabled:bg-sky-600 focus:outline-none focus:ring-2 focus:ring-sky-400 disabled:bg-slate-700 disabled:text-slate-400 disabled:cursor-not-allowed"
+          className="flex items-center gap-2 rounded-[10px] bg-indigo-600 px-5 py-3 text-sm font-medium text-white transition-colors hover:not-disabled:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 disabled:bg-zinc-100 disabled:text-zinc-400 disabled:cursor-not-allowed"
         >
           {refreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
           {refreshing ? 'Refreshing...' : 'Manual Refresh'}
@@ -318,20 +313,20 @@ export default function QueueTable({
 
         <button
           onClick={() => setAutoRefresh((v) => !v)}
-          className={`flex items-center gap-2 rounded-[10px] border-2 px-5 py-3 text-sm font-medium transition-colors ${
+          className={`flex items-center gap-2 rounded-[10px] border px-5 py-3 text-sm font-medium transition-colors ${
             autoRefresh
-              ? 'border-emerald-500 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20'
-              : 'border-slate-800/80 bg-slate-900/70 text-slate-400 hover:bg-slate-800/40'
+              ? 'border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
+              : 'border-zinc-300 bg-white text-zinc-500 hover:bg-zinc-50'
           }`}
         >
-          <span className={`h-2 w-2 rounded-full ${autoRefresh ? 'bg-emerald-400' : 'bg-slate-600'}`} />
+          <span className={`h-2 w-2 rounded-full ${autoRefresh ? 'bg-emerald-500' : 'bg-zinc-300'}`} />
           {autoRefresh ? 'Auto-Refresh: ON' : 'Auto-Refresh: OFF'}
         </button>
 
         <button
           onClick={handleDeleteSelected}
           disabled={selectedIds.size === 0 || deleting}
-          className="ml-auto flex items-center gap-2 rounded-[10px] border-2 border-red-500 bg-red-950 px-5 py-3 text-sm font-medium text-red-300 transition-colors hover:not-disabled:bg-red-900 hover:not-disabled:text-white disabled:border-slate-800/80 disabled:bg-slate-900/70 disabled:text-slate-500 disabled:opacity-60 disabled:cursor-not-allowed"
+          className="ml-auto flex items-center gap-2 rounded-[10px] border border-red-300 bg-white px-5 py-3 text-sm font-medium text-red-600 transition-colors hover:not-disabled:bg-red-50 disabled:border-zinc-200 disabled:text-zinc-300 disabled:cursor-not-allowed"
         >
           {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
           {deleting ? 'Deleting...' : 'Delete Selected'}
@@ -339,9 +334,9 @@ export default function QueueTable({
       </div>
 
       {/* TABLE */}
-      <div className="w-full overflow-x-auto rounded-xl border border-slate-800/80 bg-slate-900/70">
+      <div className="w-full overflow-x-auto rounded-xl border border-zinc-200 bg-white shadow-sm">
         <table className="w-full border-collapse text-sm">
-          <thead className="border-b-2 border-slate-800/80 bg-slate-950">
+          <thead className="border-b border-zinc-200 bg-zinc-50">
             <tr>
               <th className="w-10 px-2.5 py-2 text-center">
                 <input
@@ -352,23 +347,23 @@ export default function QueueTable({
                     if (el) el.indeterminate = someChecked;
                   }}
                   onChange={(e) => toggleAll(e.target.checked)}
-                  className="h-4 w-4 cursor-pointer accent-sky-500"
+                  className="h-4 w-4 cursor-pointer accent-indigo-600"
                 />
               </th>
-              <th className="whitespace-nowrap px-3 py-2 text-left text-[11px] font-semibold tracking-widest uppercase text-slate-500">Child Name</th>
-              <th className="whitespace-nowrap px-3 py-2 text-left text-[11px] font-semibold tracking-widest uppercase text-slate-500">Project</th>
-              <th className="whitespace-nowrap px-3 py-2 text-left text-[11px] font-semibold tracking-widest uppercase text-slate-500">Filament</th>
-              <th className="whitespace-nowrap px-3 py-2 text-left text-[11px] font-semibold tracking-widest uppercase text-slate-500">Status</th>
-              <th className="whitespace-nowrap px-3 py-2 text-left text-[11px] font-semibold tracking-widest uppercase text-slate-500">Action</th>
-              <th className="whitespace-nowrap px-3 py-2 text-left text-[11px] font-semibold tracking-widest uppercase text-slate-500">Edit</th>
+              <th className="whitespace-nowrap px-3 py-2 text-left text-[11px] font-semibold tracking-widest uppercase text-zinc-400">Child Name</th>
+              <th className="whitespace-nowrap px-3 py-2 text-left text-[11px] font-semibold tracking-widest uppercase text-zinc-400">Project</th>
+              <th className="whitespace-nowrap px-3 py-2 text-left text-[11px] font-semibold tracking-widest uppercase text-zinc-400">Filament</th>
+              <th className="whitespace-nowrap px-3 py-2 text-left text-[11px] font-semibold tracking-widest uppercase text-zinc-400">Status</th>
+              <th className="whitespace-nowrap px-3 py-2 text-left text-[11px] font-semibold tracking-widest uppercase text-zinc-400">Action</th>
+              <th className="whitespace-nowrap px-3 py-2 text-left text-[11px] font-semibold tracking-widest uppercase text-zinc-400">Edit</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
               <tr>
                 <td colSpan={7}>
-                  <div className="flex flex-col items-center gap-4 py-16 text-center text-slate-400">
-                    <Loader2 className="h-9 w-9 animate-spin text-slate-500" />
+                  <div className="flex flex-col items-center gap-4 py-16 text-center text-zinc-400">
+                    <Loader2 className="h-9 w-9 animate-spin text-zinc-300" />
                     <p className="text-sm">Loading queue...</p>
                   </div>
                 </td>
@@ -376,8 +371,8 @@ export default function QueueTable({
             ) : loadError ? (
               <tr>
                 <td colSpan={7}>
-                  <div className="flex flex-col items-center gap-4 py-16 text-center text-slate-400">
-                    <AlertTriangle className="h-9 w-9 text-amber-400" />
+                  <div className="flex flex-col items-center gap-4 py-16 text-center text-zinc-400">
+                    <AlertTriangle className="h-9 w-9 text-amber-500" />
                     <p className="text-sm">Failed to load queue. Check your connection.</p>
                   </div>
                 </td>
@@ -385,7 +380,7 @@ export default function QueueTable({
             ) : jobs.length === 0 ? (
               <tr>
                 <td colSpan={7}>
-                  <div className="flex flex-col items-center gap-4 py-16 text-center text-slate-400">
+                  <div className="flex flex-col items-center gap-4 py-16 text-center text-zinc-400">
                     <CheckCircle2 className="h-9 w-9 text-emerald-500" />
                     <p className="text-sm">Queue is empty — all caught up!</p>
                   </div>
@@ -408,8 +403,8 @@ export default function QueueTable({
                 return (
                   <tr
                     key={job.id}
-                    className={`border-b border-slate-800/40 transition-colors hover:bg-white/5 ${
-                      isSelected ? 'bg-sky-500/10' : ''
+                    className={`border-b border-zinc-100 transition-colors hover:bg-zinc-50 ${
+                      isSelected ? 'bg-indigo-50/60' : ''
                     }`}
                   >
                     <td className="px-2.5 py-2 text-center">
@@ -417,7 +412,7 @@ export default function QueueTable({
                         type="checkbox"
                         checked={isSelected}
                         onChange={() => toggleCheckbox(job.id)}
-                        className="h-4 w-4 cursor-pointer accent-sky-500"
+                        className="h-4 w-4 cursor-pointer accent-indigo-600"
                       />
                     </td>
 
@@ -427,29 +422,29 @@ export default function QueueTable({
                           <input
                             value={editFields.requestor_name}
                             onChange={(e) => setEditFields((f) => ({ ...f, requestor_name: e.target.value }))}
-                            className="w-full min-w-[80px] rounded-md border border-slate-800/80 bg-slate-950 px-2 py-1 text-sm text-slate-200 outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-400"
+                            className="w-full min-w-[80px] rounded-md border border-zinc-300 bg-white px-2 py-1 text-sm text-zinc-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30"
                           />
                         </td>
                         <td className="px-3 py-2">
                           <input
                             value={editFields.project_name}
                             onChange={(e) => setEditFields((f) => ({ ...f, project_name: e.target.value }))}
-                            className="w-full min-w-[80px] rounded-md border border-slate-800/80 bg-slate-950 px-2 py-1 text-sm text-slate-200 outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-400"
+                            className="w-full min-w-[80px] rounded-md border border-zinc-300 bg-white px-2 py-1 text-sm text-zinc-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30"
                           />
                         </td>
                         <td className="px-3 py-2">
                           <input
                             value={editFields.color_preference}
                             onChange={(e) => setEditFields((f) => ({ ...f, color_preference: e.target.value }))}
-                            className="w-full min-w-[80px] rounded-md border border-slate-800/80 bg-slate-950 px-2 py-1 text-sm text-slate-200 outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-400"
+                            className="w-full min-w-[80px] rounded-md border border-zinc-300 bg-white px-2 py-1 text-sm text-zinc-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30"
                           />
                         </td>
                       </>
                     ) : (
                       <>
-                        <td className="px-3 py-2 text-sm font-medium text-slate-200">{job.requestor_name || job.child_name || '—'}</td>
-                        <td className="px-3 py-2 text-xs text-slate-400">
-                          <span className="text-sm font-medium text-slate-200">{projectTitle}</span>
+                        <td className="px-3 py-2 text-sm font-medium text-zinc-900">{job.requestor_name || job.child_name || '—'}</td>
+                        <td className="px-3 py-2 text-xs text-zinc-500">
+                          <span className="text-sm font-medium text-zinc-900">{projectTitle}</span>
                           {stlUrl && (
                             <>
                               <br />
@@ -457,7 +452,7 @@ export default function QueueTable({
                                 href={stlUrl}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1 text-xs font-semibold text-sky-400 hover:text-sky-300 hover:underline"
+                                className="inline-flex items-center gap-1 text-xs font-semibold text-indigo-600 hover:text-indigo-700 hover:underline"
                               >
                                 <Link2 className="h-3 w-3" />
                                 View Model
@@ -465,19 +460,19 @@ export default function QueueTable({
                             </>
                           )}
                           {projectNote && (
-                            <span className="mt-0.5 flex items-center gap-1 text-xs italic text-slate-500">
+                            <span className="mt-0.5 flex items-center gap-1 text-xs italic text-zinc-400">
                               <StickyNote className="h-3 w-3 flex-shrink-0" />
                               {projectNote}
                             </span>
                           )}
                           {submitDateStr && (
-                            <span className="mt-0.5 flex items-center gap-1 text-xs italic text-slate-500">
+                            <span className="mt-0.5 flex items-center gap-1 text-xs italic text-zinc-400">
                               <Clock className="h-3 w-3 flex-shrink-0" />
                               {submitDateStr}
                             </span>
                           )}
                         </td>
-                        <td className="px-3 py-2 text-xs text-slate-400">{job.color_preference || job.filament || '—'}</td>
+                        <td className="px-3 py-2 text-xs text-zinc-500">{job.color_preference || job.filament || '—'}</td>
                       </>
                     )}
 
@@ -491,7 +486,7 @@ export default function QueueTable({
                       <button
                         onClick={() => handleCycleStatus(job)}
                         disabled={isEditing || updatingId === job.id}
-                        className={`flex min-w-[150px] items-center justify-center gap-1.5 rounded-lg px-4 py-2 text-center text-sm font-medium shadow-md transition-colors disabled:!bg-slate-700 disabled:!text-slate-500 disabled:cursor-not-allowed disabled:shadow-none ${actionBtn.className}`}
+                        className={`flex min-w-[150px] items-center justify-center gap-1.5 rounded-lg px-4 py-2 text-center text-sm font-medium transition-colors disabled:!bg-zinc-100 disabled:!text-zinc-400 disabled:cursor-not-allowed ${actionBtn.className}`}
                       >
                         {updatingId === job.id ? (
                           <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -508,14 +503,14 @@ export default function QueueTable({
                           <button
                             onClick={() => saveEdit(job.id)}
                             disabled={savingEdit}
-                            className="flex min-w-[60px] items-center justify-center gap-1.5 rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-4 py-2 text-sm font-medium text-emerald-400 transition-colors hover:not-disabled:bg-emerald-500/20 hover:not-disabled:text-white"
+                            className="flex min-w-[60px] items-center justify-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-700 transition-colors hover:not-disabled:bg-emerald-100"
                           >
                             {savingEdit ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
                             Save
                           </button>
                           <button
                             onClick={cancelEdit}
-                            className="flex min-w-[60px] items-center justify-center gap-1.5 rounded-lg border border-slate-800/80 bg-slate-900/70 px-4 py-2 text-sm font-medium text-slate-400 transition-colors hover:bg-slate-800/40"
+                            className="flex min-w-[60px] items-center justify-center gap-1.5 rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-500 transition-colors hover:bg-zinc-50"
                           >
                             <X className="h-3.5 w-3.5" />
                             Cancel
@@ -524,7 +519,7 @@ export default function QueueTable({
                       ) : (
                         <button
                           onClick={() => startEdit(job)}
-                          className="flex min-w-[60px] items-center justify-center gap-1.5 rounded-lg border border-sky-500/40 bg-sky-500/10 px-4 py-2 text-sm font-medium text-sky-400 transition-colors hover:bg-sky-500/20 hover:text-white"
+                          className="flex min-w-[60px] items-center justify-center gap-1.5 rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-medium text-indigo-600 transition-colors hover:bg-indigo-100"
                         >
                           <Pencil className="h-3.5 w-3.5" />
                           Edit
@@ -539,7 +534,7 @@ export default function QueueTable({
         </table>
       </div>
 
-      <div className="mt-9 pb-5 text-center text-xs text-slate-500">
+      <div className="mt-9 pb-5 text-center text-xs text-zinc-400">
         C3DW Workshop &mdash; Print Queue Manager
       </div>
     </div>

@@ -33,7 +33,7 @@
  *     `/request` (no query string) still resolves to an active shop profile
  *     instead of throwing "Shop Not Found". Resolution order:
  *       1. `?shop=` URL search param (multi-tenant override — this is the
- *          real per-shop routing mechanism; see the Hub's "🔗 Share Your
+ *          real per-shop routing mechanism; see the Hub's "Share Your
  *          Link" modal, which hands each shop owner their own exact,
  *          session-derived link built from this param).
  *       2. `NEXT_PUBLIC_DEFAULT_SHOP_SLUG` build-time env var (per-deployment
@@ -68,11 +68,15 @@
  *     unambiguously resolves to that shop, or it visibly fails. Only local
  *     development gets the convenience fallback.
  *
- * Visual palette: "Deep Oceanic Stealth" theme — arctic twilight blue canvas
- * (bg-slate-950), frosted navy slate panels (bg-slate-900/70,
- * border-slate-800/80, rounded-xl), vibrant cyan (sky-500) primary actions
- * with dark text for max contrast, slate-200/slate-400/slate-500 text
- * hierarchy. Functional status colors (mint success / red error) unchanged.
+ * UPDATED 2026-09-26 (icon pass): emoji icons replaced with lucide-react.
+ *
+ * UPDATED 2026-09-26 (visual redesign, phase 2 — see
+ * claude/dashboard-domain-split-plan.md "Design pass" section): retired the
+ * dark "Deep Oceanic Stealth" theme for the neutral light SaaS theme shared
+ * across every Hub/Request file (zinc neutrals + one indigo accent) — see
+ * HubShell.tsx's header comment for the full reasoning. Functional status
+ * colors (mint success / red error) re-tuned for a light background but
+ * otherwise unchanged in meaning.
  */
 'use client';
 
@@ -358,12 +362,12 @@ function RequestPageInner() {
   }
 
   // -----------------------------------------------
-  // RENDER — GATE STATES ("Deep Oceanic Stealth" theme)
+  // RENDER — GATE STATES (neutral light SaaS theme)
   // -----------------------------------------------
   if (gate === 'checking') {
     return (
-      <main className="mx-auto flex min-h-screen max-w-lg flex-col items-center justify-center gap-3 bg-slate-950 px-6 py-24 text-center text-xs text-slate-400">
-        <Loader2 className="h-6 w-6 animate-spin text-slate-500" />
+      <main className="mx-auto flex min-h-screen max-w-lg flex-col items-center justify-center gap-3 bg-zinc-50 px-6 py-24 text-center text-xs text-zinc-400">
+        <Loader2 className="h-6 w-6 animate-spin text-zinc-300" />
         <p>Loading…</p>
       </main>
     );
@@ -371,11 +375,11 @@ function RequestPageInner() {
 
   if (gate === 'not-found') {
     return (
-      <main className="mx-auto min-h-screen max-w-lg bg-slate-950 px-6 py-16">
-        <div className="mx-auto max-w-md rounded-xl border border-slate-800/80 bg-slate-900/70 px-8 py-10 text-center shadow-lg">
-          <AlertTriangle className="mx-auto mb-3 h-11 w-11 text-amber-400" strokeWidth={1.75} />
-          <h2 className="mb-3 text-lg font-semibold text-slate-200">Shop Not Found</h2>
-          <p className="text-xs leading-relaxed text-slate-400">
+      <main className="mx-auto min-h-screen max-w-lg bg-zinc-50 px-6 py-16">
+        <div className="mx-auto max-w-md rounded-xl border border-zinc-200 bg-white px-8 py-10 text-center shadow-sm">
+          <AlertTriangle className="mx-auto mb-3 h-11 w-11 text-amber-500" strokeWidth={1.75} />
+          <h2 className="mb-3 text-lg font-semibold text-zinc-900">Shop Not Found</h2>
+          <p className="text-xs leading-relaxed text-zinc-500">
             Please double-check the web address provided by your 3D print operator.
           </p>
         </div>
@@ -384,8 +388,8 @@ function RequestPageInner() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950">
-      <header className="border-b border-slate-800/80 bg-slate-950 px-6 pt-10 pb-6 text-center">
+    <div className="min-h-screen bg-zinc-50">
+      <header className="border-b border-zinc-200 bg-white px-6 pt-10 pb-6 text-center">
         {shopBrand?.logo_url ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
@@ -394,25 +398,25 @@ function RequestPageInner() {
             className="mx-auto max-h-[60px] max-w-[220px] object-contain"
           />
         ) : (
-          <h1 className="text-2xl font-semibold text-slate-200">
+          <h1 className="text-2xl font-semibold text-zinc-900">
             {shopBrand?.shop_name ?? 'Print Request'}
           </h1>
         )}
-        <p className="mt-2 text-sm italic text-slate-400">
+        <p className="mt-2 text-sm italic text-zinc-500">
           Submit a job to the 3D print queue!
         </p>
       </header>
 
       <main className="px-6 py-6">
-        <div className="mx-auto w-full max-w-[500px] rounded-xl border border-slate-800/80 bg-slate-900/70 p-6 text-left shadow-lg">
-          <h2 className="mb-5 flex items-center gap-2 border-b border-slate-800/80 pb-2.5 text-base font-semibold text-slate-200">
-            <Printer className="h-[18px] w-[18px] text-sky-400" />
+        <div className="mx-auto w-full max-w-[500px] rounded-xl border border-zinc-200 bg-white p-6 text-left shadow-sm">
+          <h2 className="mb-5 flex items-center gap-2 border-b border-zinc-200 pb-2.5 text-base font-semibold text-zinc-900">
+            <Printer className="h-[18px] w-[18px] text-indigo-600" />
             Submit a Print Request
           </h2>
 
           <form onSubmit={handleSubmit} noValidate>
             <div className="mb-4">
-              <label htmlFor="requestorName" className="mb-1.5 block text-xs font-semibold text-slate-400">
+              <label htmlFor="requestorName" className="mb-1.5 block text-xs font-semibold text-zinc-500">
                 Your Name
               </label>
               <input
@@ -423,12 +427,12 @@ function RequestPageInner() {
                 placeholder="e.g., Jane Smith"
                 required
                 autoComplete="name"
-                className="block w-full rounded-md border border-slate-800/80 bg-slate-950 px-3 py-2.5 text-sm text-slate-200 transition-colors placeholder:text-slate-500 focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-400"
+                className="block w-full rounded-md border border-zinc-300 bg-white px-3 py-2.5 text-sm text-zinc-900 transition-colors placeholder:text-zinc-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
               />
             </div>
 
             <div className="mb-4">
-              <label htmlFor="projectName" className="mb-1.5 block text-xs font-semibold text-slate-400">
+              <label htmlFor="projectName" className="mb-1.5 block text-xs font-semibold text-zinc-500">
                 Project Name
               </label>
               <input
@@ -438,13 +442,13 @@ function RequestPageInner() {
                 onChange={(e) => setProjectName(e.target.value)}
                 placeholder="e.g., Desk Organizer"
                 required
-                className="block w-full rounded-md border border-slate-800/80 bg-slate-950 px-3 py-2.5 text-sm text-slate-200 transition-colors placeholder:text-slate-500 focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-400"
+                className="block w-full rounded-md border border-zinc-300 bg-white px-3 py-2.5 text-sm text-zinc-900 transition-colors placeholder:text-zinc-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
               />
             </div>
 
             <div className="mb-4">
-              <label htmlFor="modelLink" className="mb-1.5 block text-xs font-semibold text-slate-400">
-                Link to Model <span className="text-xs font-normal text-slate-500">(optional)</span>
+              <label htmlFor="modelLink" className="mb-1.5 block text-xs font-semibold text-zinc-500">
+                Link to Model <span className="text-xs font-normal text-zinc-400">(optional)</span>
               </label>
               <input
                 type="text"
@@ -452,31 +456,31 @@ function RequestPageInner() {
                 value={modelLink}
                 onChange={(e) => setModelLink(e.target.value)}
                 placeholder="e.g., https://www.thingiverse.com/thing:..."
-                className="block w-full rounded-md border border-slate-800/80 bg-slate-950 px-3 py-2.5 text-sm text-slate-200 transition-colors placeholder:text-slate-500 focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-400"
+                className="block w-full rounded-md border border-zinc-300 bg-white px-3 py-2.5 text-sm text-zinc-900 transition-colors placeholder:text-zinc-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
               />
             </div>
 
             <div className="mb-4">
-              <label className="mb-1.5 block text-xs font-semibold text-slate-400">
-                Filament Color(s) <span className="text-xs font-normal text-slate-500">(select one or more)</span>
+              <label className="mb-1.5 block text-xs font-semibold text-zinc-500">
+                Filament Color(s) <span className="text-xs font-normal text-zinc-400">(select one or more)</span>
               </label>
 
               {/* Selected color pills */}
               <div className="mt-1 flex min-h-0 flex-wrap gap-1.5">
                 {selectedFilaments.length === 0 ? (
-                  <span className="text-xs italic text-slate-500">No colors selected yet…</span>
+                  <span className="text-xs italic text-zinc-400">No colors selected yet…</span>
                 ) : (
                   selectedFilaments.map((f) => (
                     <span
                       key={f.id}
-                      className="inline-flex items-center gap-1.5 rounded-full border border-sky-500/40 bg-sky-500/10 px-2.5 py-1 text-xs font-semibold text-sky-400"
+                      className="inline-flex items-center gap-1.5 rounded-full border border-indigo-200 bg-indigo-50 px-2.5 py-1 text-xs font-semibold text-indigo-600"
                     >
                       {f.label}
                       <button
                         type="button"
                         aria-label={`Remove ${f.label}`}
                         onClick={() => removeFilament(f.id)}
-                        className="leading-none text-sky-400/70 hover:text-sky-400"
+                        className="leading-none text-indigo-600/70 hover:text-indigo-700"
                       >
                         <X className="h-3 w-3" />
                       </button>
@@ -486,28 +490,28 @@ function RequestPageInner() {
               </div>
 
               {/* Scrollable checklist */}
-              <div className="mt-2 max-h-[200px] overflow-y-auto rounded-md border border-slate-800/80 bg-slate-950 py-1">
+              <div className="mt-2 max-h-[200px] overflow-y-auto rounded-md border border-zinc-200 bg-white py-1">
                 {filamentsLoading ? (
-                  <div className="px-3 py-2.5 text-xs italic text-slate-500">Loading filaments…</div>
+                  <div className="px-3 py-2.5 text-xs italic text-zinc-400">Loading filaments…</div>
                 ) : filamentsError ? (
-                  <div className="px-3 py-2.5 text-xs italic text-slate-500">Could not load filaments</div>
+                  <div className="px-3 py-2.5 text-xs italic text-zinc-400">Could not load filaments</div>
                 ) : allFilaments.length === 0 ? (
-                  <div className="px-3 py-2.5 text-xs italic text-slate-500">No filaments available</div>
+                  <div className="px-3 py-2.5 text-xs italic text-zinc-400">No filaments available</div>
                 ) : (
                   allFilaments.map((f) => {
                     const checked = selectedIds.has(String(f.id));
                     return (
                       <label
                         key={f.id}
-                        className={`flex cursor-pointer select-none items-center gap-2.5 px-3 py-2 text-sm text-slate-200 transition-colors hover:bg-sky-500/10 ${
-                          checked ? 'bg-sky-500/15' : ''
+                        className={`flex cursor-pointer select-none items-center gap-2.5 px-3 py-2 text-sm text-zinc-900 transition-colors hover:bg-indigo-50 ${
+                          checked ? 'bg-indigo-50' : ''
                         }`}
                       >
                         <input
                           type="checkbox"
                           checked={checked}
                           onChange={(e) => toggleFilament(f, e.target.checked)}
-                          className="h-[17px] w-[17px] flex-shrink-0 accent-sky-500"
+                          className="h-[17px] w-[17px] flex-shrink-0 accent-indigo-600"
                         />
                         <span>
                           {f.color} — {f.finish}
@@ -520,9 +524,9 @@ function RequestPageInner() {
             </div>
 
             <div className="mb-4">
-              <label htmlFor="specialInstructions" className="mb-1.5 block text-xs font-semibold text-slate-400">
+              <label htmlFor="specialInstructions" className="mb-1.5 block text-xs font-semibold text-zinc-500">
                 Special Instructions / Comments{' '}
-                <span className="text-xs font-normal text-slate-500">(optional)</span>
+                <span className="text-xs font-normal text-zinc-400">(optional)</span>
               </label>
               <textarea
                 id="specialInstructions"
@@ -530,14 +534,14 @@ function RequestPageInner() {
                 onChange={(e) => setSpecialInstructions(e.target.value)}
                 placeholder="e.g., Please use a raft, print at 20% infill, or any other notes..."
                 rows={3}
-                className="block min-h-[80px] w-full resize-y rounded-md border border-slate-800/80 bg-slate-950 px-3 py-2.5 text-sm text-slate-200 transition-colors placeholder:text-slate-500 focus:border-sky-500 focus:outline-none focus:ring-2 focus:ring-sky-400"
+                className="block min-h-[80px] w-full resize-y rounded-md border border-zinc-300 bg-white px-3 py-2.5 text-sm text-zinc-900 transition-colors placeholder:text-zinc-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/30"
               />
             </div>
 
             <button
               type="submit"
               disabled={submitting}
-              className="mt-2 flex w-full items-center justify-center gap-2 rounded-full bg-sky-500 py-3.5 text-sm font-medium text-slate-950 transition-colors hover:not-disabled:bg-sky-600 focus:outline-none focus:ring-2 focus:ring-sky-400 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-400"
+              className="mt-2 flex w-full items-center justify-center gap-2 rounded-full bg-indigo-600 py-3.5 text-sm font-medium text-white transition-colors hover:not-disabled:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 disabled:cursor-not-allowed disabled:bg-zinc-200 disabled:text-zinc-400"
             >
               {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
               {submitting ? 'Submitting...' : 'Submit Request'}
@@ -547,8 +551,8 @@ function RequestPageInner() {
               <div
                 className={`mt-4 flex items-center justify-center gap-2 rounded-lg border px-4 py-3 text-center text-sm ${
                   statusMessage.type === 'success'
-                    ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-400'
-                    : 'border-red-500/40 bg-red-500/10 text-red-400'
+                    ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                    : 'border-red-200 bg-red-50 text-red-600'
                 }`}
               >
                 {statusMessage.type === 'success' ? (
@@ -570,7 +574,7 @@ export default function RequestPage() {
   return (
     <Suspense
       fallback={
-        <main className="mx-auto min-h-screen max-w-lg bg-slate-950 px-6 py-24 text-center text-xs text-slate-400">
+        <main className="mx-auto min-h-screen max-w-lg bg-zinc-50 px-6 py-24 text-center text-xs text-zinc-400">
           <p>Loading…</p>
         </main>
       }

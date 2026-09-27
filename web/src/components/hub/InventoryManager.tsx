@@ -8,16 +8,12 @@
  * in-stock toggle (with optimistic pending-state), delete, and search filter.
  * Edits to color/finish are delegated to InvEditModal.
  *
- * UPDATED 2026-09-26 (design pass): emoji icons (⏳➕🔍🎨✅❌🗑️▸▾) replaced with
- * lucide-react icons — real spinners on in-flight actions, chevrons for the
- * collapsible groups.
+ * UPDATED 2026-09-26 (icon pass): emoji icons replaced with lucide-react.
  *
- * Visual palette: "Deep Oceanic Stealth" theme — arctic twilight blue canvas
- * (bg-slate-950), frosted navy slate panels (bg-slate-900/70,
- * border-slate-800/80, rounded-xl), vibrant cyan (sky-500) primary actions
- * with dark text for max contrast, emerald for "In Stock" (functional
- * active-state indicator, unchanged), crisp slate-200 primary text,
- * slate-400/slate-500 secondary text hierarchy.
+ * UPDATED 2026-09-26 (visual redesign, phase 2): neutral light SaaS theme —
+ * see HubShell.tsx's header comment for the full reasoning. "In Stock" stays
+ * emerald as the one functional exception to the single-accent rule, since
+ * stock state needs to be scannable at a glance across a long list.
  * ─────────────────────────────────────────────────────────────────────────────
  */
 import { useCallback, useEffect, useState } from 'react';
@@ -224,25 +220,25 @@ export default function InventoryManager({ showToast }: { showToast: (msg: strin
       {/* ADD FILAMENT FORM */}
       <form
         onSubmit={handleAddFilament}
-        className="mb-6 flex flex-wrap items-end gap-4 rounded-xl border border-slate-800/80 bg-slate-900/70 p-4"
+        className="mb-6 flex flex-wrap items-end gap-4 rounded-xl border border-zinc-200 bg-white p-4 shadow-sm"
       >
         <div className="flex flex-col gap-1">
-          <label className="text-[11px] font-semibold uppercase tracking-widest text-slate-500">Color Name</label>
+          <label className="text-[11px] font-semibold uppercase tracking-widest text-zinc-400">Color Name</label>
           <input
             value={newColor}
             onChange={(e) => setNewColor(e.target.value)}
             placeholder="e.g. Galaxy Black"
             required
-            className="rounded-lg border border-slate-800/80 bg-slate-950 px-3 py-2 text-sm text-slate-200 outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-400"
+            className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30"
           />
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className="text-[11px] font-semibold uppercase tracking-widest text-slate-500">Finish</label>
+          <label className="text-[11px] font-semibold uppercase tracking-widest text-zinc-400">Finish</label>
           <select
             value={newFinish}
             onChange={(e) => handleFinishSelect(e.target.value)}
-            className="rounded-lg border border-slate-800/80 bg-slate-950 px-3 py-2 text-sm text-slate-200 outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-400"
+            className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30"
           >
             {finishes.map((f) => (
               <option key={f} value={f}>
@@ -254,12 +250,12 @@ export default function InventoryManager({ showToast }: { showToast: (msg: strin
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className="text-[11px] font-semibold uppercase tracking-widest text-slate-500">Description</label>
+          <label className="text-[11px] font-semibold uppercase tracking-widest text-zinc-400">Description</label>
           <input
             value={newDescription}
             onChange={(e) => setNewDescription(e.target.value)}
             placeholder="Optional notes"
-            className="rounded-lg border border-slate-800/80 bg-slate-950 px-3 py-2 text-sm text-slate-200 outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-400"
+            className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30"
           />
         </div>
 
@@ -270,12 +266,12 @@ export default function InventoryManager({ showToast }: { showToast: (msg: strin
             [newHex3, setNewHex3] as const,
           ].map(([val, setter], i) => (
             <div key={i} className="flex flex-col gap-1">
-              <label className="text-[11px] font-semibold uppercase tracking-widest text-slate-500">Hex {i + 1}</label>
+              <label className="text-[11px] font-semibold uppercase tracking-widest text-zinc-400">Hex {i + 1}</label>
               <input
                 type="color"
                 value={val}
                 onChange={(e) => setter(e.target.value)}
-                className="h-9 w-11 cursor-pointer rounded-lg border border-slate-800/80 bg-slate-950 p-0.5"
+                className="h-9 w-11 cursor-pointer rounded-lg border border-zinc-300 bg-white p-0.5"
               />
             </div>
           ))}
@@ -284,7 +280,7 @@ export default function InventoryManager({ showToast }: { showToast: (msg: strin
         <button
           type="submit"
           disabled={submitting}
-          className="flex items-center gap-2 rounded-lg bg-sky-500 px-5 py-2.5 text-sm font-medium text-slate-950 transition-colors hover:not-disabled:bg-sky-600 focus:outline-none focus:ring-2 focus:ring-sky-400 disabled:opacity-60"
+          className="flex items-center gap-2 rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:not-disabled:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 disabled:opacity-60"
         >
           {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
           {submitting ? 'Adding...' : 'Add Filament'}
@@ -293,24 +289,24 @@ export default function InventoryManager({ showToast }: { showToast: (msg: strin
 
       {/* SEARCH */}
       <div className="relative mb-5 max-w-md">
-        <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
+        <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search by color, finish, or description..."
-          className="w-full rounded-lg border border-slate-800/80 bg-slate-900/70 py-2.5 pl-10 pr-4 text-sm text-slate-200 outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-400"
+          className="w-full rounded-lg border border-zinc-300 bg-white py-2.5 pl-10 pr-4 text-sm text-zinc-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30"
         />
       </div>
 
       {/* GROUPED LIST */}
       {loading ? (
-        <div className="flex flex-col items-center gap-4 py-16 text-center text-slate-400">
-          <Loader2 className="h-9 w-9 animate-spin text-slate-500" />
+        <div className="flex flex-col items-center gap-4 py-16 text-center text-zinc-400">
+          <Loader2 className="h-9 w-9 animate-spin text-zinc-300" />
           <p className="text-sm">Loading inventory...</p>
         </div>
       ) : sortedFinishKeys.length === 0 ? (
-        <div className="flex flex-col items-center gap-4 py-16 text-center text-slate-400">
-          <Palette className="h-9 w-9 text-slate-500" />
+        <div className="flex flex-col items-center gap-4 py-16 text-center text-zinc-400">
+          <Palette className="h-9 w-9 text-zinc-300" />
           <p className="text-sm">No filaments found.</p>
         </div>
       ) : (
@@ -319,23 +315,23 @@ export default function InventoryManager({ showToast }: { showToast: (msg: strin
             const items = groupedByFinish[finish];
             const isCollapsed = collapsed.has(finish);
             return (
-              <div key={finish} className="overflow-hidden rounded-xl border border-slate-800/80 bg-slate-900/70">
+              <div key={finish} className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm">
                 <button
                   onClick={() => toggleGroup(finish)}
-                  className="flex w-full items-center justify-between bg-slate-950 px-4 py-3 text-left"
+                  className="flex w-full items-center justify-between bg-zinc-50 px-4 py-3 text-left"
                 >
-                  <span className="text-[11px] font-semibold uppercase tracking-widest text-slate-500">
-                    {finish} <span className="text-slate-500">({items.length})</span>
+                  <span className="text-[11px] font-semibold uppercase tracking-widest text-zinc-500">
+                    {finish} <span className="text-zinc-400">({items.length})</span>
                   </span>
                   {isCollapsed ? (
-                    <ChevronRight className="h-4 w-4 text-slate-500" />
+                    <ChevronRight className="h-4 w-4 text-zinc-400" />
                   ) : (
-                    <ChevronDown className="h-4 w-4 text-slate-500" />
+                    <ChevronDown className="h-4 w-4 text-zinc-400" />
                   )}
                 </button>
 
                 {!isCollapsed && (
-                  <div className="divide-y divide-slate-800/40">
+                  <div className="divide-y divide-zinc-100">
                     {items.map((item) => {
                       const isPending = pendingStockIds.has(item.id);
                       return (
@@ -344,7 +340,7 @@ export default function InventoryManager({ showToast }: { showToast: (msg: strin
                             {[item.colorHex1, item.colorHex2, item.colorHex3].map((hex, i) => (
                               <span
                                 key={i}
-                                className="h-6 w-6 rounded-full border border-white/20"
+                                className="h-6 w-6 rounded-full border border-zinc-200"
                                 style={{ backgroundColor: hex || '#000000' }}
                               />
                             ))}
@@ -352,14 +348,14 @@ export default function InventoryManager({ showToast }: { showToast: (msg: strin
 
                           <button
                             onClick={() => setEditTarget({ id: item.id, fieldName: 'color', currentValue: item.color })}
-                            className="min-w-[120px] text-left text-sm font-medium text-slate-200 hover:text-sky-400"
+                            className="min-w-[120px] text-left text-sm font-medium text-zinc-900 hover:text-indigo-600"
                             title="Click to edit color name"
                           >
                             {item.color}
                           </button>
 
                           {item.description && (
-                            <span className="text-xs italic text-slate-400">{item.description}</span>
+                            <span className="text-xs italic text-zinc-500">{item.description}</span>
                           )}
 
                           <button
@@ -367,8 +363,8 @@ export default function InventoryManager({ showToast }: { showToast: (msg: strin
                             disabled={isPending}
                             className={`ml-auto flex items-center gap-1.5 rounded-full px-4 py-1.5 text-[11px] font-semibold uppercase tracking-widest transition-colors disabled:opacity-60 ${
                               item.inStock
-                                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/40 hover:bg-emerald-500/20'
-                                : 'bg-red-950 text-red-400 border border-red-800 hover:bg-red-900'
+                                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100'
+                                : 'bg-red-50 text-red-600 border border-red-200 hover:bg-red-100'
                             }`}
                           >
                             {isPending ? (
@@ -383,7 +379,7 @@ export default function InventoryManager({ showToast }: { showToast: (msg: strin
 
                           <button
                             onClick={() => handleDelete(item)}
-                            className="flex items-center gap-1.5 rounded-lg border border-red-800 bg-red-950 px-3 py-1.5 text-xs font-medium text-red-300 transition-colors hover:bg-red-900 hover:text-white"
+                            className="flex items-center gap-1.5 rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-50"
                           >
                             <Trash2 className="h-3.5 w-3.5" />
                             Delete
@@ -406,7 +402,7 @@ export default function InventoryManager({ showToast }: { showToast: (msg: strin
         onSave={handleSaveEdit}
       />
 
-      <div className="mt-9 pb-5 text-center text-xs text-slate-500">
+      <div className="mt-9 pb-5 text-center text-xs text-zinc-400">
         C3DW Workshop &mdash; Filament Inventory Manager
       </div>
     </div>

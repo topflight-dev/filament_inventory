@@ -30,8 +30,9 @@
  * future option is an opaque random per-shop token in place of the readable
  * slug. Not needed today — flagged here for a future feature pass.
  *
- * Visual palette matches ChangePasscodeModal.tsx / NotificationSettingsModal.tsx
- * exactly — "Deep Oceanic Stealth" theme.
+ * UPDATED 2026-09-26 (visual redesign, phase 2): neutral light SaaS theme —
+ * matches ChangePasscodeModal.tsx / NotificationSettingsModal.tsx exactly.
+ * See HubShell.tsx's header comment for the full reasoning.
  * ─────────────────────────────────────────────────────────────────────────────
  */
 import { useEffect, useState } from 'react';
@@ -103,28 +104,28 @@ export default function ShareLinkModal({
   }
 
   return (
-    <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/70">
-      <div className="w-[90%] max-w-[440px] rounded-xl border border-slate-800/80 bg-slate-900/70 p-7 text-slate-400 shadow-2xl">
-        <h3 className="mb-1 text-[11px] font-semibold uppercase tracking-widest text-slate-500">
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-zinc-900/40 backdrop-blur-sm">
+      <div className="w-[90%] max-w-[440px] rounded-xl border border-zinc-200 bg-white p-7 text-zinc-500 shadow-xl">
+        <h3 className="mb-1 text-[11px] font-semibold uppercase tracking-widest text-zinc-400">
           Share Your Print-Request Link
         </h3>
-        <p className="mb-4 text-xs leading-relaxed text-slate-500">
+        <p className="mb-4 text-xs leading-relaxed text-zinc-500">
           This link always opens {shopName ? `${shopName}'s` : "your shop's"} print request form —
           safe to send to customers, family, or anyone you want submitting jobs to your queue. It
           will never send requests to any other shop.
         </p>
 
         {loading ? (
-          <p className="py-6 text-center text-xs italic text-slate-500">Loading…</p>
+          <p className="py-6 text-center text-xs italic text-zinc-400">Loading…</p>
         ) : link ? (
           <>
-            <div className="mb-3 block w-full break-all rounded-lg border border-slate-800/80 bg-slate-950 px-3.5 py-2.5 text-sm text-slate-200">
+            <div className="mb-3 block w-full break-all rounded-lg border border-zinc-200 bg-zinc-50 px-3.5 py-2.5 text-sm text-zinc-900">
               {link}
             </div>
             <button
               type="button"
               onClick={handleCopy}
-              className="flex w-full items-center justify-center gap-2 rounded-lg bg-sky-500 px-4.5 py-2.5 text-sm font-medium text-slate-950 transition-colors hover:bg-sky-600 focus:outline-none focus:ring-2 focus:ring-sky-400"
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4.5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/40"
             >
               {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
               {copied ? 'Copied!' : 'Copy Link'}
@@ -133,7 +134,7 @@ export default function ShareLinkModal({
         ) : null}
 
         {error && (
-          <p className="mt-2 flex items-center gap-1.5 text-xs font-semibold text-red-400">
+          <p className="mt-2 flex items-center gap-1.5 text-xs font-semibold text-red-600">
             <AlertCircle className="h-3.5 w-3.5 flex-shrink-0" />
             {error}
           </p>
@@ -143,7 +144,7 @@ export default function ShareLinkModal({
           <button
             type="button"
             onClick={handleClose}
-            className="rounded-lg border border-slate-800/80 bg-slate-950 px-4.5 py-2.5 text-sm font-medium text-slate-400 transition-colors hover:bg-slate-800/40"
+            className="rounded-lg border border-zinc-300 bg-white px-4.5 py-2.5 text-sm font-medium text-zinc-500 transition-colors hover:bg-zinc-50"
           >
             Close
           </button>

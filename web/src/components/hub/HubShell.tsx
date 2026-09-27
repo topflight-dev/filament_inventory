@@ -30,19 +30,22 @@
  * makes the whole feature trustworthy — see ShareLinkModal.tsx's own header
  * comment for the full incident this closes out.
  *
- * UPDATED 2026-09-26 (design pass — see claude/dashboard-domain-split-plan.md
- * "Follow-up work" for the fuller context on why this dashboard's visual
- * polish matters now that it's a standalone product): every emoji used as a
- * functional icon (☰🖨️📦🎨🔗🔔🔑🚪⚙️) is replaced with a real icon from
- * lucide-react — consistent stroke width/sizing that actually matches the
- * theme, instead of OS-dependent emoji glyphs. Purely visual; no behavior
- * changed.
+ * UPDATED 2026-09-26 (icon pass): every emoji used as a functional icon
+ * (☰🖨️📦🎨🔗🔔🔑🚪⚙️) replaced with a real lucide-react icon.
  *
- * Visual palette: "Deep Oceanic Stealth" theme — arctic twilight blue canvas
- * (bg-slate-950), frosted navy slate panels (bg-slate-900/70,
- * border-slate-800/80, rounded-xl), vibrant cyan (sky-500) primary/active
- * accents with dark text for max contrast, slate-200/slate-400/slate-500
- * text hierarchy.
+ * UPDATED 2026-09-26 (visual redesign, phase 2 — see
+ * claude/dashboard-domain-split-plan.md "Design pass" section for the full
+ * reasoning): retired the "Deep Oceanic Stealth" dark theme in favor of a
+ * neutral, light SaaS theme — zinc neutrals (bg-zinc-50 canvas, white
+ * panels, zinc-200 borders, zinc-900/500/400 text hierarchy) with a single
+ * indigo accent (indigo-600), deliberately decoupled from both the warm
+ * "Creative Studio" marketing-site palette and the old dark cyan theme.
+ * Reasoning: Luis wants this dashboard to eventually be a standalone
+ * product other shop owners use under their own branding, so it shouldn't
+ * carry Crafted 3D Workshop's own colors — but it also needed to stop
+ * feeling "rough," which came from juggling too many competing hues at
+ * once (slate+sky+amber+emerald+red). This theme is shared verbatim across
+ * every Hub/Request file in this pass.
  * ─────────────────────────────────────────────────────────────────────────────
  */
 import { useState } from 'react';
@@ -120,20 +123,20 @@ export default function HubShell({
   ];
 
   return (
-    <div className="flex min-h-screen bg-slate-950 text-slate-200">
+    <div className="flex min-h-screen bg-zinc-50 text-zinc-900">
       {/* VERTICAL SIDEBAR */}
       <aside
-        className={`flex flex-shrink-0 flex-col border-r border-slate-800/80 bg-slate-950 transition-all duration-300 ${
+        className={`flex flex-shrink-0 flex-col border-r border-zinc-200 bg-white transition-all duration-300 ${
           collapsed ? 'w-16' : 'w-64'
         }`}
       >
         {/* SIDEBAR HEADER — shop name pinned to top */}
-        <div className="flex items-center gap-2 border-b border-slate-800/80 px-3 py-3">
+        <div className="flex items-center gap-2 border-b border-zinc-200 px-3 py-3">
           <button
             type="button"
             onClick={() => setCollapsed((v) => !v)}
             aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border border-slate-800/80 bg-slate-900/70 text-slate-400 transition-colors hover:border-sky-500 hover:text-sky-400"
+            className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border border-zinc-200 bg-white text-zinc-500 transition-colors hover:border-indigo-300 hover:text-indigo-600"
           >
             {collapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
           </button>
@@ -142,12 +145,12 @@ export default function HubShell({
               collapsed ? 'max-w-0 opacity-0' : 'max-w-[180px] opacity-100'
             }`}
           >
-            <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-widest text-slate-500">
+            <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-widest text-zinc-400">
               <Settings className="h-3 w-3" />
               C3DW Admin
             </span>
             {shopName && (
-              <span className="block truncate text-xs font-medium text-slate-300">{shopName}</span>
+              <span className="block truncate text-xs font-medium text-zinc-700">{shopName}</span>
             )}
           </div>
         </div>
@@ -165,8 +168,8 @@ export default function HubShell({
                 title={collapsed ? item.label : undefined}
                 className={`flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium tracking-wide transition-colors ${
                   isActive
-                    ? 'bg-sky-500/10 text-sky-400'
-                    : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
+                    ? 'bg-indigo-50 text-indigo-600'
+                    : 'text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900'
                 }`}
               >
                 <Icon className="h-[18px] w-[18px] flex-shrink-0" strokeWidth={2} />
@@ -183,7 +186,7 @@ export default function HubShell({
         </nav>
 
         {/* FOOTER — Share Link, Notifications, Change Passcode, Sign Out — pinned to bottom */}
-        <div className="border-t border-slate-800/80 px-2 py-3">
+        <div className="border-t border-zinc-200 px-2 py-3">
           {footerItems.map((item) => {
             const Icon = item.icon;
             return (
@@ -191,10 +194,10 @@ export default function HubShell({
                 key={item.key}
                 onClick={item.onClick}
                 title={collapsed ? item.label : undefined}
-                className={`mb-2 flex w-full items-center gap-3 rounded-xl border border-slate-800/80 bg-slate-900/70 px-3 py-2.5 text-xs font-medium tracking-wide text-slate-400 transition-colors last:mb-0 ${
+                className={`mb-2 flex w-full items-center gap-3 rounded-xl border border-zinc-200 bg-white px-3 py-2.5 text-xs font-medium tracking-wide text-zinc-500 transition-colors last:mb-0 ${
                   item.danger
-                    ? 'hover:border-red-500 hover:bg-red-950 hover:text-red-400'
-                    : 'hover:border-sky-500 hover:text-sky-400'
+                    ? 'hover:border-red-300 hover:bg-red-50 hover:text-red-600'
+                    : 'hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-600'
                 }`}
               >
                 <Icon className="h-4 w-4 flex-shrink-0" strokeWidth={2} />
@@ -225,11 +228,11 @@ export default function HubShell({
 
       <style>{`
         .hub-scroll { scrollbar-width: thin; scrollbar-color: transparent transparent; }
-        .hub-scroll:hover { scrollbar-color: rgba(148,163,184,0.25) transparent; }
+        .hub-scroll:hover { scrollbar-color: rgba(161,161,170,0.4) transparent; }
         .hub-scroll::-webkit-scrollbar { width: 4px; }
         .hub-scroll::-webkit-scrollbar-track { background: transparent; }
         .hub-scroll::-webkit-scrollbar-thumb { background: transparent; border-radius: 4px; }
-        .hub-scroll:hover::-webkit-scrollbar-thumb { background: rgba(148,163,184,0.25); }
+        .hub-scroll:hover::-webkit-scrollbar-thumb { background: rgba(161,161,170,0.4); }
       `}</style>
     </div>
   );
