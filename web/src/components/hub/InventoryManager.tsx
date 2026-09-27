@@ -8,6 +8,10 @@
  * in-stock toggle (with optimistic pending-state), delete, and search filter.
  * Edits to color/finish are delegated to InvEditModal.
  *
+ * UPDATED 2026-09-26 (design pass): emoji icons (⏳➕🔍🎨✅❌🗑️▸▾) replaced with
+ * lucide-react icons — real spinners on in-flight actions, chevrons for the
+ * collapsible groups.
+ *
  * Visual palette: "Deep Oceanic Stealth" theme — arctic twilight blue canvas
  * (bg-slate-950), frosted navy slate panels (bg-slate-900/70,
  * border-slate-800/80, rounded-xl), vibrant cyan (sky-500) primary actions
@@ -17,6 +21,17 @@
  * ─────────────────────────────────────────────────────────────────────────────
  */
 import { useCallback, useEffect, useState } from 'react';
+import {
+  CheckCircle2,
+  ChevronDown,
+  ChevronRight,
+  Loader2,
+  Palette,
+  Plus,
+  Search,
+  Trash2,
+  XCircle,
+} from 'lucide-react';
 import { type ColorItem } from '@/lib/supabase/hub-queries';
 import InvEditModal, { type InvEditTarget } from './InvEditModal';
 
@@ -269,31 +284,33 @@ export default function InventoryManager({ showToast }: { showToast: (msg: strin
         <button
           type="submit"
           disabled={submitting}
-          className="rounded-lg bg-sky-500 px-5 py-2.5 text-sm font-medium text-slate-950 transition-colors hover:not-disabled:bg-sky-600 focus:outline-none focus:ring-2 focus:ring-sky-400 disabled:opacity-60"
+          className="flex items-center gap-2 rounded-lg bg-sky-500 px-5 py-2.5 text-sm font-medium text-slate-950 transition-colors hover:not-disabled:bg-sky-600 focus:outline-none focus:ring-2 focus:ring-sky-400 disabled:opacity-60"
         >
-          {submitting ? '⏳ Adding...' : '➕ Add Filament'}
+          {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+          {submitting ? 'Adding...' : 'Add Filament'}
         </button>
       </form>
 
       {/* SEARCH */}
-      <div className="mb-5">
+      <div className="relative mb-5 max-w-md">
+        <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
         <input
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="🔍 Search by color, finish, or description..."
-          className="w-full max-w-md rounded-lg border border-slate-800/80 bg-slate-900/70 px-4 py-2.5 text-sm text-slate-200 outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-400"
+          placeholder="Search by color, finish, or description..."
+          className="w-full rounded-lg border border-slate-800/80 bg-slate-900/70 py-2.5 pl-10 pr-4 text-sm text-slate-200 outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-400"
         />
       </div>
 
       {/* GROUPED LIST */}
       {loading ? (
-        <div className="py-16 text-center text-slate-400">
-          <span className="mb-4 block text-5xl">⏳</span>
+        <div className="flex flex-col items-center gap-4 py-16 text-center text-slate-400">
+          <Loader2 className="h-9 w-9 animate-spin text-slate-500" />
           <p className="text-sm">Loading inventory...</p>
         </div>
       ) : sortedFinishKeys.length === 0 ? (
-        <div className="py-16 text-center text-slate-400">
-          <span className="mb-4 block text-5xl">🎨</span>
+        <div className="flex flex-col items-center gap-4 py-16 text-center text-slate-400">
+          <Palette className="h-9 w-9 text-slate-500" />
           <p className="text-sm">No filaments found.</p>
         </div>
       ) : (
@@ -310,7 +327,11 @@ export default function InventoryManager({ showToast }: { showToast: (msg: strin
                   <span className="text-[11px] font-semibold uppercase tracking-widest text-slate-500">
                     {finish} <span className="text-slate-500">({items.length})</span>
                   </span>
-                  <span className="text-slate-500">{isCollapsed ? '▸' : '▾'}</span>
+                  {isCollapsed ? (
+                    <ChevronRight className="h-4 w-4 text-slate-500" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4 text-slate-500" />
+                  )}
                 </button>
 
                 {!isCollapsed && (
@@ -344,20 +365,28 @@ export default function InventoryManager({ showToast }: { showToast: (msg: strin
                           <button
                             onClick={() => handleToggleStock(item)}
                             disabled={isPending}
-                            className={`ml-auto rounded-full px-4 py-1.5 text-[11px] font-semibold uppercase tracking-widest transition-colors disabled:opacity-60 ${
+                            className={`ml-auto flex items-center gap-1.5 rounded-full px-4 py-1.5 text-[11px] font-semibold uppercase tracking-widest transition-colors disabled:opacity-60 ${
                               item.inStock
                                 ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/40 hover:bg-emerald-500/20'
                                 : 'bg-red-950 text-red-400 border border-red-800 hover:bg-red-900'
                             }`}
                           >
-                            {isPending ? '⏳' : item.inStock ? '✅ In Stock' : '❌ Out of Stock'}
+                            {isPending ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : item.inStock ? (
+                              <CheckCircle2 className="h-3 w-3" />
+                            ) : (
+                              <XCircle className="h-3 w-3" />
+                            )}
+                            {isPending ? 'Updating' : item.inStock ? 'In Stock' : 'Out of Stock'}
                           </button>
 
                           <button
                             onClick={() => handleDelete(item)}
-                            className="rounded-lg border border-red-800 bg-red-950 px-3 py-1.5 text-xs font-medium text-red-300 transition-colors hover:bg-red-900 hover:text-white"
+                            className="flex items-center gap-1.5 rounded-lg border border-red-800 bg-red-950 px-3 py-1.5 text-xs font-medium text-red-300 transition-colors hover:bg-red-900 hover:text-white"
                           >
-                            🗑️ Delete
+                            <Trash2 className="h-3.5 w-3.5" />
+                            Delete
                           </button>
                         </div>
                       );

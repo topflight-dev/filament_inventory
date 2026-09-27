@@ -21,9 +21,19 @@
   --font-mono: var(--font-geist-mono);
 }
 
+/*
+ * UPDATED 2026-09-26 (design pass): this used to hardcode
+ * `font-family: Arial, Helvetica, sans-serif` here, which silently
+ * overrode the Geist font already being loaded via next/font/google in
+ * layout.tsx (geistSans.variable / --font-geist-sans) — the whole site
+ * was rendering in Arial even though Geist was being downloaded and
+ * applied to <html>. Removed so `--font-sans` (Geist) from the @theme
+ * block above actually takes effect. Tailwind's Preflight base styles
+ * already default `font-family` to `var(--font-sans)`, so no explicit
+ * declaration is needed here.
+ */
 html,
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
 }

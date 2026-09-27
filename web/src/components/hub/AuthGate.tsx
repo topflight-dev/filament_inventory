@@ -21,6 +21,7 @@
  */
 
 import { FormEvent, useEffect, useState } from 'react';
+import { AlertCircle, Loader2, Lock, LogIn } from 'lucide-react';
 
 type AuthState = 'checking' | 'locked' | 'granted';
 
@@ -106,7 +107,7 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
           shake ? 'animate-auth-shake' : ''
         }`}
       >
-        <span className="mb-3 block text-[2.8rem] drop-shadow-[0_0_12px_rgba(56,189,248,0.5)]">🔒</span>
+        <Lock className="mx-auto mb-3 h-11 w-11 text-sky-400 drop-shadow-[0_0_12px_rgba(56,189,248,0.5)]" strokeWidth={1.75} />
         <h2 className="mb-1.5 text-lg font-semibold tracking-wide text-slate-200">Admin Hub Login</h2>
         <p className="mb-7 text-xs text-slate-400">Enter your shop name and passcode to continue</p>
 
@@ -132,14 +133,16 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
           <button
             type="submit"
             disabled={verifying}
-            className="block w-full rounded-[10px] bg-sky-500 py-3.5 text-sm font-medium tracking-wide text-slate-950 shadow-[0_4px_16px_rgba(56,189,248,0.35)] transition-colors hover:not-disabled:bg-sky-600 focus:outline-none focus:ring-2 focus:ring-sky-400 disabled:opacity-70"
+            className="flex w-full items-center justify-center gap-2 rounded-[10px] bg-sky-500 py-3.5 text-sm font-medium tracking-wide text-slate-950 shadow-[0_4px_16px_rgba(56,189,248,0.35)] transition-colors hover:not-disabled:bg-sky-600 focus:outline-none focus:ring-2 focus:ring-sky-400 disabled:opacity-70"
           >
-            {verifying ? '⏳ Verifying...' : '🔓 Authenticate Session'}
+            {verifying ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogIn className="h-4 w-4" />}
+            {verifying ? 'Verifying...' : 'Authenticate Session'}
           </button>
 
           {error && (
-            <p className="mt-3.5 text-xs font-semibold text-red-400">
-              ❌ Invalid shop slug or passcode. Please try again.
+            <p className="mt-3.5 flex items-center justify-center gap-1.5 text-xs font-semibold text-red-400">
+              <AlertCircle className="h-3.5 w-3.5 flex-shrink-0" />
+              Invalid shop slug or passcode. Please try again.
             </p>
           )}
         </form>

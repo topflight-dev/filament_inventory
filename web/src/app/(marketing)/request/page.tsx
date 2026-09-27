@@ -78,6 +78,7 @@
 
 import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { AlertTriangle, CheckCircle2, Loader2, Printer, Send, X, XCircle } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 
 type Filament = {
@@ -326,7 +327,7 @@ function RequestPageInner() {
       const { error } = await supabase.from('print_jobs').insert([payload]);
       if (error) throw error;
 
-      setStatusMessage({ text: '✅ Request added to the queue!', type: 'success' });
+      setStatusMessage({ text: 'Request added to the queue!', type: 'success' });
       setRequestorName('');
       setProjectName('');
       setModelLink('');
@@ -350,7 +351,7 @@ function RequestPageInner() {
     } catch (err) {
       console.error('Submission error:', err);
       const message = err instanceof Error ? err.message : 'Unknown error';
-      setStatusMessage({ text: `❌ Submission failed: ${message}`, type: 'error' });
+      setStatusMessage({ text: `Submission failed: ${message}`, type: 'error' });
     } finally {
       setSubmitting(false);
     }
@@ -361,7 +362,8 @@ function RequestPageInner() {
   // -----------------------------------------------
   if (gate === 'checking') {
     return (
-      <main className="mx-auto min-h-screen max-w-lg bg-slate-950 px-6 py-24 text-center text-xs text-slate-400">
+      <main className="mx-auto flex min-h-screen max-w-lg flex-col items-center justify-center gap-3 bg-slate-950 px-6 py-24 text-center text-xs text-slate-400">
+        <Loader2 className="h-6 w-6 animate-spin text-slate-500" />
         <p>Loading…</p>
       </main>
     );
@@ -371,7 +373,7 @@ function RequestPageInner() {
     return (
       <main className="mx-auto min-h-screen max-w-lg bg-slate-950 px-6 py-16">
         <div className="mx-auto max-w-md rounded-xl border border-slate-800/80 bg-slate-900/70 px-8 py-10 text-center shadow-lg">
-          <span className="mb-3 block text-5xl">⚠️</span>
+          <AlertTriangle className="mx-auto mb-3 h-11 w-11 text-amber-400" strokeWidth={1.75} />
           <h2 className="mb-3 text-lg font-semibold text-slate-200">Shop Not Found</h2>
           <p className="text-xs leading-relaxed text-slate-400">
             Please double-check the web address provided by your 3D print operator.
@@ -403,8 +405,9 @@ function RequestPageInner() {
 
       <main className="px-6 py-6">
         <div className="mx-auto w-full max-w-[500px] rounded-xl border border-slate-800/80 bg-slate-900/70 p-6 text-left shadow-lg">
-          <h2 className="mb-5 border-b border-slate-800/80 pb-2.5 text-base font-semibold text-slate-200">
-            🖨️ Submit a Print Request
+          <h2 className="mb-5 flex items-center gap-2 border-b border-slate-800/80 pb-2.5 text-base font-semibold text-slate-200">
+            <Printer className="h-[18px] w-[18px] text-sky-400" />
+            Submit a Print Request
           </h2>
 
           <form onSubmit={handleSubmit} noValidate>
@@ -475,7 +478,7 @@ function RequestPageInner() {
                         onClick={() => removeFilament(f.id)}
                         className="leading-none text-sky-400/70 hover:text-sky-400"
                       >
-                        ✕
+                        <X className="h-3 w-3" />
                       </button>
                     </span>
                   ))
@@ -534,19 +537,25 @@ function RequestPageInner() {
             <button
               type="submit"
               disabled={submitting}
-              className="mt-2 w-full rounded-full bg-sky-500 py-3.5 text-sm font-medium text-slate-950 transition-colors hover:not-disabled:bg-sky-600 focus:outline-none focus:ring-2 focus:ring-sky-400 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-400"
+              className="mt-2 flex w-full items-center justify-center gap-2 rounded-full bg-sky-500 py-3.5 text-sm font-medium text-slate-950 transition-colors hover:not-disabled:bg-sky-600 focus:outline-none focus:ring-2 focus:ring-sky-400 disabled:cursor-not-allowed disabled:bg-slate-700 disabled:text-slate-400"
             >
-              {submitting ? 'Submitting...' : '🚀 Submit Request'}
+              {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+              {submitting ? 'Submitting...' : 'Submit Request'}
             </button>
 
             {statusMessage && (
               <div
-                className={`mt-4 rounded-lg border px-4 py-3 text-center text-sm ${
+                className={`mt-4 flex items-center justify-center gap-2 rounded-lg border px-4 py-3 text-center text-sm ${
                   statusMessage.type === 'success'
                     ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-400'
                     : 'border-red-500/40 bg-red-500/10 text-red-400'
                 }`}
               >
+                {statusMessage.type === 'success' ? (
+                  <CheckCircle2 className="h-4 w-4 flex-shrink-0" />
+                ) : (
+                  <XCircle className="h-4 w-4 flex-shrink-0" />
+                )}
                 {statusMessage.text}
               </div>
             )}

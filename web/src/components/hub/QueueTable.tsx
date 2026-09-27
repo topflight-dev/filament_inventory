@@ -10,6 +10,13 @@
  * branch is intentionally dropped — this is a pure web target; Electron's
  * hub.html remains the desktop notification path, untouched.
  *
+ * UPDATED 2026-09-26 (design pass): emoji icons (📥📦⏳🔄🟢⚫🗑️▶✅🔄💾✖✏️🔗📝🕐⚠️)
+ * replaced with lucide-react icons throughout — real spinners (Loader2 +
+ * animate-spin) on every "in-flight" state instead of an hourglass emoji, and
+ * a plain colored dot for the auto-refresh toggle instead of 🟢/⚫. Toast copy
+ * (showToast calls) is unchanged for now — same behavior, no visual changes
+ * beyond the persistent chrome.
+ *
  * Visual palette: "Deep Oceanic Stealth" theme — arctic twilight blue canvas
  * (bg-slate-950), frosted navy slate panels (bg-slate-900/70,
  * border-slate-800/80, rounded-xl), vibrant cyan (sky-500) primary actions
@@ -21,6 +28,24 @@
  * ─────────────────────────────────────────────────────────────────────────────
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  AlertTriangle,
+  CheckCircle2,
+  Clock,
+  Inbox,
+  Link2,
+  Loader2,
+  Package,
+  Pencil,
+  Play,
+  RefreshCw,
+  RotateCcw,
+  Save,
+  StickyNote,
+  Trash2,
+  X,
+  type LucideIcon,
+} from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { type PrintJob, type QueueStatusFilter } from '@/lib/supabase/hub-queries';
 
@@ -38,10 +63,10 @@ const BADGE_CLASS: Record<StatusKey, string> = {
   completed: 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/40',
 };
 
-const ACTION_BTN: Record<StatusKey, { className: string; label: string }> = {
-  pending: { className: 'bg-sky-500 text-slate-950 font-medium hover:bg-sky-600', label: '▶ Start Printing' },
-  printing: { className: 'bg-emerald-500 text-slate-950 font-medium hover:bg-emerald-600', label: '✅ Mark Complete' },
-  completed: { className: 'bg-slate-900/70 text-slate-400 border border-slate-800/80 hover:bg-slate-800/60', label: '🔄 Reset to Pending' },
+const ACTION_BTN: Record<StatusKey, { className: string; label: string; icon: LucideIcon }> = {
+  pending: { className: 'bg-sky-500 text-slate-950 font-medium hover:bg-sky-600', label: 'Start Printing', icon: Play },
+  printing: { className: 'bg-emerald-500 text-slate-950 font-medium hover:bg-emerald-600', label: 'Mark Complete', icon: CheckCircle2 },
+  completed: { className: 'bg-slate-900/70 text-slate-400 border border-slate-800/80 hover:bg-slate-800/60', label: 'Reset to Pending', icon: RotateCcw },
 };
 
 function normalizeStatus(status: string | null): StatusKey {
@@ -257,8 +282,13 @@ export default function QueueTable({
     <div>
       {/* VIEW-INDICATOR TITLE — replaces the retired hover-dropdown labels */}
       <div className="mb-4 flex items-center gap-2">
-        <h1 className="text-lg font-semibold tracking-wide text-slate-200">
-          {queueStatusFilter === 'completed' ? '📦 Completed Archive' : '📥 Active Queue'}
+        <h1 className="flex items-center gap-2 text-lg font-semibold tracking-wide text-slate-200">
+          {queueStatusFilter === 'completed' ? (
+            <Package className="h-5 w-5 text-slate-400" />
+          ) : (
+            <Inbox className="h-5 w-5 text-slate-400" />
+          )}
+          {queueStatusFilter === 'completed' ? 'Completed Archive' : 'Active Queue'}
         </h1>
         <span className="text-xs text-slate-500">
           {queueStatusFilter === 'completed'
@@ -270,38 +300,41 @@ export default function QueueTable({
       {/* TOP CONTROL BAR */}
       <div className="mb-6 flex flex-wrap items-center gap-4 rounded-xl border border-slate-800/80 bg-slate-900/70 p-4">
         <div className="flex items-center gap-2.5 rounded-lg border-2 border-amber-400 bg-amber-950 px-5 py-2.5">
-          <span className="text-xs font-semibold uppercase tracking-wide text-amber-400">⏳ Pending</span>
+          <Clock className="h-3.5 w-3.5 text-amber-400" />
+          <span className="text-xs font-semibold uppercase tracking-wide text-amber-400">Pending</span>
           <span className="min-w-[2ch] text-center text-xl font-bold text-amber-400">
             {loading ? '—' : pendingCount}
           </span>
         </div>
 
-
         <button
           onClick={fetchQueue}
           disabled={refreshing}
-          className="rounded-[10px] bg-sky-500 px-5 py-3 text-sm font-medium text-slate-950 transition-colors hover:not-disabled:bg-sky-600 focus:outline-none focus:ring-2 focus:ring-sky-400 disabled:bg-slate-700 disabled:text-slate-400 disabled:cursor-not-allowed"
+          className="flex items-center gap-2 rounded-[10px] bg-sky-500 px-5 py-3 text-sm font-medium text-slate-950 transition-colors hover:not-disabled:bg-sky-600 focus:outline-none focus:ring-2 focus:ring-sky-400 disabled:bg-slate-700 disabled:text-slate-400 disabled:cursor-not-allowed"
         >
-          {refreshing ? '⏳ Refreshing...' : '🔄 Manual Refresh'}
+          {refreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+          {refreshing ? 'Refreshing...' : 'Manual Refresh'}
         </button>
 
         <button
           onClick={() => setAutoRefresh((v) => !v)}
-          className={`rounded-[10px] border-2 px-5 py-3 text-sm font-medium transition-colors ${
+          className={`flex items-center gap-2 rounded-[10px] border-2 px-5 py-3 text-sm font-medium transition-colors ${
             autoRefresh
               ? 'border-emerald-500 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20'
               : 'border-slate-800/80 bg-slate-900/70 text-slate-400 hover:bg-slate-800/40'
           }`}
         >
-          {autoRefresh ? '🟢 Auto-Refresh: ON' : '⚫ Auto-Refresh: OFF'}
+          <span className={`h-2 w-2 rounded-full ${autoRefresh ? 'bg-emerald-400' : 'bg-slate-600'}`} />
+          {autoRefresh ? 'Auto-Refresh: ON' : 'Auto-Refresh: OFF'}
         </button>
 
         <button
           onClick={handleDeleteSelected}
           disabled={selectedIds.size === 0 || deleting}
-          className="ml-auto rounded-[10px] border-2 border-red-500 bg-red-950 px-5 py-3 text-sm font-medium text-red-300 transition-colors hover:not-disabled:bg-red-900 hover:not-disabled:text-white disabled:border-slate-800/80 disabled:bg-slate-900/70 disabled:text-slate-500 disabled:opacity-60 disabled:cursor-not-allowed"
+          className="ml-auto flex items-center gap-2 rounded-[10px] border-2 border-red-500 bg-red-950 px-5 py-3 text-sm font-medium text-red-300 transition-colors hover:not-disabled:bg-red-900 hover:not-disabled:text-white disabled:border-slate-800/80 disabled:bg-slate-900/70 disabled:text-slate-500 disabled:opacity-60 disabled:cursor-not-allowed"
         >
-          {deleting ? '⏳ Deleting...' : '🗑️ Delete Selected'}
+          {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+          {deleting ? 'Deleting...' : 'Delete Selected'}
         </button>
       </div>
 
@@ -334,8 +367,8 @@ export default function QueueTable({
             {loading ? (
               <tr>
                 <td colSpan={7}>
-                  <div className="py-16 text-center text-slate-400">
-                    <span className="mb-4 block text-5xl">⏳</span>
+                  <div className="flex flex-col items-center gap-4 py-16 text-center text-slate-400">
+                    <Loader2 className="h-9 w-9 animate-spin text-slate-500" />
                     <p className="text-sm">Loading queue...</p>
                   </div>
                 </td>
@@ -343,8 +376,8 @@ export default function QueueTable({
             ) : loadError ? (
               <tr>
                 <td colSpan={7}>
-                  <div className="py-16 text-center text-slate-400">
-                    <span className="mb-4 block text-5xl">⚠️</span>
+                  <div className="flex flex-col items-center gap-4 py-16 text-center text-slate-400">
+                    <AlertTriangle className="h-9 w-9 text-amber-400" />
                     <p className="text-sm">Failed to load queue. Check your connection.</p>
                   </div>
                 </td>
@@ -352,8 +385,8 @@ export default function QueueTable({
             ) : jobs.length === 0 ? (
               <tr>
                 <td colSpan={7}>
-                  <div className="py-16 text-center text-slate-400">
-                    <span className="mb-4 block text-5xl">✅</span>
+                  <div className="flex flex-col items-center gap-4 py-16 text-center text-slate-400">
+                    <CheckCircle2 className="h-9 w-9 text-emerald-500" />
                     <p className="text-sm">Queue is empty — all caught up!</p>
                   </div>
                 </td>
@@ -370,6 +403,7 @@ export default function QueueTable({
                 const stlUrl = (job.stl_url || '').trim();
                 const submitDateStr = formatSubmitDate(job.created_at);
                 const actionBtn = ACTION_BTN[statusKey];
+                const ActionIcon = actionBtn.icon;
 
                 return (
                   <tr
@@ -423,17 +457,24 @@ export default function QueueTable({
                                 href={stlUrl}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-xs font-semibold text-sky-400 hover:text-sky-300 hover:underline"
+                                className="inline-flex items-center gap-1 text-xs font-semibold text-sky-400 hover:text-sky-300 hover:underline"
                               >
-                                🔗 View Model
+                                <Link2 className="h-3 w-3" />
+                                View Model
                               </a>
                             </>
                           )}
                           {projectNote && (
-                            <span className="mt-0.5 block text-xs italic text-slate-500">📝 {projectNote}</span>
+                            <span className="mt-0.5 flex items-center gap-1 text-xs italic text-slate-500">
+                              <StickyNote className="h-3 w-3 flex-shrink-0" />
+                              {projectNote}
+                            </span>
                           )}
                           {submitDateStr && (
-                            <span className="mt-0.5 block text-xs italic text-slate-500">🕐 {submitDateStr}</span>
+                            <span className="mt-0.5 flex items-center gap-1 text-xs italic text-slate-500">
+                              <Clock className="h-3 w-3 flex-shrink-0" />
+                              {submitDateStr}
+                            </span>
                           )}
                         </td>
                         <td className="px-3 py-2 text-xs text-slate-400">{job.color_preference || job.filament || '—'}</td>
@@ -450,9 +491,14 @@ export default function QueueTable({
                       <button
                         onClick={() => handleCycleStatus(job)}
                         disabled={isEditing || updatingId === job.id}
-                        className={`min-w-[140px] rounded-lg px-4 py-2 text-center text-sm font-medium shadow-md transition-colors disabled:!bg-slate-700 disabled:!text-slate-500 disabled:cursor-not-allowed disabled:shadow-none ${actionBtn.className}`}
+                        className={`flex min-w-[150px] items-center justify-center gap-1.5 rounded-lg px-4 py-2 text-center text-sm font-medium shadow-md transition-colors disabled:!bg-slate-700 disabled:!text-slate-500 disabled:cursor-not-allowed disabled:shadow-none ${actionBtn.className}`}
                       >
-                        {updatingId === job.id ? '⏳ Updating...' : actionBtn.label}
+                        {updatingId === job.id ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : (
+                          <ActionIcon className="h-3.5 w-3.5" />
+                        )}
+                        {updatingId === job.id ? 'Updating...' : actionBtn.label}
                       </button>
                     </td>
 
@@ -462,23 +508,26 @@ export default function QueueTable({
                           <button
                             onClick={() => saveEdit(job.id)}
                             disabled={savingEdit}
-                            className="min-w-[60px] rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-4 py-2 text-sm font-medium text-emerald-400 transition-colors hover:not-disabled:bg-emerald-500/20 hover:not-disabled:text-white"
+                            className="flex min-w-[60px] items-center justify-center gap-1.5 rounded-lg border border-emerald-500/40 bg-emerald-500/10 px-4 py-2 text-sm font-medium text-emerald-400 transition-colors hover:not-disabled:bg-emerald-500/20 hover:not-disabled:text-white"
                           >
-                            💾 Save
+                            {savingEdit ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+                            Save
                           </button>
                           <button
                             onClick={cancelEdit}
-                            className="min-w-[60px] rounded-lg border border-slate-800/80 bg-slate-900/70 px-4 py-2 text-sm font-medium text-slate-400 transition-colors hover:bg-slate-800/40"
+                            className="flex min-w-[60px] items-center justify-center gap-1.5 rounded-lg border border-slate-800/80 bg-slate-900/70 px-4 py-2 text-sm font-medium text-slate-400 transition-colors hover:bg-slate-800/40"
                           >
-                            ✖ Cancel
+                            <X className="h-3.5 w-3.5" />
+                            Cancel
                           </button>
                         </div>
                       ) : (
                         <button
                           onClick={() => startEdit(job)}
-                          className="min-w-[60px] rounded-lg border border-sky-500/40 bg-sky-500/10 px-4 py-2 text-sm font-medium text-sky-400 transition-colors hover:bg-sky-500/20 hover:text-white"
+                          className="flex min-w-[60px] items-center justify-center gap-1.5 rounded-lg border border-sky-500/40 bg-sky-500/10 px-4 py-2 text-sm font-medium text-sky-400 transition-colors hover:bg-sky-500/20 hover:text-white"
                         >
-                          ✏️ Edit
+                          <Pencil className="h-3.5 w-3.5" />
+                          Edit
                         </button>
                       )}
                     </td>

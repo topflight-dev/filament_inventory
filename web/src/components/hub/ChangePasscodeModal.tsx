@@ -18,6 +18,7 @@
  * ─────────────────────────────────────────────────────────────────────────────
  */
 import { useState } from 'react';
+import { AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
 
 export default function ChangePasscodeModal({
   open,
@@ -72,7 +73,7 @@ export default function ChangePasscodeModal({
         return;
       }
 
-      setSuccess('✅ Passcode changed successfully.');
+      setSuccess('Passcode changed successfully.');
       resetFields();
       setTimeout(() => {
         setSuccess(null);
@@ -122,8 +123,18 @@ export default function ChangePasscodeModal({
           className="mb-2 block w-full rounded-lg border border-slate-800/80 bg-slate-950 px-3.5 py-2.5 text-sm text-slate-200 outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-400"
         />
 
-        {error && <p className="mt-2 text-xs font-semibold text-red-400">❌ {error}</p>}
-        {success && <p className="mt-2 text-xs font-semibold text-emerald-400">{success}</p>}
+        {error && (
+          <p className="mt-2 flex items-center gap-1.5 text-xs font-semibold text-red-400">
+            <AlertCircle className="h-3.5 w-3.5 flex-shrink-0" />
+            {error}
+          </p>
+        )}
+        {success && (
+          <p className="mt-2 flex items-center gap-1.5 text-xs font-semibold text-emerald-400">
+            <CheckCircle2 className="h-3.5 w-3.5 flex-shrink-0" />
+            {success}
+          </p>
+        )}
 
         <div className="mt-5 flex gap-2.5">
           <button
@@ -137,8 +148,9 @@ export default function ChangePasscodeModal({
             type="button"
             onClick={handleSave}
             disabled={saving}
-            className="rounded-lg bg-sky-500 px-4.5 py-2.5 text-sm font-medium text-slate-950 transition-colors hover:not-disabled:bg-sky-600 focus:outline-none focus:ring-2 focus:ring-sky-400 disabled:opacity-60"
+            className="flex items-center gap-2 rounded-lg bg-sky-500 px-4.5 py-2.5 text-sm font-medium text-slate-950 transition-colors hover:not-disabled:bg-sky-600 focus:outline-none focus:ring-2 focus:ring-sky-400 disabled:opacity-60"
           >
+            {saving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
             {saving ? 'Saving...' : 'Save Changes'}
           </button>
         </div>

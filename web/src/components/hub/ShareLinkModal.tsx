@@ -35,6 +35,7 @@
  * ─────────────────────────────────────────────────────────────────────────────
  */
 import { useEffect, useState } from 'react';
+import { AlertCircle, Check, Copy } from 'lucide-react';
 
 export default function ShareLinkModal({
   open,
@@ -123,14 +124,20 @@ export default function ShareLinkModal({
             <button
               type="button"
               onClick={handleCopy}
-              className="w-full rounded-lg bg-sky-500 px-4.5 py-2.5 text-sm font-medium text-slate-950 transition-colors hover:bg-sky-600 focus:outline-none focus:ring-2 focus:ring-sky-400"
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-sky-500 px-4.5 py-2.5 text-sm font-medium text-slate-950 transition-colors hover:bg-sky-600 focus:outline-none focus:ring-2 focus:ring-sky-400"
             >
-              {copied ? '✅ Copied!' : '📋 Copy Link'}
+              {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+              {copied ? 'Copied!' : 'Copy Link'}
             </button>
           </>
         ) : null}
 
-        {error && <p className="mt-2 text-xs font-semibold text-red-400">❌ {error}</p>}
+        {error && (
+          <p className="mt-2 flex items-center gap-1.5 text-xs font-semibold text-red-400">
+            <AlertCircle className="h-3.5 w-3.5 flex-shrink-0" />
+            {error}
+          </p>
+        )}
 
         <div className="mt-5 flex gap-2.5">
           <button

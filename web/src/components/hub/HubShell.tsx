@@ -30,6 +30,14 @@
  * makes the whole feature trustworthy — see ShareLinkModal.tsx's own header
  * comment for the full incident this closes out.
  *
+ * UPDATED 2026-09-26 (design pass — see claude/dashboard-domain-split-plan.md
+ * "Follow-up work" for the fuller context on why this dashboard's visual
+ * polish matters now that it's a standalone product): every emoji used as a
+ * functional icon (☰🖨️📦🎨🔗🔔🔑🚪⚙️) is replaced with a real icon from
+ * lucide-react — consistent stroke width/sizing that actually matches the
+ * theme, instead of OS-dependent emoji glyphs. Purely visual; no behavior
+ * changed.
+ *
  * Visual palette: "Deep Oceanic Stealth" theme — arctic twilight blue canvas
  * (bg-slate-950), frosted navy slate panels (bg-slate-900/70,
  * border-slate-800/80, rounded-xl), vibrant cyan (sky-500) primary/active
@@ -38,6 +46,19 @@
  * ─────────────────────────────────────────────────────────────────────────────
  */
 import { useState } from 'react';
+import {
+  Bell,
+  KeyRound,
+  Link2,
+  LogOut,
+  Package,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Palette,
+  Printer,
+  Settings,
+  type LucideIcon,
+} from 'lucide-react';
 import type { QueueStatusFilter } from '@/lib/supabase/hub-queries';
 import ChangePasscodeModal from './ChangePasscodeModal';
 import NotificationSettingsModal from './NotificationSettingsModal';
@@ -85,10 +106,17 @@ export default function HubShell({
     setQueueStatusFilter(nav === 'completed' ? 'completed' : 'active');
   }
 
-  const navItems: { key: NavKey; icon: string; label: string }[] = [
-    { key: 'queue', icon: '🖨️', label: 'Request Queue' },
-    { key: 'completed', icon: '📦', label: 'Completed' },
-    { key: 'inventory', icon: '🎨', label: 'Filament Inventory' },
+  const navItems: { key: NavKey; icon: LucideIcon; label: string }[] = [
+    { key: 'queue', icon: Printer, label: 'Request Queue' },
+    { key: 'completed', icon: Package, label: 'Completed' },
+    { key: 'inventory', icon: Palette, label: 'Filament Inventory' },
+  ];
+
+  const footerItems: { key: string; icon: LucideIcon; label: string; onClick: () => void; danger?: boolean }[] = [
+    { key: 'share', icon: Link2, label: 'Share Your Link', onClick: () => setShowShareLink(true) },
+    { key: 'notifications', icon: Bell, label: 'Notifications', onClick: () => setShowNotificationSettings(true) },
+    { key: 'passcode', icon: KeyRound, label: 'Change Passcode', onClick: () => setShowChangePasscode(true) },
+    { key: 'signout', icon: LogOut, label: 'Sign Out', onClick: handleSignOut, danger: true },
   ];
 
   return (
@@ -107,15 +135,16 @@ export default function HubShell({
             aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg border border-slate-800/80 bg-slate-900/70 text-slate-400 transition-colors hover:border-sky-500 hover:text-sky-400"
           >
-            ☰
+            {collapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
           </button>
           <div
             className={`overflow-hidden whitespace-nowrap transition-all duration-300 ${
               collapsed ? 'max-w-0 opacity-0' : 'max-w-[180px] opacity-100'
             }`}
           >
-            <span className="block text-[11px] font-semibold uppercase tracking-widest text-slate-500">
-              ⚙️ C3DW Admin
+            <span className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-widest text-slate-500">
+              <Settings className="h-3 w-3" />
+              C3DW Admin
             </span>
             {shopName && (
               <span className="block truncate text-xs font-medium text-slate-300">{shopName}</span>
@@ -127,6 +156,7 @@ export default function HubShell({
         <nav className="flex flex-1 flex-col gap-1 overflow-y-auto px-2 py-3" aria-label="Admin Hub Navigation">
           {navItems.map((item) => {
             const isActive = activeNav === item.key;
+            const Icon = item.icon;
             return (
               <button
                 key={item.key}
@@ -139,7 +169,7 @@ export default function HubShell({
                     : 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
                 }`}
               >
-                <span className="flex-shrink-0 text-base leading-none">{item.icon}</span>
+                <Icon className="h-[18px] w-[18px] flex-shrink-0" strokeWidth={2} />
                 <span
                   className={`overflow-hidden whitespace-nowrap transition-all duration-300 ${
                     collapsed ? 'max-w-0 opacity-0' : 'max-w-[160px] opacity-100'
@@ -154,62 +184,30 @@ export default function HubShell({
 
         {/* FOOTER — Share Link, Notifications, Change Passcode, Sign Out — pinned to bottom */}
         <div className="border-t border-slate-800/80 px-2 py-3">
-          <button
-            onClick={() => setShowShareLink(true)}
-            title={collapsed ? 'Share Your Link' : undefined}
-            className="mb-2 flex w-full items-center gap-3 rounded-xl border border-slate-800/80 bg-slate-900/70 px-3 py-2.5 text-xs font-medium tracking-wide text-slate-400 transition-colors hover:border-sky-500 hover:text-sky-400"
-          >
-            <span className="flex-shrink-0 text-base leading-none">🔗</span>
-            <span
-              className={`overflow-hidden whitespace-nowrap transition-all duration-300 ${
-                collapsed ? 'max-w-0 opacity-0' : 'max-w-[140px] opacity-100'
-              }`}
-            >
-              Share Your Link
-            </span>
-          </button>
-          <button
-            onClick={() => setShowNotificationSettings(true)}
-            title={collapsed ? 'Notifications' : undefined}
-            className="mb-2 flex w-full items-center gap-3 rounded-xl border border-slate-800/80 bg-slate-900/70 px-3 py-2.5 text-xs font-medium tracking-wide text-slate-400 transition-colors hover:border-sky-500 hover:text-sky-400"
-          >
-            <span className="flex-shrink-0 text-base leading-none">🔔</span>
-            <span
-              className={`overflow-hidden whitespace-nowrap transition-all duration-300 ${
-                collapsed ? 'max-w-0 opacity-0' : 'max-w-[140px] opacity-100'
-              }`}
-            >
-              Notifications
-            </span>
-          </button>
-          <button
-            onClick={() => setShowChangePasscode(true)}
-            title={collapsed ? 'Change Passcode' : undefined}
-            className="mb-2 flex w-full items-center gap-3 rounded-xl border border-slate-800/80 bg-slate-900/70 px-3 py-2.5 text-xs font-medium tracking-wide text-slate-400 transition-colors hover:border-sky-500 hover:text-sky-400"
-          >
-            <span className="flex-shrink-0 text-base leading-none">🔑</span>
-            <span
-              className={`overflow-hidden whitespace-nowrap transition-all duration-300 ${
-                collapsed ? 'max-w-0 opacity-0' : 'max-w-[140px] opacity-100'
-              }`}
-            >
-              Change Passcode
-            </span>
-          </button>
-          <button
-            onClick={handleSignOut}
-            title={collapsed ? 'Sign Out' : undefined}
-            className="flex w-full items-center gap-3 rounded-xl border border-slate-800/80 bg-slate-900/70 px-3 py-2.5 text-xs font-medium tracking-wide text-slate-400 transition-colors hover:border-red-500 hover:bg-red-950 hover:text-red-400"
-          >
-            <span className="flex-shrink-0 text-base leading-none">🚪</span>
-            <span
-              className={`overflow-hidden whitespace-nowrap transition-all duration-300 ${
-                collapsed ? 'max-w-0 opacity-0' : 'max-w-[140px] opacity-100'
-              }`}
-            >
-              Sign Out
-            </span>
-          </button>
+          {footerItems.map((item) => {
+            const Icon = item.icon;
+            return (
+              <button
+                key={item.key}
+                onClick={item.onClick}
+                title={collapsed ? item.label : undefined}
+                className={`mb-2 flex w-full items-center gap-3 rounded-xl border border-slate-800/80 bg-slate-900/70 px-3 py-2.5 text-xs font-medium tracking-wide text-slate-400 transition-colors last:mb-0 ${
+                  item.danger
+                    ? 'hover:border-red-500 hover:bg-red-950 hover:text-red-400'
+                    : 'hover:border-sky-500 hover:text-sky-400'
+                }`}
+              >
+                <Icon className="h-4 w-4 flex-shrink-0" strokeWidth={2} />
+                <span
+                  className={`overflow-hidden whitespace-nowrap transition-all duration-300 ${
+                    collapsed ? 'max-w-0 opacity-0' : 'max-w-[140px] opacity-100'
+                  }`}
+                >
+                  {item.label}
+                </span>
+              </button>
+            );
+          })}
         </div>
       </aside>
 
