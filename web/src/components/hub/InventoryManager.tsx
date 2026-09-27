@@ -14,6 +14,11 @@
  * see HubShell.tsx's header comment for the full reasoning. "In Stock" stays
  * emerald as the one functional exception to the single-accent rule, since
  * stock state needs to be scannable at a glance across a long list.
+ *
+ * UPDATED 2026-09-26 (phase 3): migrated the add-filament form and search box
+ * onto the shared Input/Select components, the stock toggle and delete
+ * controls onto Button, and replaced the spinner-only "Loading inventory..."
+ * fallback with Skeleton group cards shaped like the real finish-grouped list.
  * ─────────────────────────────────────────────────────────────────────────────
  */
 import { useCallback, useEffect, useState } from 'react';
@@ -21,7 +26,6 @@ import {
   CheckCircle2,
   ChevronDown,
   ChevronRight,
-  Loader2,
   Palette,
   Plus,
   Search,
@@ -30,8 +34,37 @@ import {
 } from 'lucide-react';
 import { type ColorItem } from '@/lib/supabase/hub-queries';
 import InvEditModal, { type InvEditTarget } from './InvEditModal';
+import Input from '@/components/ui/Input';
+import Select from '@/components/ui/Select';
+import Button from '@/components/ui/Button';
+import Skeleton from '@/components/ui/Skeleton';
 
 const ADD_NEW_FINISH = '__add_new__';
+
+function SkeletonGroup() {
+  return (
+    <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm">
+      <div className="flex items-center justify-between bg-zinc-50 px-4 py-3">
+        <Skeleton className="h-3 w-28" />
+        <Skeleton className="h-4 w-4" />
+      </div>
+      <div className="divide-y divide-zinc-100">
+        {[0, 1].map((i) => (
+          <div key={i} className="flex flex-wrap items-center gap-4 px-4 py-3">
+            <div className="flex gap-1">
+              <Skeleton className="h-6 w-6 rounded-full" />
+              <Skeleton className="h-6 w-6 rounded-full" />
+              <Skeleton className="h-6 w-6 rounded-full" />
+            </div>
+            <Skeleton className="h-4 w-28" />
+            <Skeleton className="ml-auto h-6 w-24 rounded-full" />
+            <Skeleton className="h-7 w-20 rounded-lg" />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default function InventoryManager({ showToast }: { showToast: (msg: string) => void }) {
   const [colors, setColors] = useState<ColorItem[]>([]);
@@ -224,38 +257,34 @@ export default function InventoryManager({ showToast }: { showToast: (msg: strin
       >
         <div className="flex flex-col gap-1">
           <label className="text-[11px] font-semibold uppercase tracking-widest text-zinc-400">Color Name</label>
-          <input
+          <Input
             value={newColor}
             onChange={(e) => setNewColor(e.target.value)}
             placeholder="e.g. Galaxy Black"
             required
-            className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30"
+            className="!py-2"
           />
         </div>
 
         <div className="flex flex-col gap-1">
           <label className="text-[11px] font-semibold uppercase tracking-widest text-zinc-400">Finish</label>
-          <select
-            value={newFinish}
-            onChange={(e) => handleFinishSelect(e.target.value)}
-            className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30"
-          >
+          <Select value={newFinish} onChange={(e) => handleFinishSelect(e.target.value)} className="!py-2">
             {finishes.map((f) => (
               <option key={f} value={f}>
                 {f}
               </option>
             ))}
             <option value={ADD_NEW_FINISH}>+ Add New Finish...</option>
-          </select>
+          </Select>
         </div>
 
         <div className="flex flex-col gap-1">
           <label className="text-[11px] font-semibold uppercase tracking-widest text-zinc-400">Description</label>
-          <input
+          <Input
             value={newDescription}
             onChange={(e) => setNewDescription(e.target.value)}
             placeholder="Optional notes"
-            className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30"
+            className="!py-2"
           />
         </div>
 
@@ -277,32 +306,26 @@ export default function InventoryManager({ showToast }: { showToast: (msg: strin
           ))}
         </div>
 
-        <button
-          type="submit"
-          disabled={submitting}
-          className="flex items-center gap-2 rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white transition-colors hover:not-disabled:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 disabled:opacity-60"
-        >
-          {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+        <Button type="submit" loading={submitting} icon={Plus} variant="primary">
           {submitting ? 'Adding...' : 'Add Filament'}
-        </button>
+        </Button>
       </form>
 
       {/* SEARCH */}
-      <div className="relative mb-5 max-w-md">
-        <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
-        <input
+      <div className="mb-5 max-w-md">
+        <Input
+          icon={Search}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Search by color, finish, or description..."
-          className="w-full rounded-lg border border-zinc-300 bg-white py-2.5 pl-10 pr-4 text-sm text-zinc-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30"
         />
       </div>
 
       {/* GROUPED LIST */}
       {loading ? (
-        <div className="flex flex-col items-center gap-4 py-16 text-center text-zinc-400">
-          <Loader2 className="h-9 w-9 animate-spin text-zinc-300" />
-          <p className="text-sm">Loading inventory...</p>
+        <div className="flex flex-col gap-4">
+          <SkeletonGroup />
+          <SkeletonGroup />
         </div>
       ) : sortedFinishKeys.length === 0 ? (
         <div className="flex flex-col items-center gap-4 py-16 text-center text-zinc-400">
@@ -358,32 +381,20 @@ export default function InventoryManager({ showToast }: { showToast: (msg: strin
                             <span className="text-xs italic text-zinc-500">{item.description}</span>
                           )}
 
-                          <button
+                          <Button
                             onClick={() => handleToggleStock(item)}
-                            disabled={isPending}
-                            className={`ml-auto flex items-center gap-1.5 rounded-full px-4 py-1.5 text-[11px] font-semibold uppercase tracking-widest transition-colors disabled:opacity-60 ${
-                              item.inStock
-                                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100'
-                                : 'bg-red-50 text-red-600 border border-red-200 hover:bg-red-100'
-                            }`}
+                            loading={isPending}
+                            icon={item.inStock ? CheckCircle2 : XCircle}
+                            variant={item.inStock ? 'success' : 'destructive'}
+                            size="sm"
+                            className="ml-auto !rounded-full !uppercase !tracking-widest"
                           >
-                            {isPending ? (
-                              <Loader2 className="h-3 w-3 animate-spin" />
-                            ) : item.inStock ? (
-                              <CheckCircle2 className="h-3 w-3" />
-                            ) : (
-                              <XCircle className="h-3 w-3" />
-                            )}
                             {isPending ? 'Updating' : item.inStock ? 'In Stock' : 'Out of Stock'}
-                          </button>
+                          </Button>
 
-                          <button
-                            onClick={() => handleDelete(item)}
-                            className="flex items-center gap-1.5 rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-50"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
+                          <Button onClick={() => handleDelete(item)} icon={Trash2} variant="destructive" size="sm">
                             Delete
-                          </button>
+                          </Button>
                         </div>
                       );
                     })}

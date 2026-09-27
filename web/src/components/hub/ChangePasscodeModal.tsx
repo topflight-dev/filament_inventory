@@ -13,10 +13,17 @@
  * UPDATED 2026-09-26 (visual redesign, phase 2): neutral light SaaS theme —
  * see HubShell.tsx's header comment for the full reasoning. White panel on
  * a neutral dark scrim, zinc borders, indigo accent.
+ *
+ * UPDATED 2026-09-26 (phase 3): migrated onto the shared Modal/Input/Button
+ * kit (components/ui/*) — same markup and behavior, now centrally styled
+ * and with the animated open/close that came with Modal.tsx.
  * ─────────────────────────────────────────────────────────────────────────────
  */
 import { useState } from 'react';
-import { AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
+import { AlertCircle, CheckCircle2 } from 'lucide-react';
+import Modal from '@/components/ui/Modal';
+import Input from '@/components/ui/Input';
+import Button from '@/components/ui/Button';
 
 export default function ChangePasscodeModal({
   open,
@@ -31,8 +38,6 @@ export default function ChangePasscodeModal({
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-
-  if (!open) return null;
 
   function resetFields() {
     setCurrentPasscode('');
@@ -85,74 +90,64 @@ export default function ChangePasscodeModal({
   }
 
   return (
-    <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-zinc-900/40 backdrop-blur-sm">
-      <div className="w-[90%] max-w-[420px] rounded-xl border border-zinc-200 bg-white p-7 text-zinc-500 shadow-xl">
-        <h3 className="mb-4 text-[11px] font-semibold uppercase tracking-widest text-zinc-400">
-          Change Passcode
-        </h3>
-
-        <label className="mb-1 block text-xs font-medium text-zinc-500">Current Passcode</label>
-        <input
-          type="password"
-          value={currentPasscode}
-          onChange={(e) => setCurrentPasscode(e.target.value)}
-          autoComplete="current-password"
-          spellCheck={false}
-          className="mb-3.5 block w-full rounded-lg border border-zinc-300 bg-white px-3.5 py-2.5 text-sm text-zinc-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30"
-        />
-
-        <label className="mb-1 block text-xs font-medium text-zinc-500">New Passcode</label>
-        <input
-          type="password"
-          value={newPasscode}
-          onChange={(e) => setNewPasscode(e.target.value)}
-          autoComplete="new-password"
-          spellCheck={false}
-          className="mb-3.5 block w-full rounded-lg border border-zinc-300 bg-white px-3.5 py-2.5 text-sm text-zinc-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30"
-        />
-
-        <label className="mb-1 block text-xs font-medium text-zinc-500">Confirm New Passcode</label>
-        <input
-          type="password"
-          value={confirmPasscode}
-          onChange={(e) => setConfirmPasscode(e.target.value)}
-          autoComplete="new-password"
-          spellCheck={false}
-          className="mb-2 block w-full rounded-lg border border-zinc-300 bg-white px-3.5 py-2.5 text-sm text-zinc-900 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30"
-        />
-
-        {error && (
-          <p className="mt-2 flex items-center gap-1.5 text-xs font-semibold text-red-600">
-            <AlertCircle className="h-3.5 w-3.5 flex-shrink-0" />
-            {error}
-          </p>
-        )}
-        {success && (
-          <p className="mt-2 flex items-center gap-1.5 text-xs font-semibold text-emerald-600">
-            <CheckCircle2 className="h-3.5 w-3.5 flex-shrink-0" />
-            {success}
-          </p>
-        )}
-
-        <div className="mt-5 flex gap-2.5">
-          <button
-            type="button"
-            onClick={handleClose}
-            className="rounded-lg border border-zinc-300 bg-white px-4.5 py-2.5 text-sm font-medium text-zinc-500 transition-colors hover:bg-zinc-50"
-          >
+    <Modal
+      open={open}
+      onClose={handleClose}
+      title="Change Passcode"
+      maxWidth="max-w-[420px]"
+      footer={
+        <>
+          <Button type="button" variant="secondary" onClick={handleClose}>
             Cancel
-          </button>
-          <button
-            type="button"
-            onClick={handleSave}
-            disabled={saving}
-            className="flex items-center gap-2 rounded-lg bg-indigo-600 px-4.5 py-2.5 text-sm font-medium text-white transition-colors hover:not-disabled:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 disabled:opacity-60"
-          >
-            {saving && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+          </Button>
+          <Button type="button" onClick={handleSave} loading={saving}>
             {saving ? 'Saving...' : 'Save Changes'}
-          </button>
-        </div>
-      </div>
-    </div>
+          </Button>
+        </>
+      }
+    >
+      <label className="mb-1 block text-xs font-medium text-zinc-500">Current Passcode</label>
+      <Input
+        type="password"
+        value={currentPasscode}
+        onChange={(e) => setCurrentPasscode(e.target.value)}
+        autoComplete="current-password"
+        spellCheck={false}
+        className="mb-3.5"
+      />
+
+      <label className="mb-1 block text-xs font-medium text-zinc-500">New Passcode</label>
+      <Input
+        type="password"
+        value={newPasscode}
+        onChange={(e) => setNewPasscode(e.target.value)}
+        autoComplete="new-password"
+        spellCheck={false}
+        className="mb-3.5"
+      />
+
+      <label className="mb-1 block text-xs font-medium text-zinc-500">Confirm New Passcode</label>
+      <Input
+        type="password"
+        value={confirmPasscode}
+        onChange={(e) => setConfirmPasscode(e.target.value)}
+        autoComplete="new-password"
+        spellCheck={false}
+        className="mb-2"
+      />
+
+      {error && (
+        <p className="mt-2 flex items-center gap-1.5 text-xs font-semibold text-red-600">
+          <AlertCircle className="h-3.5 w-3.5 flex-shrink-0" />
+          {error}
+        </p>
+      )}
+      {success && (
+        <p className="mt-2 flex items-center gap-1.5 text-xs font-semibold text-emerald-600">
+          <CheckCircle2 className="h-3.5 w-3.5 flex-shrink-0" />
+          {success}
+        </p>
+      )}
+    </Modal>
   );
 }

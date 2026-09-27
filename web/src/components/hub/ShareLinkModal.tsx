@@ -33,10 +33,17 @@
  * UPDATED 2026-09-26 (visual redesign, phase 2): neutral light SaaS theme —
  * matches ChangePasscodeModal.tsx / NotificationSettingsModal.tsx exactly.
  * See HubShell.tsx's header comment for the full reasoning.
+ *
+ * UPDATED 2026-09-26 (phase 3): migrated onto the shared Modal/Button kit and
+ * swapped the plain "Loading…" text for a Skeleton placeholder shaped like
+ * the link box it's about to reveal.
  * ─────────────────────────────────────────────────────────────────────────────
  */
 import { useEffect, useState } from 'react';
 import { AlertCircle, Check, Copy } from 'lucide-react';
+import Modal from '@/components/ui/Modal';
+import Button from '@/components/ui/Button';
+import Skeleton from '@/components/ui/Skeleton';
 
 export default function ShareLinkModal({
   open,
@@ -84,8 +91,6 @@ export default function ShareLinkModal({
     };
   }, [open]);
 
-  if (!open) return null;
-
   function handleClose() {
     setCopied(false);
     setError(null);
@@ -104,52 +109,45 @@ export default function ShareLinkModal({
   }
 
   return (
-    <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-zinc-900/40 backdrop-blur-sm">
-      <div className="w-[90%] max-w-[440px] rounded-xl border border-zinc-200 bg-white p-7 text-zinc-500 shadow-xl">
-        <h3 className="mb-1 text-[11px] font-semibold uppercase tracking-widest text-zinc-400">
-          Share Your Print-Request Link
-        </h3>
-        <p className="mb-4 text-xs leading-relaxed text-zinc-500">
+    <Modal
+      open={open}
+      onClose={handleClose}
+      title="Share Your Print-Request Link"
+      description={
+        <>
           This link always opens {shopName ? `${shopName}'s` : "your shop's"} print request form —
           safe to send to customers, family, or anyone you want submitting jobs to your queue. It
           will never send requests to any other shop.
-        </p>
-
-        {loading ? (
-          <p className="py-6 text-center text-xs italic text-zinc-400">Loading…</p>
-        ) : link ? (
-          <>
-            <div className="mb-3 block w-full break-all rounded-lg border border-zinc-200 bg-zinc-50 px-3.5 py-2.5 text-sm text-zinc-900">
-              {link}
-            </div>
-            <button
-              type="button"
-              onClick={handleCopy}
-              className="flex w-full items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4.5 py-2.5 text-sm font-medium text-white transition-colors hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/40"
-            >
-              {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-              {copied ? 'Copied!' : 'Copy Link'}
-            </button>
-          </>
-        ) : null}
-
-        {error && (
-          <p className="mt-2 flex items-center gap-1.5 text-xs font-semibold text-red-600">
-            <AlertCircle className="h-3.5 w-3.5 flex-shrink-0" />
-            {error}
-          </p>
-        )}
-
-        <div className="mt-5 flex gap-2.5">
-          <button
-            type="button"
-            onClick={handleClose}
-            className="rounded-lg border border-zinc-300 bg-white px-4.5 py-2.5 text-sm font-medium text-zinc-500 transition-colors hover:bg-zinc-50"
-          >
-            Close
-          </button>
+        </>
+      }
+      footer={
+        <Button type="button" variant="secondary" onClick={handleClose}>
+          Close
+        </Button>
+      }
+    >
+      {loading ? (
+        <div className="space-y-3">
+          <Skeleton className="h-10 w-full" />
+          <Skeleton className="h-10 w-full" />
         </div>
-      </div>
-    </div>
+      ) : link ? (
+        <>
+          <div className="mb-3 block w-full break-all rounded-lg border border-zinc-200 bg-zinc-50 px-3.5 py-2.5 text-sm text-zinc-900">
+            {link}
+          </div>
+          <Button type="button" onClick={handleCopy} icon={copied ? Check : Copy} fullWidth>
+            {copied ? 'Copied!' : 'Copy Link'}
+          </Button>
+        </>
+      ) : null}
+
+      {error && (
+        <p className="mt-2 flex items-center gap-1.5 text-xs font-semibold text-red-600">
+          <AlertCircle className="h-3.5 w-3.5 flex-shrink-0" />
+          {error}
+        </p>
+      )}
+    </Modal>
   );
 }

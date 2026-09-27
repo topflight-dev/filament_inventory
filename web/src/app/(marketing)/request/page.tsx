@@ -77,13 +77,24 @@
  * HubShell.tsx's header comment for the full reasoning. Functional status
  * colors (mint success / red error) re-tuned for a light background but
  * otherwise unchanged in meaning.
+ *
+ * UPDATED 2026-09-26 (phase 3): the filament picker was a plain scrollable
+ * checkbox list — functional, but it read like a leftover HTML form rather
+ * than the rest of this page. Replaced with a searchable chip-select: a
+ * search box filters the available colors, and each color is a clickable
+ * chip that toggles selected/unselected in place (no checkbox required).
+ * The already-selected pills row above it is unchanged — it's still the
+ * fastest way to see (and remove) a full selection when a search filters
+ * a chip out of view below.
  */
 'use client';
 
 import { Suspense, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-import { AlertTriangle, CheckCircle2, Loader2, Printer, Send, X, XCircle } from 'lucide-react';
+import { AlertTriangle, Check, CheckCircle2, Loader2, Printer, Search, Send, X, XCircle } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import Input from '@/components/ui/Input';
+import Skeleton from '@/components/ui/Skeleton';
 
 type Filament = {
   id: number;
@@ -139,6 +150,7 @@ function RequestPageInner() {
   const [filamentsLoading, setFilamentsLoading] = useState(true);
   const [filamentsError, setFilamentsError] = useState(false);
   const [selectedFilaments, setSelectedFilaments] = useState<SelectedFilament[]>([]);
+  const [filamentSearch, setFilamentSearch] = useState('');
 
   const [requestorName, setRequestorName] = useState('');
   const [projectName, setProjectName] = useState('');
@@ -289,6 +301,14 @@ function RequestPageInner() {
   }
 
   const selectedIds = useMemo(() => new Set(selectedFilaments.map((f) => f.id)), [selectedFilaments]);
+
+  const filteredFilaments = useMemo(() => {
+    const q = filamentSearch.trim().toLowerCase();
+    if (!q) return allFilaments;
+    return allFilaments.filter(
+      (f) => f.color.toLowerCase().includes(q) || f.finish.toLowerCase().includes(q)
+    );
+  }, [allFilaments, filamentSearch]);
 
   // -----------------------------------------------
   // FORM SUBMISSION
@@ -489,36 +509,52 @@ function RequestPageInner() {
                 )}
               </div>
 
-              {/* Scrollable checklist */}
-              <div className="mt-2 max-h-[200px] overflow-y-auto rounded-md border border-zinc-200 bg-white py-1">
+              {/* Searchable chip-select */}
+              {!filamentsLoading && !filamentsError && allFilaments.length > 0 && (
+                <Input
+                  icon={Search}
+                  value={filamentSearch}
+                  onChange={(e) => setFilamentSearch(e.target.value)}
+                  placeholder="Search colors or finishes…"
+                  className="mt-2"
+                />
+              )}
+
+              <div className="mt-2 max-h-[200px] overflow-y-auto rounded-md border border-zinc-200 bg-white p-2.5">
                 {filamentsLoading ? (
-                  <div className="px-3 py-2.5 text-xs italic text-zinc-400">Loading filaments…</div>
+                  <div className="flex flex-wrap gap-2">
+                    {Array.from({ length: 8 }).map((_, i) => (
+                      <Skeleton key={i} className="h-8 w-24 rounded-full" />
+                    ))}
+                  </div>
                 ) : filamentsError ? (
-                  <div className="px-3 py-2.5 text-xs italic text-zinc-400">Could not load filaments</div>
+                  <div className="px-1 py-2 text-xs italic text-zinc-400">Could not load filaments</div>
                 ) : allFilaments.length === 0 ? (
-                  <div className="px-3 py-2.5 text-xs italic text-zinc-400">No filaments available</div>
+                  <div className="px-1 py-2 text-xs italic text-zinc-400">No filaments available</div>
+                ) : filteredFilaments.length === 0 ? (
+                  <div className="px-1 py-2 text-xs italic text-zinc-400">No colors match your search</div>
                 ) : (
-                  allFilaments.map((f) => {
-                    const checked = selectedIds.has(String(f.id));
-                    return (
-                      <label
-                        key={f.id}
-                        className={`flex cursor-pointer select-none items-center gap-2.5 px-3 py-2 text-sm text-zinc-900 transition-colors hover:bg-indigo-50 ${
-                          checked ? 'bg-indigo-50' : ''
-                        }`}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          onChange={(e) => toggleFilament(f, e.target.checked)}
-                          className="h-[17px] w-[17px] flex-shrink-0 accent-indigo-600"
-                        />
-                        <span>
+                  <div className="flex flex-wrap gap-2">
+                    {filteredFilaments.map((f) => {
+                      const checked = selectedIds.has(String(f.id));
+                      return (
+                        <button
+                          key={f.id}
+                          type="button"
+                          onClick={() => toggleFilament(f, !checked)}
+                          aria-pressed={checked}
+                          className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+                            checked
+                              ? 'border-indigo-600 bg-indigo-600 text-white'
+                              : 'border-zinc-300 bg-white text-zinc-700 hover:border-indigo-300 hover:bg-indigo-50'
+                          }`}
+                        >
+                          {checked && <Check className="h-3 w-3 flex-shrink-0" />}
                           {f.color} — {f.finish}
-                        </span>
-                      </label>
-                    );
-                  })
+                        </button>
+                      );
+                    })}
+                  </div>
                 )}
               </div>
             </div>

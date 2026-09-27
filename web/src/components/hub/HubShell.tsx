@@ -46,9 +46,18 @@
  * feeling "rough," which came from juggling too many competing hues at
  * once (slate+sky+amber+emerald+red). This theme is shared verbatim across
  * every Hub/Request file in this pass.
+ *
+ * UPDATED 2026-09-26 (phase 3): sidebar footer buttons migrated onto the
+ * shared Button component (ghost / ghost-danger variants — the latter added
+ * for Sign Out, which needs to stay neutral by default and only turn red on
+ * hover, unlike the always-red `destructive` variant). Also added a fade+
+ * slide transition (framer-motion) on the main content area, keyed on the
+ * active nav item, so switching Queue/Completed/Inventory feels like a real
+ * view transition instead of an instant content swap.
  * ─────────────────────────────────────────────────────────────────────────────
  */
 import { useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import {
   Bell,
   KeyRound,
@@ -66,6 +75,7 @@ import type { QueueStatusFilter } from '@/lib/supabase/hub-queries';
 import ChangePasscodeModal from './ChangePasscodeModal';
 import NotificationSettingsModal from './NotificationSettingsModal';
 import ShareLinkModal from './ShareLinkModal';
+import Button from '@/components/ui/Button';
 
 type TabName = 'queue' | 'inventory';
 
@@ -187,36 +197,42 @@ export default function HubShell({
 
         {/* FOOTER — Share Link, Notifications, Change Passcode, Sign Out — pinned to bottom */}
         <div className="border-t border-zinc-200 px-2 py-3">
-          {footerItems.map((item) => {
-            const Icon = item.icon;
-            return (
-              <button
-                key={item.key}
-                onClick={item.onClick}
-                title={collapsed ? item.label : undefined}
-                className={`mb-2 flex w-full items-center gap-3 rounded-xl border border-zinc-200 bg-white px-3 py-2.5 text-xs font-medium tracking-wide text-zinc-500 transition-colors last:mb-0 ${
-                  item.danger
-                    ? 'hover:border-red-300 hover:bg-red-50 hover:text-red-600'
-                    : 'hover:border-indigo-300 hover:bg-indigo-50 hover:text-indigo-600'
+          {footerItems.map((item) => (
+            <Button
+              key={item.key}
+              type="button"
+              onClick={item.onClick}
+              title={collapsed ? item.label : undefined}
+              variant={item.danger ? 'ghost-danger' : 'ghost'}
+              icon={item.icon}
+              fullWidth
+              className="mb-2 !justify-start !gap-3 !rounded-xl !px-3 !text-xs tracking-wide last:mb-0"
+            >
+              <span
+                className={`overflow-hidden whitespace-nowrap transition-all duration-300 ${
+                  collapsed ? 'max-w-0 opacity-0' : 'max-w-[140px] opacity-100'
                 }`}
               >
-                <Icon className="h-4 w-4 flex-shrink-0" strokeWidth={2} />
-                <span
-                  className={`overflow-hidden whitespace-nowrap transition-all duration-300 ${
-                    collapsed ? 'max-w-0 opacity-0' : 'max-w-[140px] opacity-100'
-                  }`}
-                >
-                  {item.label}
-                </span>
-              </button>
-            );
-          })}
+                {item.label}
+              </span>
+            </Button>
+          ))}
         </div>
       </aside>
 
       {/* MAIN CONTENT — fluid, adapts to sidebar width */}
       <div className="hub-scroll flex-1 overflow-y-auto px-6 py-5 pb-10 transition-all duration-300">
-        {children(activeTab, queueStatusFilter)}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeNav}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            transition={{ duration: 0.18, ease: 'easeOut' }}
+          >
+            {children(activeTab, queueStatusFilter)}
+          </motion.div>
+        </AnimatePresence>
       </div>
 
       <ChangePasscodeModal open={showChangePasscode} onClose={() => setShowChangePasscode(false)} />

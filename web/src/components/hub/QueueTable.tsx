@@ -20,6 +20,12 @@
  * reasoning. Status colors kept functionally distinct but re-tuned for a
  * light background: amber (pending), indigo (printing/in-progress — ties to
  * the one brand accent), emerald (completed), red (destructive).
+ *
+ * UPDATED 2026-09-26 (phase 3): migrated the control-bar and row action
+ * buttons onto the shared Button component, status pills onto Badge, and
+ * replaced the spinner-only "Loading queue..." fallback with Skeleton rows
+ * shaped like the real table — the loading state now previews the columns
+ * it's about to fill instead of just saying "please wait."
  * ─────────────────────────────────────────────────────────────────────────────
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -29,7 +35,6 @@ import {
   Clock,
   Inbox,
   Link2,
-  Loader2,
   Package,
   Pencil,
   Play,
@@ -43,6 +48,9 @@ import {
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import { type PrintJob, type QueueStatusFilter } from '@/lib/supabase/hub-queries';
+import Button, { type ButtonVariant } from '@/components/ui/Button';
+import Badge, { type BadgeTone } from '@/components/ui/Badge';
+import Skeleton from '@/components/ui/Skeleton';
 
 type StatusKey = 'pending' | 'printing' | 'completed';
 
@@ -52,16 +60,16 @@ const NEXT_STATUS: Record<StatusKey, StatusKey> = {
   completed: 'pending',
 };
 
-const BADGE_CLASS: Record<StatusKey, string> = {
-  pending: 'bg-amber-50 text-amber-700 border border-amber-200',
-  printing: 'bg-indigo-50 text-indigo-700 border border-indigo-200',
-  completed: 'bg-emerald-50 text-emerald-700 border border-emerald-200',
+const BADGE_TONE: Record<StatusKey, BadgeTone> = {
+  pending: 'amber',
+  printing: 'indigo',
+  completed: 'emerald',
 };
 
-const ACTION_BTN: Record<StatusKey, { className: string; label: string; icon: LucideIcon }> = {
-  pending: { className: 'bg-indigo-600 text-white font-medium hover:bg-indigo-700', label: 'Start Printing', icon: Play },
-  printing: { className: 'bg-emerald-600 text-white font-medium hover:bg-emerald-700', label: 'Mark Complete', icon: CheckCircle2 },
-  completed: { className: 'bg-white text-zinc-600 border border-zinc-300 hover:bg-zinc-50', label: 'Reset to Pending', icon: RotateCcw },
+const ACTION_BTN: Record<StatusKey, { variant: ButtonVariant; label: string; icon: LucideIcon }> = {
+  pending: { variant: 'primary', label: 'Start Printing', icon: Play },
+  printing: { variant: 'success-solid', label: 'Mark Complete', icon: CheckCircle2 },
+  completed: { variant: 'secondary', label: 'Reset to Pending', icon: RotateCcw },
 };
 
 function normalizeStatus(status: string | null): StatusKey {
@@ -88,6 +96,34 @@ function formatSubmitDate(isoString: string | null) {
   } catch {
     return '';
   }
+}
+
+function SkeletonRow() {
+  return (
+    <tr className="border-b border-zinc-100">
+      <td className="px-2.5 py-3 text-center">
+        <Skeleton className="mx-auto h-4 w-4" />
+      </td>
+      <td className="px-3 py-3">
+        <Skeleton className="h-4 w-24" />
+      </td>
+      <td className="px-3 py-3">
+        <Skeleton className="h-4 w-32" />
+      </td>
+      <td className="px-3 py-3">
+        <Skeleton className="h-4 w-20" />
+      </td>
+      <td className="px-3 py-3">
+        <Skeleton className="h-6 w-20 rounded-full" />
+      </td>
+      <td className="px-3 py-3">
+        <Skeleton className="h-9 w-[150px] rounded-lg" />
+      </td>
+      <td className="px-3 py-3">
+        <Skeleton className="h-8 w-[70px] rounded-lg" />
+      </td>
+    </tr>
+  );
 }
 
 export default function QueueTable({
@@ -302,18 +338,13 @@ export default function QueueTable({
           </span>
         </div>
 
-        <button
-          onClick={fetchQueue}
-          disabled={refreshing}
-          className="flex items-center gap-2 rounded-[10px] bg-indigo-600 px-5 py-3 text-sm font-medium text-white transition-colors hover:not-disabled:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 disabled:bg-zinc-100 disabled:text-zinc-400 disabled:cursor-not-allowed"
-        >
-          {refreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+        <Button onClick={fetchQueue} loading={refreshing} icon={RefreshCw} variant="primary">
           {refreshing ? 'Refreshing...' : 'Manual Refresh'}
-        </button>
+        </Button>
 
         <button
           onClick={() => setAutoRefresh((v) => !v)}
-          className={`flex items-center gap-2 rounded-[10px] border px-5 py-3 text-sm font-medium transition-colors ${
+          className={`flex items-center gap-2 rounded-lg border px-4.5 py-2.5 text-sm font-medium transition-colors ${
             autoRefresh
               ? 'border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100'
               : 'border-zinc-300 bg-white text-zinc-500 hover:bg-zinc-50'
@@ -323,14 +354,16 @@ export default function QueueTable({
           {autoRefresh ? 'Auto-Refresh: ON' : 'Auto-Refresh: OFF'}
         </button>
 
-        <button
+        <Button
           onClick={handleDeleteSelected}
-          disabled={selectedIds.size === 0 || deleting}
-          className="ml-auto flex items-center gap-2 rounded-[10px] border border-red-300 bg-white px-5 py-3 text-sm font-medium text-red-600 transition-colors hover:not-disabled:bg-red-50 disabled:border-zinc-200 disabled:text-zinc-300 disabled:cursor-not-allowed"
+          disabled={selectedIds.size === 0}
+          loading={deleting}
+          icon={Trash2}
+          variant="destructive"
+          className="ml-auto"
         >
-          {deleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
           {deleting ? 'Deleting...' : 'Delete Selected'}
-        </button>
+        </Button>
       </div>
 
       {/* TABLE */}
@@ -360,14 +393,13 @@ export default function QueueTable({
           </thead>
           <tbody>
             {loading ? (
-              <tr>
-                <td colSpan={7}>
-                  <div className="flex flex-col items-center gap-4 py-16 text-center text-zinc-400">
-                    <Loader2 className="h-9 w-9 animate-spin text-zinc-300" />
-                    <p className="text-sm">Loading queue...</p>
-                  </div>
-                </td>
-              </tr>
+              <>
+                <SkeletonRow />
+                <SkeletonRow />
+                <SkeletonRow />
+                <SkeletonRow />
+                <SkeletonRow />
+              </>
             ) : loadError ? (
               <tr>
                 <td colSpan={7}>
@@ -398,7 +430,6 @@ export default function QueueTable({
                 const stlUrl = (job.stl_url || '').trim();
                 const submitDateStr = formatSubmitDate(job.created_at);
                 const actionBtn = ACTION_BTN[statusKey];
-                const ActionIcon = actionBtn.icon;
 
                 return (
                   <tr
@@ -477,53 +508,36 @@ export default function QueueTable({
                     )}
 
                     <td className="px-3 py-2">
-                      <span className={`inline-block rounded-full px-4 py-1.5 text-[11px] font-semibold uppercase tracking-widest ${BADGE_CLASS[statusKey]}`}>
-                        {capitalize(statusKey)}
-                      </span>
+                      <Badge tone={BADGE_TONE[statusKey]}>{capitalize(statusKey)}</Badge>
                     </td>
 
                     <td className="px-3 py-2">
-                      <button
+                      <Button
                         onClick={() => handleCycleStatus(job)}
-                        disabled={isEditing || updatingId === job.id}
-                        className={`flex min-w-[150px] items-center justify-center gap-1.5 rounded-lg px-4 py-2 text-center text-sm font-medium transition-colors disabled:!bg-zinc-100 disabled:!text-zinc-400 disabled:cursor-not-allowed ${actionBtn.className}`}
+                        disabled={isEditing}
+                        loading={updatingId === job.id}
+                        variant={actionBtn.variant}
+                        icon={actionBtn.icon}
+                        className="min-w-[150px] w-full"
                       >
-                        {updatingId === job.id ? (
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        ) : (
-                          <ActionIcon className="h-3.5 w-3.5" />
-                        )}
                         {updatingId === job.id ? 'Updating...' : actionBtn.label}
-                      </button>
+                      </Button>
                     </td>
 
                     <td className="px-3 py-2">
                       {isEditing ? (
                         <div className="flex flex-col gap-1">
-                          <button
-                            onClick={() => saveEdit(job.id)}
-                            disabled={savingEdit}
-                            className="flex min-w-[60px] items-center justify-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-700 transition-colors hover:not-disabled:bg-emerald-100"
-                          >
-                            {savingEdit ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+                          <Button onClick={() => saveEdit(job.id)} loading={savingEdit} variant="success" icon={Save} size="sm">
                             Save
-                          </button>
-                          <button
-                            onClick={cancelEdit}
-                            className="flex min-w-[60px] items-center justify-center gap-1.5 rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-500 transition-colors hover:bg-zinc-50"
-                          >
-                            <X className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button onClick={cancelEdit} variant="secondary" icon={X} size="sm">
                             Cancel
-                          </button>
+                          </Button>
                         </div>
                       ) : (
-                        <button
-                          onClick={() => startEdit(job)}
-                          className="flex min-w-[60px] items-center justify-center gap-1.5 rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-medium text-indigo-600 transition-colors hover:bg-indigo-100"
-                        >
-                          <Pencil className="h-3.5 w-3.5" />
+                        <Button onClick={() => startEdit(job)} variant="accent" icon={Pencil} size="sm">
                           Edit
-                        </button>
+                        </Button>
                       )}
                     </td>
                   </tr>
