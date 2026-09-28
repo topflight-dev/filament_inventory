@@ -17,6 +17,13 @@ import { NextRequest, NextResponse } from 'next/server';
  * the RLS review) instead of a direct client-side Supabase insert, so it
  * needs the same host-split treatment as /api/notify-request already gets.
  *
+ * UPDATED 2026-09-27 (later still) — added /signup to DASHBOARD_PREFIXES:
+ * the new invite-gated self-serve sign-up page (piece #1 of the test-release
+ * plan — see api/hub/signup/route.ts and app/(dashboard)/signup/page.tsx)
+ * lives on the dashboard product, not the marketing site, so it needs the
+ * same treatment /hub and /request already get. Its own API route,
+ * /api/hub/signup, is already covered by the existing /api/hub prefix below.
+ *
  * UPDATED 2026-09-27 — product name/domain committed: the dashboard now has
  * its own genuinely separate domain, printcue.ink ("Printcue"), replacing the
  * app.crafted3dworkshop.com subdomain this middleware originally split onto.
@@ -69,7 +76,7 @@ const APP_HOST = 'printcue.ink';
 const OLD_APP_HOST = 'app.crafted3dworkshop.com';
 
 // Path prefixes that belong to the dashboard product, not the marketing site.
-const DASHBOARD_PREFIXES = ['/hub', '/request', '/api/hub', '/api/notify-request', '/api/print-request'];
+const DASHBOARD_PREFIXES = ['/hub', '/request', '/signup', '/api/hub', '/api/notify-request', '/api/print-request'];
 
 // Never redirected based on host — hit directly by Vercel Cron, not a browser.
 const ALWAYS_ALLOW_PREFIXES = ['/api/keepalive'];

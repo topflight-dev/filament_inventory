@@ -152,6 +152,13 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
             </p>
           )}
         </form>
+
+        <p className="mt-6 text-xs text-zinc-400">
+          Don&apos;t have a shop yet?{' '}
+          <a href="/signup" className="font-medium text-indigo-600 hover:text-indigo-700">
+            Sign up with an invite code
+          </a>
+        </p>
       </div>
 
       <style>{`
