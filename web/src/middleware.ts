@@ -24,6 +24,18 @@ import { NextRequest, NextResponse } from 'next/server';
  * same treatment /hub and /request already get. Its own API route,
  * /api/hub/signup, is already covered by the existing /api/hub prefix below.
  *
+ * UPDATED 2026-09-28 — printcue.ink's root path ('/') no longer redirects
+ * straight to /hub. It now REWRITES to /welcome — Printcue's own public
+ * landing page (piece #5 of the test-release plan; see
+ * claude/printcue-test-release-plan.md in the Claude Project) — while the
+ * address bar keeps showing the bare domain, since a rewrite (unlike a
+ * redirect) never changes the visible URL. /welcome is also directly
+ * reachable on its own and gets the same host-split treatment as /hub,
+ * /request, and /signup via DASHBOARD_PREFIXES below, so it always resolves
+ * on printcue.ink regardless of which URL a visitor actually typed or
+ * clicked. /api/request-access (the landing page's request-access form)
+ * gets the same treatment as the other /api/* dashboard routes.
+ *
  * UPDATED 2026-09-27 — product name/domain committed: the dashboard now has
  * its own genuinely separate domain, printcue.ink ("Printcue"), replacing the
  * app.crafted3dworkshop.com subdomain this middleware originally split onto.
@@ -46,8 +58,9 @@ import { NextRequest, NextResponse } from 'next/server';
  *   - Any request to the legacy app.crafted3dworkshop.com host redirects to
  *     the same path (+ query string) on printcue.ink, permanently.
  *   - On the printcue.ink host, only dashboard routes are served; the bare
- *     root path goes straight to /hub, and anything else (a marketing page)
- *     redirects to the same path on the marketing host.
+ *     root path is rewritten (URL unchanged) to the /welcome landing page,
+ *     and anything else (a marketing page) redirects to the same path on
+ *     the marketing host.
  *   - On the marketing host, dashboard routes (/hub, /request, their APIs)
  *     redirect to the same path on printcue.ink — so any link already shared
  *     under any prior domain keeps working instead of 404ing.
@@ -76,7 +89,16 @@ const APP_HOST = 'printcue.ink';
 const OLD_APP_HOST = 'app.crafted3dworkshop.com';
 
 // Path prefixes that belong to the dashboard product, not the marketing site.
-const DASHBOARD_PREFIXES = ['/hub', '/request', '/signup', '/api/hub', '/api/notify-request', '/api/print-request'];
+const DASHBOARD_PREFIXES = [
+  '/hub',
+  '/request',
+  '/signup',
+  '/welcome',
+  '/api/hub',
+  '/api/notify-request',
+  '/api/print-request',
+  '/api/request-access',
+];
 
 // Never redirected based on host — hit directly by Vercel Cron, not a browser.
 const ALWAYS_ALLOW_PREFIXES = ['/api/keepalive'];
@@ -113,8 +135,8 @@ export function middleware(request: NextRequest) {
   if (onAppHost) {
     if (pathname === '/') {
       const url = request.nextUrl.clone();
-      url.pathname = '/hub';
-      return NextResponse.redirect(url, 307);
+      url.pathname = '/welcome';
+      return NextResponse.rewrite(url);
     }
     if (!isDashboardPath) {
       const url = request.nextUrl.clone();
