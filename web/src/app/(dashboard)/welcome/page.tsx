@@ -34,17 +34,21 @@
  * the "illustrated/CSS-only for now" placeholder note above. These are
  * genuine screenshots of a dedicated test shop ("Riverside 3D Prints",
  * seeded with fake sample data) — NOT Luis's real crafted3d shop — so
- * nothing here ever exposes real customer names or orders. Framed in a
- * simple browser-chrome wrapper (three dots + a fake address pill) so they
- * read as product shots rather than raw screen grabs, still using next/image
- * for basic optimization.
+ * nothing here ever exposes real customer names or orders.
+ *
+ * UPDATED 2026-09-28 (later same day) — the screenshots render noticeably
+ * smaller than their native size in the two-column grid (~460px vs. the
+ * source images' 800px), so per Luis's question about size, they're now
+ * click-to-enlarge via components/printcue/ScreenshotGallery.tsx (a client
+ * component — the browser-chrome framing, hover affordance, and the
+ * lightbox modal all live there now; this file just supplies the image list).
  * ─────────────────────────────────────────────────────────────────────────────
  */
 import type { Metadata } from 'next';
-import Image from 'next/image';
 import { ArrowRight, Boxes, Inbox, Layers, LogIn, MonitorSmartphone, Ticket } from 'lucide-react';
 import Card from '@/components/ui/Card';
 import RequestAccessForm from '@/components/printcue/RequestAccessForm';
+import ScreenshotGallery from '@/components/printcue/ScreenshotGallery';
 
 export const metadata: Metadata = {
   title: 'Printcue — A Simple Dashboard for Small Print Shops',
@@ -67,39 +71,18 @@ function LayerDivider() {
   );
 }
 
-function ScreenshotFrame({
-  src,
-  alt,
-  label,
-}: {
-  src: string;
-  alt: string;
-  label: string;
-}) {
-  return (
-    <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm">
-      <div className="flex items-center gap-2 border-b border-zinc-200 bg-zinc-50 px-4 py-2.5">
-        <span className="h-2.5 w-2.5 rounded-full bg-zinc-300" />
-        <span className="h-2.5 w-2.5 rounded-full bg-zinc-300" />
-        <span className="h-2.5 w-2.5 rounded-full bg-zinc-300" />
-        <span className="ml-2 rounded-md bg-white px-2.5 py-1 text-xs text-zinc-400">
-          printcue.ink/hub
-        </span>
-      </div>
-      <Image
-        src={src}
-        alt={alt}
-        width={800}
-        height={886}
-        className="w-full"
-        sizes="(min-width: 640px) 50vw, 100vw"
-      />
-      <div className="border-t border-zinc-200 bg-white px-4 py-2.5 text-center text-xs font-medium text-zinc-500">
-        {label}
-      </div>
-    </div>
-  );
-}
+const HUB_SCREENSHOTS = [
+  {
+    src: '/printcue/hub-queue.jpg',
+    alt: "Printcue's request queue showing three incoming print jobs with their filament and status",
+    label: "Request queue — know what's next at a glance",
+  },
+  {
+    src: '/printcue/hub-inventory.jpg',
+    alt: "Printcue's filament inventory showing color swatches, materials, and stock status",
+    label: 'Filament inventory — color, material, and stock in one place',
+  },
+];
 
 export default function WelcomePage() {
   return (
@@ -217,18 +200,7 @@ export default function WelcomePage() {
             mockup.
           </p>
         </div>
-        <div className="grid gap-6 sm:grid-cols-2">
-          <ScreenshotFrame
-            src="/printcue/hub-queue.jpg"
-            alt="Printcue's request queue showing three incoming print jobs with their filament and status"
-            label="Request queue — know what's next at a glance"
-          />
-          <ScreenshotFrame
-            src="/printcue/hub-inventory.jpg"
-            alt="Printcue's filament inventory showing color swatches, materials, and stock status"
-            label="Filament inventory — color, material, and stock in one place"
-          />
-        </div>
+        <ScreenshotGallery screenshots={HUB_SCREENSHOTS} />
       </section>
 
       <LayerDivider />
