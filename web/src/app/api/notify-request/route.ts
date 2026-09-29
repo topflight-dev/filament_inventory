@@ -34,6 +34,12 @@
  * footer read "Printcue" instead of the placeholder "Print Queue Alerts" /
  * "C3DW". Still just a fallback — set HUB_DASHBOARD_URL=https://printcue.ink
  * in Vercel so this constant is never actually relied on in production.
+ *
+ * UPDATED 2026-09-29 — deliverability pass, same reasoning as
+ * api/request-access/route.ts (see its header comment): dropped the emoji
+ * from the email subject line and added a plain-text `text` alternative
+ * alongside `html`. The Discord embed's emoji are untouched — Discord isn't a
+ * spam-filtered inbox, so there's no reason to flatten that one.
  * ─────────────────────────────────────────────────────────────────────────────
  */
 import { NextRequest, NextResponse } from 'next/server';
@@ -120,14 +126,23 @@ export async function POST(request: NextRequest) {
         await resend.emails.send({
           from: FROM_ADDRESS,
           to: settings.notification_email,
-          subject: `🖨️ New Print Request — ${projectName}`,
+          subject: `New Print Request — ${projectName}`,
           html: `
-            <h2>New Print Request Received!</h2>
+            <h2>New Print Request</h2>
             <p><strong>Project:</strong> ${escapeHtml(projectName)}</p>
             <p><strong>Requester:</strong> ${escapeHtml(requestorName)}</p>
             <p><strong>Filament:</strong> ${escapeHtml(colorPreference)}</p>
             <p><a href="${HUB_DASHBOARD_URL}/hub">View Dashboard</a></p>
           `,
+          text: [
+            'New Print Request',
+            '',
+            `Project: ${projectName}`,
+            `Requester: ${requestorName}`,
+            `Filament: ${colorPreference}`,
+            '',
+            `View Dashboard: ${HUB_DASHBOARD_URL}/hub`,
+          ].join('\n'),
         });
         sent.push('email');
       } catch (err) {

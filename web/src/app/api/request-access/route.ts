@@ -28,6 +28,20 @@
  * owner shop, the request is effectively lost (logged server-side only) —
  * worth confirming crafted3d has at least one channel set up before relying
  * on this in production.
+ *
+ * UPDATED 2026-09-29 — Luis's first real request-access email landed in his
+ * Gmail Spam folder. Checked Resend: DKIM + SPF on mail.crafted3dworkshop.com
+ * are both Verified, so DNS/auth isn't the problem — the domain was only
+ * verified a few days ago and has no sending history with Gmail yet, which
+ * is the more likely cause and fixes itself over time as Luis marks these
+ * "Not spam" and volume builds. Two things changed here that help regardless:
+ * dropped the emoji from the subject line (a mild spam-filter signal), and
+ * added a plain-text `text` alternative alongside `html` (an HTML-only email
+ * is itself a spam-score factor). Same treatment applied to
+ * api/notify-request/route.ts's email send — same sending domain, same
+ * recipient inbox, same concern. If Gmail keeps flagging these, the durable
+ * fix is a Gmail filter on this from-address set to "Never send to Spam" —
+ * that's outside anything code here can control.
  * ─────────────────────────────────────────────────────────────────────────────
  */
 import { NextRequest, NextResponse } from 'next/server';
@@ -112,7 +126,7 @@ export async function POST(request: NextRequest) {
         await resend.emails.send({
           from: FROM_ADDRESS,
           to: settings.notification_email,
-          subject: `🎟️ New Printcue Access Request — ${name}`,
+          subject: `New Printcue Access Request — ${name}`,
           html: `
             <h2>New Access Request</h2>
             <p><strong>Name:</strong> ${escapeHtml(name)}</p>
@@ -120,6 +134,15 @@ export async function POST(request: NextRequest) {
             <p><strong>What they print:</strong> ${escapeHtml(whatYouPrint)}</p>
             <p>Reply directly to this address if you'd like to send them an invite code.</p>
           `,
+          text: [
+            'New Access Request',
+            '',
+            `Name: ${name}`,
+            `Email: ${email}`,
+            `What they print: ${whatYouPrint}`,
+            '',
+            'Reply directly to this address if you’d like to send them an invite code.',
+          ].join('\n'),
         });
       } catch (err) {
         console.warn('[Printcue] request-access: email send failed (non-critical):', err);
