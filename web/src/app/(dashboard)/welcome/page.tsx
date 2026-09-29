@@ -28,12 +28,20 @@
  * metadata directly — everything below is static except the request-access
  * form itself, split out to components/printcue/RequestAccessForm.tsx
  * specifically so this page doesn't need to become a client component too.
- * No photos/screenshots yet (illustrated/CSS-only motifs for now, per the
- * plan doc's open decision) — easy to swap in real images later without
- * restructuring anything here.
+ *
+ * UPDATED 2026-09-28 — added a "See it in action" section with real Hub
+ * screenshots (public/printcue/hub-queue.jpg, hub-inventory.jpg), replacing
+ * the "illustrated/CSS-only for now" placeholder note above. These are
+ * genuine screenshots of a dedicated test shop ("Riverside 3D Prints",
+ * seeded with fake sample data) — NOT Luis's real crafted3d shop — so
+ * nothing here ever exposes real customer names or orders. Framed in a
+ * simple browser-chrome wrapper (three dots + a fake address pill) so they
+ * read as product shots rather than raw screen grabs, still using next/image
+ * for basic optimization.
  * ─────────────────────────────────────────────────────────────────────────────
  */
 import type { Metadata } from 'next';
+import Image from 'next/image';
 import { ArrowRight, Boxes, Inbox, Layers, LogIn, MonitorSmartphone, Ticket } from 'lucide-react';
 import Card from '@/components/ui/Card';
 import RequestAccessForm from '@/components/printcue/RequestAccessForm';
@@ -55,6 +63,40 @@ function LayerDivider() {
             'repeating-linear-gradient(to right, #d4d4d8 0, #d4d4d8 6px, transparent 6px, transparent 14px)',
         }}
       />
+    </div>
+  );
+}
+
+function ScreenshotFrame({
+  src,
+  alt,
+  label,
+}: {
+  src: string;
+  alt: string;
+  label: string;
+}) {
+  return (
+    <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm">
+      <div className="flex items-center gap-2 border-b border-zinc-200 bg-zinc-50 px-4 py-2.5">
+        <span className="h-2.5 w-2.5 rounded-full bg-zinc-300" />
+        <span className="h-2.5 w-2.5 rounded-full bg-zinc-300" />
+        <span className="h-2.5 w-2.5 rounded-full bg-zinc-300" />
+        <span className="ml-2 rounded-md bg-white px-2.5 py-1 text-xs text-zinc-400">
+          printcue.ink/hub
+        </span>
+      </div>
+      <Image
+        src={src}
+        alt={alt}
+        width={800}
+        height={886}
+        className="w-full"
+        sizes="(min-width: 640px) 50vw, 100vw"
+      />
+      <div className="border-t border-zinc-200 bg-white px-4 py-2.5 text-center text-xs font-medium text-zinc-500">
+        {label}
+      </div>
     </div>
   );
 }
@@ -162,6 +204,30 @@ export default function WelcomePage() {
               about it.
             </p>
           </Card>
+        </div>
+      </section>
+
+      <LayerDivider />
+
+      <section className="mx-auto max-w-5xl px-6 py-16">
+        <div className="mb-10 text-center">
+          <h2 className="mb-3 text-2xl font-semibold tracking-tight text-zinc-900">See it in action</h2>
+          <p className="mx-auto max-w-lg text-sm leading-relaxed text-zinc-600">
+            A real look at the dashboard — a sample shop&apos;s request queue and filament shelf, not a
+            mockup.
+          </p>
+        </div>
+        <div className="grid gap-6 sm:grid-cols-2">
+          <ScreenshotFrame
+            src="/printcue/hub-queue.jpg"
+            alt="Printcue's request queue showing three incoming print jobs with their filament and status"
+            label="Request queue — know what's next at a glance"
+          />
+          <ScreenshotFrame
+            src="/printcue/hub-inventory.jpg"
+            alt="Printcue's filament inventory showing color swatches, materials, and stock status"
+            label="Filament inventory — color, material, and stock in one place"
+          />
         </div>
       </section>
 
