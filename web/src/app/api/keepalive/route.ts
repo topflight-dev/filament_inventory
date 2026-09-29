@@ -6,13 +6,21 @@
  * Rule 4 — Keep-Alive Architecture). Runs a trivial read-only query against
  * the sacred `colors` table to keep the Supabase free-tier project awake,
  * without requiring any `functions`/`runtime` block in vercel.json.
+ *
+ * UPDATED 2026-09-29 — switched from the anon-key server client to the
+ * service-role client. anon's grant on `colors` was revoked as part of
+ * fixing a confirmed cross-tenant leak (see api/public/colors/route.ts's
+ * header comment); this endpoint doesn't care about tenant scoping at all
+ * — it just needs any trivial read to keep the database warm — so the
+ * service-role client is the correct tool now that anon can no longer touch
+ * this table.
  * ─────────────────────────────────────────────────────────────────────────────
  */
-import { createClient } from '@/lib/supabase/server';
+import { createServiceClient } from '@/lib/supabase/service';
 import { NextResponse } from 'next/server';
 
 export async function GET() {
-  const supabase = await createClient();
+  const supabase = createServiceClient();
 
   const { error } = await supabase.from('colors').select('id').limit(1);
 

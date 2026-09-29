@@ -261,14 +261,17 @@ function RequestPageInner() {
       setFilamentsLoading(true);
       setFilamentsError(false);
       try {
-        const { data, error } = await supabase
-          .from('colors')
-          .select('id, color, finish, inStock')
-          .eq('inStock', true)
-          .eq('shop_slug', resolvedShopSlug)
-          .order('color', { ascending: true });
-
-        if (error) throw error;
+        // UPDATED 2026-09-29 — this used to query `colors` directly via the
+        // anon browser client (supabase.from('colors')...). That relied
+        // entirely on this .eq('shop_slug', ...) filter for tenant
+        // isolation, with nothing enforcing it at the database level — a
+        // confirmed cross-tenant leak (see api/public/colors/route.ts's
+        // header comment for the full story). Colors reads now go through
+        // that server route instead, which is the only path left with any
+        // access to the table at all.
+        const res = await fetch(`/api/public/colors?shop=${encodeURIComponent(resolvedShopSlug)}`);
+        if (!res.ok) throw new Error(`Failed to load filaments (${res.status})`);
+        const data = await res.json();
         if (!cancelled) setAllFilaments(Array.isArray(data) ? (data as Filament[]) : []);
       } catch (err) {
         console.error('Filament load error:', err);
@@ -282,7 +285,7 @@ function RequestPageInner() {
     return () => {
       cancelled = true;
     };
-  }, [gate, resolvedShopSlug, supabase]);
+  }, [gate, resolvedShopSlug]);
 
   function toggleFilament(f: Filament, checked: boolean) {
     const id = String(f.id);

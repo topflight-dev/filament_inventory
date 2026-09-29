@@ -30,11 +30,28 @@ import { getInStockColors } from '@/lib/supabase/queries';
  * not a per-tenant route like /request — so it's scoped to exactly this
  * site's own shop via NEXT_PUBLIC_DEFAULT_SHOP_SLUG (the same env var
  * /request already uses to mean "this deployment's own shop").
+ *
+ * UPDATED 2026-09-29 — the "harmless today" note above turned out not to
+ * stay true: a second shop (the "riverside-3d-prints" test shop) now has
+ * color rows, and a real cross-tenant leak was confirmed at the database
+ * level (see queries.ts's updated header comment and
+ * api/public/colors/route.ts). getInStockColors now REQUIRES a shopSlug and
+ * queries via the service-role client, so this page's own behavior is
+ * unchanged, but it's no longer resting on "no other shop has data yet" —
+ * it's enforced by the query itself. Added an explicit guard here too: if
+ * NEXT_PUBLIC_DEFAULT_SHOP_SLUG is ever unset, this page now fails loudly
+ * (empty list + a logged error) instead of silently falling through to
+ * fetching every shop's colors, which is exactly the failure mode that
+ * created this gap in the first place.
  */
 export const revalidate = 60;
 
 export default async function InventoryPage() {
-  const items = await getInStockColors(process.env.NEXT_PUBLIC_DEFAULT_SHOP_SLUG);
+  const shopSlug = process.env.NEXT_PUBLIC_DEFAULT_SHOP_SLUG ?? '';
+  if (!shopSlug) {
+    console.error('[Printcue] /inventory: NEXT_PUBLIC_DEFAULT_SHOP_SLUG is not set — showing an empty list rather than every shop’s colors.');
+  }
+  const items = await getInStockColors(shopSlug);
 
   return (
     <>
