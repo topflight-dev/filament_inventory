@@ -74,6 +74,20 @@ import { NextRequest, NextResponse } from 'next/server';
  * "View Dashboard" links read HUB_DASHBOARD_URL, not a hardcoded string — see
  * api/notify-request/route.ts; that env var needs updating to
  * https://printcue.ink in Vercel alongside this deploy.
+ *
+ * UPDATED 2026-09-28 (post-deploy verification) — added /api/public/colors to
+ * DASHBOARD_PREFIXES. It was missing when that route was created as part of
+ * the `colors` cross-tenant leak fix, which broke /request in production:
+ * the page itself correctly stays on printcue.ink (it's a dashboard path),
+ * but its relative `fetch('/api/public/colors?...')` call was NOT recognized
+ * as a dashboard path, so this middleware 308-redirected that one fetch over
+ * to www.crafted3dworkshop.com — a different origin from the page — which the
+ * browser then blocked as a cross-origin request with no CORS headers
+ * ("TypeError: Failed to fetch", surfaced to visitors as "Could not load
+ * filaments"). Caught during post-deploy verification, before any real
+ * customer hit it. Same class of bug the OLD_APP_HOST redirect above exists
+ * to prevent for full-page links — this was the same trap for an in-page
+ * fetch call instead.
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
@@ -98,6 +112,7 @@ const DASHBOARD_PREFIXES = [
   '/api/notify-request',
   '/api/print-request',
   '/api/request-access',
+  '/api/public/colors',
 ];
 
 // Never redirected based on host — hit directly by Vercel Cron, not a browser.
