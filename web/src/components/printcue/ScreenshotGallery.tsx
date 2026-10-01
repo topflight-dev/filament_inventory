@@ -21,6 +21,16 @@
  * blur the same pixels. If Luis ever wants crisper/bigger source images (e.g.
  * from his own higher-DPI screen), swapping the two files in public/printcue/
  * and bumping the width/height props here is all that's needed.
+ *
+ * UPDATED 2026-09-30 — added `animated` support for the new Hub demo clip
+ * (a GIF, same 800x886 frame size as the two static screenshots). next/image
+ * runs any local file through Vercel's image optimizer by default, which
+ * re-encodes GIFs down to a single static frame — fine for the two still
+ * screenshots, but it would silently kill the clip's animation. `unoptimized`
+ * bypasses that optimizer and serves the file exactly as uploaded, so the
+ * GIF actually plays. An animated item also spans both grid columns
+ * (`sm:col-span-2`) rather than sharing a row with a still screenshot — it's
+ * a different kind of asset and reads better with more room.
  * ─────────────────────────────────────────────────────────────────────────────
  */
 import { useEffect, useState } from 'react';
@@ -31,6 +41,8 @@ export interface Screenshot {
   src: string;
   alt: string;
   label: string;
+  /** True for an animated GIF/clip — bypasses next/image's optimizer (which would otherwise flatten it to a static frame) and spans the full grid width. */
+  animated?: boolean;
 }
 
 const NATIVE_WIDTH = 800;
@@ -69,7 +81,9 @@ export default function ScreenshotGallery({ screenshots }: { screenshots: Screen
             key={shot.src}
             type="button"
             onClick={() => setOpenIndex(i)}
-            className="group overflow-hidden rounded-xl border border-zinc-200 bg-white text-left shadow-sm transition-shadow hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/40"
+            className={`group overflow-hidden rounded-xl border border-zinc-200 bg-white text-left shadow-sm transition-shadow hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500/40 ${
+              shot.animated ? 'sm:col-span-2' : ''
+            }`}
           >
             <BrowserChrome />
             <div className="relative">
@@ -78,8 +92,9 @@ export default function ScreenshotGallery({ screenshots }: { screenshots: Screen
                 alt={shot.alt}
                 width={NATIVE_WIDTH}
                 height={NATIVE_HEIGHT}
+                unoptimized={shot.animated}
                 className="w-full"
-                sizes="(min-width: 640px) 50vw, 100vw"
+                sizes={shot.animated ? '100vw' : '(min-width: 640px) 50vw, 100vw'}
               />
               <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-zinc-900/0 transition-colors group-hover:bg-zinc-900/10">
                 <span className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium text-white opacity-0 shadow-sm transition-opacity group-hover:bg-zinc-900/80 group-hover:opacity-100">
@@ -122,6 +137,7 @@ export default function ScreenshotGallery({ screenshots }: { screenshots: Screen
               alt={active.alt}
               width={NATIVE_WIDTH}
               height={NATIVE_HEIGHT}
+              unoptimized={active.animated}
               className="w-full"
               sizes={`${NATIVE_WIDTH}px`}
               priority

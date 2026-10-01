@@ -42,6 +42,14 @@
  * click-to-enlarge via components/printcue/ScreenshotGallery.tsx (a client
  * component — the browser-chrome framing, hover affordance, and the
  * lightbox modal all live there now; this file just supplies the image list).
+ *
+ * UPDATED 2026-09-30 — added a short animated walkthrough
+ * (public/printcue/hub-demo.gif: request queue → completed archive →
+ * filament inventory → back to queue), captured the same way as the two
+ * static screenshots — a live Browser-pane session against the "Riverside 3D
+ * Prints" test shop, never Luis's real crafted3d data. Marked `animated` in
+ * HUB_SCREENSHOTS so ScreenshotGallery serves it unoptimized (see that
+ * file's header comment for why) and gives it the full-width row.
  * ─────────────────────────────────────────────────────────────────────────────
  */
 import type { Metadata } from 'next';
@@ -81,6 +89,12 @@ const HUB_SCREENSHOTS = [
     src: '/printcue/hub-inventory.jpg',
     alt: "Printcue's filament inventory showing color swatches, materials, and stock status",
     label: 'Filament inventory — color, material, and stock in one place',
+  },
+  {
+    src: '/printcue/hub-demo.gif',
+    alt: 'A short walkthrough of the Printcue Hub: the request queue, completed archive, and filament inventory',
+    label: 'See a full walkthrough of the Hub',
+    animated: true,
   },
 ];
 
