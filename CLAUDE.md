@@ -1,6 +1,6 @@
 # CLAUDE.md — Source of Truth
 > Crafted 3D Workshop | crafted3dworkshop.com
-> Last audited: 2026-09-24
+> Last audited: 2026-11-15
 
 ## Current Project Structure
 
@@ -45,6 +45,12 @@ filament_inventory_site/                 ← repo root
 - **Done means verified:** Run `npx tsc --noEmit` and `npm run build` in `web/`, and report the results, before saying something is done.
 - **Stop and ask:** If a request seems to need a database, security-policy (RLS or grants), or auth change, stop and ask before doing anything.
 
+### Database security notes (`shops`)
+- RLS is enabled, but a policy lets `anon` SELECT every row. Sensitive columns are protected **only** by column-level grants: `anon` must not be able to read `passcode`, `passcode_hash`, `notification_email`, or `discord_webhook_url` (confirmed 2026-11-15). Browser code currently uses `shop_slug`, `shop_name`, and `logo_url` (`web/src/app/(marketing)/request/page.tsx`).
+- Never run GRANT or REVOKE, and never suggest a broad grant on `shops`. A new column on `shops` must not be readable by `anon` without my explicit approval. `passcode_hash`, `notification_email`, and `discord_webhook_url` must never be readable by `anon`.
+- Never `select *` (or an empty `.select()`) on `shops` in browser code or in any route that returns data to a caller. Select only the columns needed.
+- The plaintext `passcode` column is legacy and pending cleanup. Never read, log, return, or write it, and don't call `validateShopCredentials` (`web/src/lib/supabase/hub-queries.ts`) or run `web/scripts/migrate-passcode-hash.mjs`, which both read it.
+
 ## Tech Stack
 
 | Layer | Technology |
@@ -64,7 +70,7 @@ filament_inventory_site/                 ← repo root
 
 ## Where to Look for More
 
-- **Operating rules, secrets policy, deployment rules:** `.clinerules`
+- **Operating rules, secrets policy, deployment rules:** the Rules section above. (`.clinerules` holds Cline's rules.)
 - **Full architecture audit, security findings, and the cleanup roadmap's history:** `website-architecture-audit.md` in the "3D Printing Business" Claude project
 - **Recent change history:** `Project_Log.md` (newest entry at top)
 
