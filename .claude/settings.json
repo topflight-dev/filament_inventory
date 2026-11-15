@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "deny": [
+      "Bash(*vercel*--prod*)",
+      "PowerShell(*vercel*--prod*)",
+      "Bash(git push*)",
+      "PowerShell(git push*)",
+      "Bash(git -C * push*)",
+      "PowerShell(git -C * push*)",
+      "Read(**/.env)",
+      "Read(**/.env.*)"
+    ]
+  }
+}

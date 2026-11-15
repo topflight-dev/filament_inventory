@@ -14,7 +14,7 @@ filament_inventory_site/                 ← repo root
 │       ├── app/
 │       │   ├── (marketing)/              ← public pages: home, inventory, gallery, contact, team, request
 │       │   ├── (dashboard)/hub/          ← admin queue/inventory dashboard
-│       │   └── api/                      ← keepalive, notify-discord route handlers
+│       │   └── api/                      ← route handlers: hub/* (login, session, shop-scoped queue/colors), print-request, notify-request, request-access, public/colors, keepalive
 │       ├── components/
 │       │   ├── hub/                      ← AuthGate, HubShell, InventoryManager, QueueTable, InvEditModal
 │       │   ├── layout/                   ← Header, Footer
@@ -26,7 +26,6 @@ filament_inventory_site/                 ← repo root
 ├── Project_Log.md                        ← development log, newest entry at top
 ├── README.md                             ← project overview (this repo)
 ├── CLAUDE.md                             ← this file
-├── .env                                  ← unused leftover from the retired server.js/Render backend; not read by anything live
 ├── CNAME                                 ← custom domain config: crafted3dworkshop.com
 ├── vercel.json                           ← Vercel config (Root Directory = web)
 └── Admin Hub.png, Filament Inventory Insert.png, Inventory Management.png, Request Form.png
@@ -35,6 +34,17 @@ filament_inventory_site/                 ← repo root
 
 **Retired and removed from this repo** (see the Cleanup Roadmap in `.clinerules` for the commit history): the root-level static HTML site, the Electron desktop admin app (`main.cjs`, `mobile-companion/`), the standalone Express/Render API (`server.js`), and the `feature/universal-web-target` branch. None of these exist anymore — don't recreate them or reference them as current.
 
+## Rules
+
+- **Database:** No schema changes, new tables, or raw DDL without my explicit approval in the current session.
+- **Writes:** Every UPDATE or DELETE must be filtered to specific rows (by `id`, plus `shop_slug` where the table has one). Never an unfiltered bulk write.
+- **Secrets:** No hardcoded keys, tokens, or passwords anywhere. Client code uses only `NEXT_PUBLIC_*` values; everything else is read with `process.env` in server code.
+- **Tenant boundary:** Authenticated (Hub) routes get `shop_slug` only from the signed session cookie, never from the request body or URL. Public routes that accept a shop slug (`print-request`, `notify-request`, `public/colors`) treat it as untrusted: confirm the shop exists and return or act on only that shop's public data. The service-role key and `lib/supabase/service.ts` are never used in or exposed to browser code. Every new route must follow this.
+- **Deploys and git:** Never run `vercel --prod` or `vercel deploy --prod`. Never commit or push. I do commits and pushes myself.
+- **Shell:** PowerShell only.
+- **Done means verified:** Run `npx tsc --noEmit` and `npm run build` in `web/`, and report the results, before saying something is done.
+- **Stop and ask:** If a request seems to need a database, security-policy (RLS or grants), or auth change, stop and ask before doing anything.
+
 ## Tech Stack
 
 | Layer | Technology |
@@ -42,15 +52,15 @@ filament_inventory_site/                 ← repo root
 | Framework | Next.js 16 (App Router) |
 | UI | React 19, Tailwind 4 |
 | Language | TypeScript |
-| Database | Supabase (PostgreSQL), accessed directly via `@supabase/ssr` — no custom backend API |
+| Database | Supabase (PostgreSQL). Almost all data access goes through Next.js Route Handlers in `web/src/app/api/` using the service-role client, which bypasses RLS, so the security boundary is the signed session cookie plus a `shop_slug` filter on every query. The browser anon client is used only for shop branding lookups, `site_traffic` inserts, and the Hub's realtime listener. |
 | Hosting | Vercel — Root Directory = `web`, deploys on every push to `main` |
 | Domain | crafted3dworkshop.com (CNAME) |
 | Contact form | Web3Forms |
-| Notifications | Discord webhook (`/api/notify-discord`) |
-| Keep-warm | Vercel Cron → `/api/keepalive`, every 4h |
+| Notifications | Per-shop email (Resend) and Discord webhook via `/api/notify-request`; Printcue access requests via `/api/request-access` |
+| Keep-warm | Vercel Cron → `/api/keepalive`, daily at 00:00 UTC (set in `web/vercel.json`) |
 
-### Supabase Tables (sacred — see `.clinerules` before changing anything)
-`colors`, `print_jobs`, `shops`, `site_traffic`
+### Supabase Tables (sacred — see Rules above)
+`colors`, `invites`, `print_jobs`, `shops`, `site_traffic`
 
 ## Where to Look for More
 
